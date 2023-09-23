@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/recycler_item_yoga_session_template_root"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    android:gravity="center">
+    <TextView
+        android:id="@+id/recycler_item_yoga_session_template_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Arms"
+        android:textColor="@color/black"
+        android:textSize="24sp"/>
+</LinearLayout>

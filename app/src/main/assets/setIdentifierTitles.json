@@ -1,0 +1,65 @@
+{
+  "DUMBBELL_CURL": {
+    "default": "Dumbbell curl"
+  },
+  "BARBELL_CURL": {
+    "default": "Barbell curl"
+  },
+  "HAMMER_CURL": {
+    "default": "Hammer curl"
+  },
+  "TRICEPS_BENCH_DIPS": {
+    "default": "Triceps Bench dips"
+  },
+  "CABLE_ROPE_TRICEPS_PUSHDOWN": {
+    "default": "Cable Rope Triceps Pushdown"
+  },
+  "SINGLE_ARM_ROW": {
+    "default": "Single Arm Row"
+  },
+  "DEADLIFT": {
+    "default": "Deadlift"
+  },
+  "BENT_OVER_DUMBBELL_ROW": {
+    "default": "Bent Over Dumbbell Row"
+  },
+  "LAT_PULLDOWN": {
+    "default": "Lat Pulldown"
+  },
+  "CHEST_DIPS": {
+    "default": "Triceps Bench dips"
+  },
+  "BARBELL_BENCH_PRESS": {
+    "default": "Barbell Bench Press"
+  },
+  "DUMBBELL_FLY": {
+    "default": "Dumbbell Fly"
+  },
+  "SEATED_PEC_DECK": {
+    "default": "Seated Pec Deck"
+  },
+  "DUMBELL_LUNGE": {
+    "default": "Dumbbell Lunge"
+  },
+  "BARBELL_SQUAT": {
+    "default": "Barbell Squat"
+  },
+  "LEG_PRESS": {
+    "default": "Leg Press"
+  },
+  "LEG_EXTENSIONS": {
+    "default": "Leg Extensions"
+  },
+  "FRONT_RAISES": {
+    "default": "Front Raises"
+  },
+  "MILITARY_PRESS": {
+    "default": "Military Press"
+  },
+  "LATERAL_RAISES": {
+    "default": "Lateral Raises"
+  },
+  "SHOULDER_PRESS": {
+    "default": "Shoulder Press"
+  }
+}

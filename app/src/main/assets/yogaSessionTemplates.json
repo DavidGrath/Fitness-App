@@ -1,0 +1,66 @@
+[
+  {
+  "sessionName": "Beginner",
+  "sessionDescription":"Gives you the chance to feel the inner energy and sense yourself",
+  "asanas": [
+    {"identifier": "BOUND_ANGLE_FORWARD_BEND",
+      "durationMillis": 30000
+    },
+    {"identifier": "CHILDS_POSE",
+      "durationMillis": 30000
+    },
+    {"identifier": "STANDING_BACK_EXTENSION",
+      "durationMillis": 30000
+    },
+    {"identifier": "REVOLVED_HEAD_TO_KNEE_POSE_RIGHT",
+      "durationMillis": 30000
+    },
+    {"identifier": "REVOLVED_HEAD_TO_KNEE_POSE_LEFT",
+      "durationMillis": 30000
+    },
+    {"identifier": "COBRA_POSE",
+      "durationMillis": 30000
+    },
+    {"identifier": "EASY_TREE_POSE_RIGHT",
+      "durationMillis": 30000
+    },
+    {"identifier": "EASY_TREE_POSE_LEFT",
+      "durationMillis": 30000
+    }
+  ]
+  },
+  {
+    "sessionName": "Advanced",
+    "sessionDescription":"Focuses on different advance pose that helps to relieve the stress",
+    "asanas": [
+      {
+        "identifier": "CRESCENT_LUNGE",
+        "durationMillis": 30000
+      },
+      {
+        "identifier": "ONE_LEGGED_KING_POSE",
+        "durationMillis": 30000
+      },
+      {
+        "identifier": "WHEEL_POSE",
+        "durationMillis": 30000
+      },
+      {
+        "identifier": "TRIANGLE_POSE_RIGHT",
+        "durationMillis": 30000
+      },
+      {
+        "identifier": "TRIANGLE_POSE_LEFT",
+        "durationMillis": 30000
+      },
+      {
+        "identifier": "BOUND_TRIANGLE_POSE_RIGHT",
+      "durationMillis": 30000
+      },
+      {
+        "identifier": "BOUND_TRIANGLE_POSE_LEFT",
+        "durationMillis": 30000
+      }
+    ]
+  }
+]

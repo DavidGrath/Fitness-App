@@ -1,0 +1,48 @@
+[
+  {
+    "routineName":"Arms",
+    "sets": [
+      {"identifier":"DUMBBELL_CURL"},
+      {"identifier":"HAMMER_CURL"},
+      {"identifier":"BARBELL_CURL"},
+      {"identifier":"TRICEPS_BENCH_DIPS"},
+      {"identifier":"CABLE_ROPE_TRICEPS_PUSHDOWN"}
+    ]
+  },
+  {
+    "routineName":"Back",
+    "sets":[
+      {"identifier":"SINGLE_ARM_ROW"},
+      {"identifier":"DEADLIFT"},
+      {"identifier":"BENT_OVER_DUMBBELL_ROW"},
+      {"identifier":"LAT_PULLDOWN"}
+    ]
+  },
+  {
+    "routineName":"Chest",
+    "sets": [
+      {"identifier":"CHEST_DIPS"},
+      {"identifier":"BARBELL_BENCH_PRESS"},
+      {"identifier":"DUMBBELL_FLY"},
+      {"identifier":"SEATED_PEC_DECK"}
+    ]
+  },
+  {
+    "routineName":"Legs",
+    "sets": [
+      {"identifier":"DUMBELL_LUNGE"},
+      {"identifier":"BARBELL_SQUAT"},
+      {"identifier":"LEG_PRESS"},
+      {"identifier":"LEG_EXTENSIONS"}
+    ]
+  },
+  {
+    "routineName":"Shoulders",
+    "sets": [
+      {"identifier":"FRONT_RAISES"},
+      {"identifier":"MILITARY_PRESS"},
+      {"identifier":"LATERAL_RAISES"},
+      {"identifier":"SHOULDER_PRESS"}
+    ]
+  }  
+]

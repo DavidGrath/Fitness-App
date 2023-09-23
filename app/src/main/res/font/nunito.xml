@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font app:font="@font/nunito_extra_light" app:fontWeight="200" app:fontStyle="normal"/>
+    <font app:font="@font/nunito_extra_light_italic" app:fontWeight="200" app:fontStyle="italic"/>
+    <font app:font="@font/nunito_light" app:fontWeight="300" app:fontStyle="normal"/>
+    <font app:font="@font/nunito_light_italic" app:fontWeight="300" app:fontStyle="italic"/>
+    <font app:font="@font/nunito_regular" app:fontWeight="400" app:fontStyle="normal"/>
+    <font app:font="@font/nunito_italic" app:fontWeight="400" app:fontStyle="italic"/>
+    <font app:font="@font/nunito_semi_bold" app:fontWeight="600" app:fontStyle="normal"/>
+    <font app:font="@font/nunito_semi_bold_italic" app:fontWeight="600" app:fontStyle="italic"/>
+    <font app:font="@font/nunito_bold" app:fontWeight="700" app:fontStyle="normal"/>
+    <font app:font="@font/nunito_bold_italic" app:fontWeight="700" app:fontStyle="italic"/>
+    <font app:font="@font/nunito_extra_bold" app:fontWeight="800" app:fontStyle="normal"/>
+    <font app:font="@font/nunito_extra_bold_italic" app:fontWeight="800" app:fontStyle="italic"/>
+    <font app:font="@font/nunito_black" app:fontWeight="900" app:fontStyle="normal"/>
+    <font app:font="@font/nunito_black_italic" app:fontWeight="900" app:fontStyle="italic"/>
+</font-family>

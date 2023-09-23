@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+    <Button
+        android:id="@+id/button_main_start_running"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Running"
+        android:visibility="visible"/>
+    <Button
+        android:id="@+id/button_main_stop_running"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop Running"
+        android:visibility="visible"/>
+    <Button
+        android:id="@+id/button_main_start_walking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Walking"
+        android:visibility="gone"/>
+    <Button
+        android:id="@+id/button_main_stop_walking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop Walking"
+        android:visibility="gone"/>
+    <Button
+        android:id="@+id/button_main_start_cycling"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Cycling"
+        android:visibility="gone"/>
+    <Button
+        android:id="@+id/button_main_stop_cycling"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop Cycling"
+        android:visibility="gone"/>
+    <Button
+        android:id="@+id/button_main_start_swimming"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Swimming"
+        android:visibility="gone"/>
+    <Button
+        android:id="@+id/button_main_stop_swimming"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop Swimming"
+        android:visibility="gone"/>
+    <TextView
+        android:id="@+id/text_view_main_workout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Nothing now"/>
+    <ListView
+        android:id="@+id/list_view_main"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+</LinearLayout>

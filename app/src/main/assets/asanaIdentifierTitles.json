@@ -1,0 +1,47 @@
+{
+  "BOUND_ANGLE_FORWARD_BEND": {
+      "default": "Bound Angle Forward Bend"
+  },
+  "CHILDS_POSE": {
+    "default": "Child's Pose"
+  },
+  "STANDING_BACK_EXTENSION": {
+    "default": "Standing Back Extension"
+  },
+  "REVOLVED_HEAD_TO_KNEE_POSE_RIGHT": {
+    "default": "Revolved Head-to-Knee Pose (Right)"
+  },
+  "REVOLVED_HEAD_TO_KNEE_POSE_LEFT": {
+    "default": "Revolved Head-to-Knee Pose (Left)"
+  },
+  "COBRA_POSE": {
+    "default": "Cobra Pose"
+  },
+  "EASY_TREE_POSE_RIGHT": {
+    "default": "Easy Tree Pose (Right)"
+  },
+  "EASY_TREE_POSE_LEFT": {
+    "default": "Easy Tree Pose (Left)"
+  },
+  "CRESCENT_LUNGE": {
+    "default": "Crescent Lunge"
+  },
+  "ONE_LEGGED_KING_POSE": {
+    "default": "One-Legged King Pose"
+  },
+  "WHEEL_POSE": {
+    "default": "Wheel Pose"
+  },
+  "TRIANGLE_POSE_RIGHT": {
+    "default": "Triangle Pose (Right)"
+  },
+  "TRIANGLE_POSE_LEFT": {
+    "default": "Triangle Pose (Left)"
+  },
+  "BOUND_TRIANGLE_POSE_RIGHT": {
+    "default": "Bound Triangle Pose (Right)"
+  },
+  "BOUND_TRIANGLE_POSE_LEFT": {
+    "default": "Bound Triangle Pose (Left)"
+  }
+}
