@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.home
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,8 +23,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,7 +39,7 @@ import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.profile.ProfileScreen
 import com.davidgrath.fitnessapp.ui.settings.SettingsScreen
-import com.davidgrath.fitnessapp.ui.swimming.SwimmingDashboard
+import com.davidgrath.fitnessapp.ui.swimming.SwimmingActivity
 
 
 @Composable
@@ -189,14 +188,35 @@ fun HomeNavHost(
         modifier
     ) {
         composable(route = BasicNavScreen.ChooseActivityNav.path) {
+            val context = LocalContext.current
             ChooseActivityScreen {
-                navController.navigate(it.path)
+                when(it) {
+                    BasicNavScreen.CyclingDashboardNav -> {}
+                    BasicNavScreen.GymDashboardNav -> {}
+                    BasicNavScreen.RunningDashboardNav -> {}
+                    BasicNavScreen.SwimmingDashboardNav -> {
+                        context.startActivity(Intent(context, SwimmingActivity::class.java))
+                    }
+                    BasicNavScreen.WalkingDashboardNav -> {}
+                    BasicNavScreen.YogaDashboardNav -> {}
+                    else -> {
+                        navController.navigate(it.path)
+                    }
+                }
             }
         }
-        composable(route = BasicNavScreen.SwimmingDashboardNav.path) {
-            SwimmingDashboard()
+        /*composable(route = BasicNavScreen.SwimmingDashboardNav.path) {
+            SwimmingDashboard({
+                              navController.popBackStack()
+            }, {
+                navController.navigate(BasicNavScreen.SwimmingHistoryNav.path)
+            })
         }
-
+        composable(route = BasicNavScreen.SwimmingHistoryNav.path) {
+            SwimmingHistory {
+                navController.popBackStack()
+            }
+        }*/
         composable(route = BasicNavScreen.CyclingDashboardNav.path) {
             Box(
                 modifier = Modifier

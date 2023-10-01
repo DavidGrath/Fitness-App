@@ -93,7 +93,9 @@ fun OnboardingScreen(
     goNext: () -> Unit,
     goPrevious: () -> Unit
 ) {
-    val pagerState = rememberPagerState()
+    val pagerState = rememberPagerState {
+        screenState.pageCount
+    }
     LaunchedEffect(screenState.currentPageIndex) {
         pagerState.animateScrollToPage(screenState.currentPageIndex)
     }
@@ -178,7 +180,7 @@ fun OnboardingScreen(
         }
         Box(Modifier.weight(1F)) {
             HorizontalPager(
-                pageCount = screenState.pageCount, state = pagerState,
+                state = pagerState,
                 userScrollEnabled = false, contentPadding = PaddingValues(16.dp)) { page ->
                 when(page) {
                     0 -> {

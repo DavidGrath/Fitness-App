@@ -54,11 +54,11 @@ import com.davidgrath.fitnessapp.framework.FitnessApp
 import com.davidgrath.fitnessapp.framework.FitnessService
 import com.davidgrath.fitnessapp.ui.home.HomeActivity
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingActivity
-import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
-import com.google.android.gms.location.Priority
+//import com.google.android.gms.common.api.ResolvableApiException
+//import com.google.android.gms.location.LocationRequest
+//import com.google.android.gms.location.LocationServices
+//import com.google.android.gms.location.LocationSettingsRequest
+//import com.google.android.gms.location.Priority
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlin.math.abs
@@ -102,11 +102,11 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         bindService(intent, servConn, BIND_AUTO_CREATE)*/
 //        startActivity(Intent(this, GymTestActivity::class.java))
 //        finish()
-        startActivity(Intent(this, YogaTestActivity::class.java))
-        finish()
-        /*setContent {
+//        startActivity(Intent(this, YogaTestActivity::class.java))
+//        finish()
+        setContent {
             MainContent()
-        }*/
+        }
 
     }
 
@@ -153,7 +153,7 @@ class MainActivity : AppCompatActivity(), OnClickListener {
     }
 
     override fun onClick(v: View?) {
-        v?.let {
+        /*v?.let {
             when(it.id) {
                 R.id.button_main_start_running -> {
                     val tiramisuPermissionNotGranted =
@@ -448,7 +448,7 @@ class MainActivity : AppCompatActivity(), OnClickListener {
 
                 }
             }
-        }
+        }*/
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)

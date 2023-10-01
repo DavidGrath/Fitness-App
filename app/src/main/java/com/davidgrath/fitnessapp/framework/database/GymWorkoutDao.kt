@@ -46,7 +46,7 @@ class GymWorkoutDao {
         }
     }
 
-    fun getAllWorkoutsByDateRangeSingle(startDate: Date?, endDate: Date?): Single<List<GymWorkout>> {
+    fun getWorkoutsByDateRangeSingle(startDate: Date? = null, endDate: Date? = null): Single<List<GymWorkout>> {
         return Single.just(workoutList).map {
             val filtered = it.filter {
                 if(startDate != null) {

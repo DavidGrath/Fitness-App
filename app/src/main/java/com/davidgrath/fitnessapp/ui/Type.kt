@@ -30,4 +30,6 @@ val NunitoTypography = Typography(
     defaultFontFamily = NunitoFontFamily,
     h4 = TextStyle(fontSize = 36.sp, letterSpacing = 0.25.sp, fontWeight = FontWeight.Bold),
     h5 = TextStyle(fontSize = 20.sp, letterSpacing = 0.sp, fontWeight = FontWeight.Bold),
+    button = TextStyle(fontSize = 14.sp, letterSpacing = -0.4.sp, fontWeight = FontWeight.Bold),
+    caption = TextStyle(fontSize = 12.sp, letterSpacing = 0.4.sp, fontWeight = FontWeight.Bold)
 )

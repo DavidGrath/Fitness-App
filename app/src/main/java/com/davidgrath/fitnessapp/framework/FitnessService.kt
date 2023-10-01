@@ -10,10 +10,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
@@ -23,12 +26,9 @@ import com.davidgrath.fitnessapp.data.entities.YogaAsanaState
 import com.davidgrath.fitnessapp.ui.home.HomeActivity
 import com.davidgrath.fitnessapp.util.Constants
 import com.davidgrath.fitnessapp.util.distanceKm
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
-import com.google.android.gms.location.Priority
+//import com.google.android.gms.location.LocationRequest
+//import com.google.android.gms.location.LocationServices
+//import com.google.android.gms.location.LocationSettingsRequest
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -57,7 +57,8 @@ class FitnessService: Service() {
 
         private val UPDATE_DURATION = 67L  //Some prime less than 100
         private val onNotificationClickedPendingIntent : PendingIntent
-        private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(service)
+        private val locationManager = service.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+//        private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(service)
         private var currentWorkout = "NONE"
         private val currentWorkoutSubject = PublishSubject.create<String>()
         private var currentWorkoutId = -1
@@ -118,7 +119,7 @@ class FitnessService: Service() {
         private val preferences: SharedPreferences
 
 
-        val locationCallback = object : LocationCallback() {
+        /*val locationCallback = object : LocationCallback() {
             private var previousLatitude: Double? = null
             private var previousLongitude: Double? = null
             override fun onLocationResult(locationResult: LocationResult) {
@@ -160,6 +161,46 @@ class FitnessService: Service() {
                 previousLongitude = latestLocation.longitude
                 previousLatitude = latestLocation.latitude
             }
+        }*/
+
+        private var previousLatitude: Double? = null
+        private var previousLongitude: Double? = null
+        val locationListener = LocationListener { latestLocation ->
+            val altitude : Double? = if (latestLocation.hasAltitude()) latestLocation.altitude else null
+            val bearing : Float? = if (latestLocation.hasBearing()) latestLocation.bearing else null
+
+            val speed : Float? = if (latestLocation.hasSpeed()) latestLocation.speed else null
+            when(currentWorkout) {
+                "RUNNING" -> {
+                    incrementRunningStatistics(currentWorkoutId, previousLatitude, previousLongitude, latestLocation.latitude, latestLocation.longitude)
+                        .flatMap {
+                            runningLocationDataDao.insertWorkoutLocationData(currentWorkoutId, latestLocation.longitude,
+                                latestLocation.latitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
+                        }
+                        .subscribeOn(Schedulers.io())
+                        .subscribe({}, {})
+                }
+                "WALKING" -> {
+                    incrementWalkingStatistics(currentWorkoutId, previousLatitude, previousLongitude, latestLocation.latitude, latestLocation.longitude)
+                        .flatMap {
+                            walkingLocationDataDao.insertWorkoutLocationData(currentWorkoutId, latestLocation.longitude,
+                                latestLocation.latitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
+                        }
+                        .subscribeOn(Schedulers.io())
+                        .subscribe({}, {})
+                }
+                "CYCLING" -> {
+                    incrementCyclingStatistics(currentWorkoutId, previousLatitude, previousLongitude, latestLocation.latitude, latestLocation.longitude)
+                        .flatMap {
+                            cyclingLocationDataDao.insertWorkoutLocationData(currentWorkoutId, latestLocation.longitude,
+                                latestLocation.latitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
+                        }
+                        .subscribeOn(Schedulers.io())
+                        .subscribe({}, {})
+                }
+            }
+            previousLongitude = latestLocation.longitude
+            previousLatitude = latestLocation.latitude
         }
 
         init {
@@ -234,7 +275,8 @@ class FitnessService: Service() {
             return if(currentWorkout != "NONE") {
                 when(currentWorkout) {
                     "RUNNING" -> {
-                        fusedLocationClient.removeLocationUpdates(locationCallback)
+//                        fusedLocationClient.removeLocationUpdates(locationCallback)
+                        locationManager.removeUpdates(locationListener)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             runningNotificationUpdateFuture?.cancel(true)
                             val removed = executorService.remove(runningNotificationUpdateRunnable)
@@ -256,7 +298,8 @@ class FitnessService: Service() {
                         calculateRunningKCalBurned(currentWorkoutId, duration)
                     }
                     "WALKING" -> {
-                        fusedLocationClient.removeLocationUpdates(locationCallback)
+//                        fusedLocationClient.removeLocationUpdates(locationCallback)
+                        locationManager.removeUpdates(locationListener)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             walkingNotificationUpdateFuture?.cancel(true)
                             val removed = executorService.remove(walkingNotificationUpdateRunnable)
@@ -278,7 +321,8 @@ class FitnessService: Service() {
                         calculateWalkingKCalBurned(currentWorkoutId, timerDuration)
                     }
                     "CYCLING" -> {
-                        fusedLocationClient.removeLocationUpdates(locationCallback)
+//                        fusedLocationClient.removeLocationUpdates(locationCallback)
+                        locationManager.removeUpdates(locationListener)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             cyclingNotificationUpdateFuture?.cancel(true)
                             val removed = executorService.remove(cyclingNotificationUpdateRunnable)
@@ -300,7 +344,6 @@ class FitnessService: Service() {
                         calculateCyclingKCalBurned(currentWorkoutId, duration)
                     }
                     "SWIMMING" -> {
-                        fusedLocationClient.removeLocationUpdates(locationCallback)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             swimmingNotificationUpdateFuture?.cancel(true)
                             val removed = executorService.remove(swimmingNotificationUpdateRunnable)
@@ -368,7 +411,7 @@ class FitnessService: Service() {
             }
         }
 
-        private fun checkLocationSettings() : Single<LocationRequest> {
+        /*private fun checkLocationSettings() : Single<LocationRequest> {
             val locationRequest = LocationRequest.create().apply {
                 interval = INTERVAL
                 fastestInterval = FASTEST_INTERVAL
@@ -398,24 +441,81 @@ class FitnessService: Service() {
                     emitter.onError(it)
                 }
             }
+        }*/
+
+        val TEMP_CODE_OK = 0
+        val TEMP_CODE_OTHER = 1
+        val TEMP_CODE_LOCATION_PERMISSION_NOT_GRANTED = 2
+        val TEMP_CODE_PROVIDER_NOT_ENABLED = 3
+        private fun verifyLocationSettings(): Int {
+            if(currentWorkout != "NONE") {
+                return TEMP_CODE_OTHER
+            }
+            if (
+                ActivityCompat.checkSelfPermission(service, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(service, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return TEMP_CODE_LOCATION_PERMISSION_NOT_GRANTED
+            } else if(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+                return TEMP_CODE_PROVIDER_NOT_ENABLED
+            } else {
+                return TEMP_CODE_OK
+            }
         }
 
-        fun startRunningWorkout() : Single<Int> {
-            return checkLocationSettings().flatMap { locationRequest ->
-                val timeZone = TimeZone.getDefault()
-                currentWorkout = "RUNNING"
-                currentWorkoutSubject.onNext(currentWorkout)
-                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-                val notification = buildNotification("Running","0s, 0km", R.drawable.run_fast)
 
-                timerUpdateFuture = executorService.scheduleAtFixedRate(timerUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
-                runningNotificationUpdateFuture = executorService.scheduleAtFixedRate(runningNotificationUpdateRunnable, 0L, 5L, TimeUnit.SECONDS)
-                service.startForeground(NOTIFICATION_ID, notification)
-                runningWorkoutDao.insertWorkout(Date().time, timeZone.id).map {
-                    currentWorkoutId = it
-                    it
+        fun startRunningWorkout() : Single<Int> {
+//            return checkLocationSettings().flatMap { locationRequest ->
+            return when(verifyLocationSettings()) {
+                TEMP_CODE_OK -> {
+                    val timeZone = TimeZone.getDefault()
+                    currentWorkout = "RUNNING"
+                    currentWorkoutSubject.onNext(currentWorkout)
+//                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+                    locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER,
+                        FASTEST_INTERVAL,
+                        1F,
+                        locationListener
+                    )
+                    val notification = buildNotification("Running", "0s, 0km", R.drawable.run_fast)
+
+                    timerUpdateFuture = executorService.scheduleAtFixedRate(
+                        timerUpdateRunnable,
+                        0L,
+                        UPDATE_DURATION,
+                        TimeUnit.MILLISECONDS
+                    )
+                    runningNotificationUpdateFuture = executorService.scheduleAtFixedRate(
+                        runningNotificationUpdateRunnable,
+                        0L,
+                        5L,
+                        TimeUnit.SECONDS
+                    )
+                    service.startForeground(NOTIFICATION_ID, notification)
+                    runningWorkoutDao.insertWorkout(Date().time, timeZone.id).map {
+                        currentWorkoutId = it
+                        it
+                    }
+                }
+                TEMP_CODE_OTHER -> {
+                    Single.error(Exception())
+                }
+                TEMP_CODE_PROVIDER_NOT_ENABLED -> {
+                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    if(intent.resolveActivity(service.packageManager) != null) {
+                        service.startActivity(intent)
+                    }
+                    Single.just(-1)
+                }
+                TEMP_CODE_LOCATION_PERMISSION_NOT_GRANTED -> {
+                    Single.error(SecurityException())
+                }
+                else -> {
+                    Single.error(Exception())
                 }
             }
+
         }
 
         //TODO This function gets affected by "stationary" behavior. Improve by detecting and adjusting
@@ -485,19 +585,54 @@ class FitnessService: Service() {
         }
 
         fun startWalkingWorkout() : Single<Int> {
-            return checkLocationSettings().flatMap { locationRequest ->
-                val timeZone = TimeZone.getDefault()
-                currentWorkout = "WALKING"
-                currentWorkoutSubject.onNext(currentWorkout)
-                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-                val notification = buildNotification("Walking","0s, 0km", R.drawable.shoe_sneaker)
+//            return checkLocationSettings().flatMap { locationRequest ->
+            return when(verifyLocationSettings()) {
+                TEMP_CODE_OK -> {
+                    val timeZone = TimeZone.getDefault()
+                    currentWorkout = "WALKING"
+                    currentWorkoutSubject.onNext(currentWorkout)
+//                    fusedLocationClient.requestLocationUpdates(
+//                        locationRequest,
+//                        locationCallback,
+//                        Looper.getMainLooper()
+//                    )
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, FASTEST_INTERVAL, 1F, locationListener)
+                    val notification =
+                        buildNotification("Walking", "0s, 0km", R.drawable.shoe_sneaker)
 
-                timerUpdateFuture = executorService.scheduleAtFixedRate(timerUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
-                walkingNotificationUpdateFuture = executorService.scheduleAtFixedRate(walkingNotificationUpdateRunnable, 0L, 5L, TimeUnit.SECONDS)
-                service.startForeground(NOTIFICATION_ID, notification)
-                walkingWorkoutDao.insertWorkout(Date().time, timeZone.id).map {
-                    currentWorkoutId = it
-                    it
+                    timerUpdateFuture = executorService.scheduleAtFixedRate(
+                        timerUpdateRunnable,
+                        0L,
+                        UPDATE_DURATION,
+                        TimeUnit.MILLISECONDS
+                    )
+                    walkingNotificationUpdateFuture = executorService.scheduleAtFixedRate(
+                        walkingNotificationUpdateRunnable,
+                        0L,
+                        5L,
+                        TimeUnit.SECONDS
+                    )
+                    service.startForeground(NOTIFICATION_ID, notification)
+                    walkingWorkoutDao.insertWorkout(Date().time, timeZone.id).map {
+                        currentWorkoutId = it
+                        it
+                    }
+                }
+                TEMP_CODE_OTHER -> {
+                    Single.error(Exception())
+                }
+                TEMP_CODE_PROVIDER_NOT_ENABLED -> {
+                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    if(intent.resolveActivity(service.packageManager) != null) {
+                        service.startActivity(intent)
+                    }
+                    Single.just(-1)
+                }
+                TEMP_CODE_LOCATION_PERMISSION_NOT_GRANTED -> {
+                    Single.error(SecurityException())
+                }
+                else -> {
+                    Single.error(Exception())
                 }
             }
         }
@@ -568,19 +703,53 @@ class FitnessService: Service() {
         }
 
         fun startCyclingWorkout() : Single<Int> {
-            return checkLocationSettings().flatMap { locationRequest ->
-                val timeZone = TimeZone.getDefault()
-                currentWorkout = "CYCLING"
-                currentWorkoutSubject.onNext(currentWorkout)
-                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-                val notification = buildNotification("Cycling","0s, 0km", R.drawable.bike)
+//            return checkLocationSettings().flatMap { locationRequest ->
+            return when(verifyLocationSettings()) {
+                TEMP_CODE_OK -> {
+                    val timeZone = TimeZone.getDefault()
+                    currentWorkout = "CYCLING"
+                    currentWorkoutSubject.onNext(currentWorkout)
+//                    fusedLocationClient.requestLocationUpdates(
+//                        locationRequest,
+//                        locationCallback,
+//                        Looper.getMainLooper()
+//                    )
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, FASTEST_INTERVAL, 1F, locationListener)
+                    val notification = buildNotification("Cycling", "0s, 0km", R.drawable.bike)
 
-                timerUpdateFuture = executorService.scheduleAtFixedRate(timerUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
-                cyclingNotificationUpdateFuture = executorService.scheduleAtFixedRate(cyclingNotificationUpdateRunnable, 0L, 5L, TimeUnit.SECONDS)
-                service.startForeground(NOTIFICATION_ID, notification)
-                cyclingWorkoutDao.insertWorkout(Date().time, timeZone.id).map {
-                    currentWorkoutId = it
-                    it
+                    timerUpdateFuture = executorService.scheduleAtFixedRate(
+                        timerUpdateRunnable,
+                        0L,
+                        UPDATE_DURATION,
+                        TimeUnit.MILLISECONDS
+                    )
+                    cyclingNotificationUpdateFuture = executorService.scheduleAtFixedRate(
+                        cyclingNotificationUpdateRunnable,
+                        0L,
+                        5L,
+                        TimeUnit.SECONDS
+                    )
+                    service.startForeground(NOTIFICATION_ID, notification)
+                    cyclingWorkoutDao.insertWorkout(Date().time, timeZone.id).map {
+                        currentWorkoutId = it
+                        it
+                    }
+                }
+                TEMP_CODE_OTHER -> {
+                    Single.error(Exception())
+                }
+                TEMP_CODE_PROVIDER_NOT_ENABLED -> {
+                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    if(intent.resolveActivity(service.packageManager) != null) {
+                        service.startActivity(intent)
+                    }
+                    Single.just(-1)
+                }
+                TEMP_CODE_LOCATION_PERMISSION_NOT_GRANTED -> {
+                    Single.error(SecurityException())
+                }
+                else -> {
+                    Single.error(Exception())
                 }
             }
         }
