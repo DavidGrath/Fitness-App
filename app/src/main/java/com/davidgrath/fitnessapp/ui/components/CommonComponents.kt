@@ -1,5 +1,10 @@
 package com.davidgrath.fitnessapp.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -219,7 +224,8 @@ fun CalendarComponent(
             Image(
                 painter = painterResource(id = R.drawable.baseline_keyboard_arrow_right_24),
                 contentDescription = "",
-                Modifier.rotate(180F)
+                Modifier
+                    .rotate(180F)
                     .then(prevMonthModifier),
                 alpha = prevMonthAlpha
             )
@@ -255,48 +261,83 @@ fun CalendarComponent(
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             weekArr.forEach {
-                Text(
-                    defaultWeekNames[it]?:"",
+                Box(
                     Modifier
                         .fillMaxWidth()
-                        .weight(1f)
-                        .padding(8.dp),
-                    style = MaterialTheme.typography.body1,
-                    textAlign = TextAlign.Center
-                )
+                        .weight(1f),
+                    Alignment.Center
+                ) {
+                    Text(
+                        defaultWeekNames[it] ?: "",
+                        Modifier
+                            .padding(8.dp),
+                        style = MaterialTheme.typography.body1,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
-        monthMatrix.forEach { week ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                week.forEach { date ->
-                    val highlighted = highlightedDates.any {
-                        it.get(Calendar.DAY_OF_YEAR) == date.get(Calendar.DAY_OF_YEAR) &&
-                                it.get(Calendar.YEAR) == date.get(Calendar.YEAR)
+
+        AnimatedContent(targetState = currentMonth,
+            transitionSpec = {
+                val compare = if(targetState.get(Calendar.YEAR) == initialState.get(Calendar.YEAR)) {
+                    targetState.get(Calendar.MONTH).compareTo(initialState.get(Calendar.MONTH))
+                } else if(targetState.get(Calendar.YEAR) < initialState.get(Calendar.YEAR)) {
+                    -1
+                } else {
+                    1
+                }
+                if(compare > 0) { // e.g November 2023 -> October 2023
+                    slideInHorizontally { width -> width } togetherWith slideOutHorizontally { width -> -width }
+                } else{
+                    slideInHorizontally { width -> -width } togetherWith  slideOutHorizontally { width -> width }
+                }
+            }
+        ) { currentMonth ->
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                monthMatrix.forEach { week ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        week.forEach { date ->
+                            val highlighted = highlightedDates.any {
+                                it.get(Calendar.DAY_OF_YEAR) == date.get(Calendar.DAY_OF_YEAR) &&
+                                        it.get(Calendar.YEAR) == date.get(Calendar.YEAR)
+                            }
+                            val modifier = if (highlighted) {
+                                val color = MaterialTheme.colors.primary
+                                Modifier.drawBehind {
+                                    drawCircle(color)
+                                }
+                            } else {
+                                Modifier
+                            }
+                            val color =
+                                if (currentMonth.get(Calendar.MONTH) == date.get(Calendar.MONTH)) {
+                                    Color.Black
+                                } else {
+                                    Color.Gray
+                                }
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                Alignment.Center
+                            ) {
+                                Text(
+                                    sdfDays.format(date.time),
+                                    Modifier
+                                        .padding(8.dp)
+                                        .then(modifier)
+                                        .padding(8.dp)
+                                        .clickable {
+                                            onDateClicked(date)
+                                        },
+                                    style = MaterialTheme.typography.body1.copy(fontSize = 11.sp),
+                                    textAlign = TextAlign.Center,
+                                    color = color
+                                )
+                            }
+                        }
                     }
-                    val modifier = if(highlighted) {
-                        Modifier.background(MaterialTheme.colors.primary, CircleShape)
-                    } else {
-                        Modifier
-                    }
-                    val color = if (currentMonth.get(Calendar.MONTH) == date.get(Calendar.MONTH)) {
-                        Color.Black
-                    } else {
-                        Color.Gray
-                    }
-                    Text(sdfDays.format(date.time),
-                        Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(4.dp)
-                            .then(modifier)
-                            .padding(4.dp)
-                            .clickable {
-                                onDateClicked(date)
-                            },
-                        style = MaterialTheme.typography.body1.copy(fontSize = 11.sp),
-                        textAlign = TextAlign.Center,
-                        color = color
-                    )
                 }
             }
         }

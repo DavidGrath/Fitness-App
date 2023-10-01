@@ -159,6 +159,7 @@ fun SwimmingNavHost(
                     viewModel.stopSwimming()
                 },
                 onNavigateBack = {
+                    navController.popBackStack()
                 })
         }
     }
