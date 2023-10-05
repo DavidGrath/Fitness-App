@@ -174,8 +174,8 @@ class FitnessService: Service() {
                 "RUNNING" -> {
                     incrementRunningStatistics(currentWorkoutId, previousLatitude, previousLongitude, latestLocation.latitude, latestLocation.longitude)
                         .flatMap {
-                            runningLocationDataDao.insertWorkoutLocationData(currentWorkoutId, latestLocation.longitude,
-                                latestLocation.latitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
+                            runningLocationDataDao.insertWorkoutLocationData(currentWorkoutId, latestLocation.latitude,
+                                latestLocation.longitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
                         }
                         .subscribeOn(Schedulers.io())
                         .subscribe({}, {})
@@ -183,8 +183,8 @@ class FitnessService: Service() {
                 "WALKING" -> {
                     incrementWalkingStatistics(currentWorkoutId, previousLatitude, previousLongitude, latestLocation.latitude, latestLocation.longitude)
                         .flatMap {
-                            walkingLocationDataDao.insertWorkoutLocationData(currentWorkoutId, latestLocation.longitude,
-                                latestLocation.latitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
+                            walkingLocationDataDao.insertWorkoutLocationData(currentWorkoutId, latestLocation.latitude,
+                                latestLocation.longitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
                         }
                         .subscribeOn(Schedulers.io())
                         .subscribe({}, {})
@@ -192,8 +192,8 @@ class FitnessService: Service() {
                 "CYCLING" -> {
                     incrementCyclingStatistics(currentWorkoutId, previousLatitude, previousLongitude, latestLocation.latitude, latestLocation.longitude)
                         .flatMap {
-                            cyclingLocationDataDao.insertWorkoutLocationData(currentWorkoutId, latestLocation.longitude,
-                                latestLocation.latitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
+                            cyclingLocationDataDao.insertWorkoutLocationData(currentWorkoutId, latestLocation.latitude,
+                                latestLocation.longitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
                         }
                         .subscribeOn(Schedulers.io())
                         .subscribe({}, {})
@@ -456,7 +456,7 @@ class FitnessService: Service() {
                 ActivityCompat.checkSelfPermission(service, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
             ) {
                 return TEMP_CODE_LOCATION_PERMISSION_NOT_GRANTED
-            } else if(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+            } else if(!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
                 return TEMP_CODE_PROVIDER_NOT_ENABLED
             } else {
                 return TEMP_CODE_OK
@@ -504,6 +504,7 @@ class FitnessService: Service() {
                 TEMP_CODE_PROVIDER_NOT_ENABLED -> {
                     val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                     if(intent.resolveActivity(service.packageManager) != null) {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         service.startActivity(intent)
                     }
                     Single.just(-1)

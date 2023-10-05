@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -279,7 +280,8 @@ fun SwimmingWorkoutScreen(
                         Text("0", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
                         Text("km", style = MaterialTheme.typography.body1.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold))
                     }
-                    Text("Distance", style = MaterialTheme.typography.body1, fontWeight = FontWeight.Bold)
+                    Text("Distance", style = MaterialTheme.typography.body1,
+                        fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     //TODO Use class for state so as to reduce total lines for "resolved" parameters
@@ -289,7 +291,8 @@ fun SwimmingWorkoutScreen(
                         0L
                     }
                     Text(resolvedCalories.toString(), style = MaterialTheme.typography.body1, fontWeight = FontWeight.Bold)
-                    Text("Calories Burned", style = MaterialTheme.typography.body1, fontWeight = FontWeight.Bold)
+                    Text("Calories Burned", style = MaterialTheme.typography.body1,
+                        fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 }
             }
         }

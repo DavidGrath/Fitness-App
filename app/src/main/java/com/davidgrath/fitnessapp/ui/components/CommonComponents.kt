@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
+import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.TimeZone
@@ -289,7 +290,7 @@ fun CalendarComponent(
                 }
                 if(compare > 0) { // e.g November 2023 -> October 2023
                     slideInHorizontally { width -> width } togetherWith slideOutHorizontally { width -> -width }
-                } else{
+                } else { // e.g October 2023 -> November 2023
                     slideInHorizontally { width -> -width } togetherWith  slideOutHorizontally { width -> width }
                 }
             }
@@ -510,6 +511,22 @@ fun SimpleGradientButton(
         ) {
             content()
         }
+    }
+}
+
+@Composable
+fun TempLocationListItem(
+    locationData: LocationDataUI
+) {
+    Row(Modifier.fillMaxWidth()) {
+        Text(locationData.latitude.toString(),
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.body1
+        )
+        Text(locationData.longitude.toString(),
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.body1
+        )
     }
 }
 

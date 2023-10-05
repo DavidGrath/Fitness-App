@@ -12,20 +12,11 @@ class CyclingLocationDataDao {
     private val behaviorSubject = BehaviorSubject.create<List<CyclingLocationData>>()
 
     //CREATE
-    fun insertWorkoutLocationData(workoutId: Int, longitude: Double, latitude: Double, timestamp: Long,
+    fun insertWorkoutLocationData(workoutId: Int, latitude: Double, longitude: Double, timestamp: Long,
                                   accuracy: Float?, altitude: Double?, bearing: Float?, speed: Float?) : Single<Int> {
         cyclingLocationData.add(
-            CyclingLocationData(
-                incrementId,
-                workoutId,
-                longitude,
-                latitude,
-                timestamp,
-                accuracy,
-                altitude,
-                bearing,
-                speed
-            )
+            CyclingLocationData(incrementId, workoutId, latitude, longitude,
+                timestamp, accuracy, altitude, bearing, speed)
         )
         behaviorSubject.onNext(cyclingLocationData)
         return Single.just(incrementId++)
