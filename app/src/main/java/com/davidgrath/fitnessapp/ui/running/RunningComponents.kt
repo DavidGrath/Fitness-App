@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
@@ -41,9 +39,9 @@ import com.davidgrath.fitnessapp.data.entities.RunningWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
+import com.davidgrath.fitnessapp.ui.components.MapViewComponent
 import com.davidgrath.fitnessapp.ui.components.SimpleAppBar
 import com.davidgrath.fitnessapp.ui.components.SimpleGradientButton
-import com.davidgrath.fitnessapp.ui.components.TempLocationListItem
 import com.davidgrath.fitnessapp.ui.components.WeekHistoryComponent
 import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
@@ -154,12 +152,14 @@ fun RunningNavHost(
         composable(route = BasicNavScreen.RunningWorkoutNav.path) {
             LaunchedEffect(key1 = null) {
                 viewModel.getIsRunning()
+                viewModel.getTimeElapsed()
             }
             val isRunning = viewModel.isRunningLiveData.observeAsState().value
             val currentWorkout = viewModel.currentWorkoutLiveData.observeAsState().value
             val locationData = viewModel.locationDataLiveData.observeAsState().value
+            val timeElapsed = viewModel.timeElapsedLiveData.observeAsState().value
             RunningWorkoutScreen(
-                elapsedTimeMillis = currentWorkout?.duration?:0,
+                elapsedTimeMillis = timeElapsed?:0,
                 caloriesBurned = currentWorkout?.kCalBurned?:0,
                 isRunning = isRunning?: false,
                 locationData = locationData?: emptyList(),
@@ -258,6 +258,7 @@ fun RunningWorkoutScreen(
     onStopRunning: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+
     Column(Modifier.fillMaxSize()) {
         Surface(elevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -383,11 +384,10 @@ fun RunningWorkoutScreen(
             }
         }
         Box(modifier = Modifier.weight(1f)) {
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(locationData) {
-                    TempLocationListItem(locationData = it)
-                }
-            }
+            MapViewComponent(
+                isRunning, locationData,
+                Modifier.fillMaxSize()
+            )
             val resolvedText = if (isRunning) {
                 "Stop Running"
             } else {
@@ -411,5 +411,34 @@ fun RunningWorkoutScreen(
                     )
                 })
         }
+//        Box(modifier = Modifier.weight(1f)) {
+//            LazyColumn(Modifier.fillMaxSize()) {
+//                items(locationData) {
+//                    TempLocationListItem(locationData = it)
+//                }
+//            }
+//            val resolvedText = if (isRunning) {
+//                "Stop Running"
+//            } else {
+//                "Start Running"
+//            }
+//            SimpleGradientButton({
+//                if (isRunning) {
+//                    onStopRunning()
+//                } else {
+//                    onStartRunning()
+//                }
+//            }, Modifier
+//                .padding(vertical = 24.dp)
+//                .align(Alignment.Center)
+//                .zIndex(1f),
+//                {
+//                    Text(
+//                        resolvedText,
+//                        style = MaterialTheme.typography.button.copy(fontSize = 18.sp),
+//                        color = Color.White
+//                    )
+//                })
+//        }
     }
 }

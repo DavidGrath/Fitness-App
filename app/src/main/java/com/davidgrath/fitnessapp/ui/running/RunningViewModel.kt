@@ -50,6 +50,9 @@ class RunningViewModel(
     private val _locationDataLiveData = MutableLiveData<List<LocationDataUI>>()
     val locationDataLiveData : LiveData<List<LocationDataUI>> = _locationDataLiveData
 
+    private val _timeElapsedLiveData = MutableLiveData<Long>()
+    val timeElapsedLiveData : LiveData<Long> = _timeElapsedLiveData
+
     fun getWorkoutsInPastWeek() {
         _pastWeekWorkoutsLiveData.postValue(SimpleResult.Processing())
         val calendar = Calendar.getInstance()
@@ -149,7 +152,7 @@ class RunningViewModel(
             })
     }
 
-    fun getLocationData() {
+    private fun getLocationData() {
         //TODO Add LiveDateReactiveStreams
         runningRepository.getWorkoutLocationData(currentWorkoutId)
             .subscribeOn(Schedulers.io())
@@ -159,6 +162,17 @@ class RunningViewModel(
                     LocationDataUI(it.latitude, it.longitude)
                 }
                 _locationDataLiveData.postValue(mapped)
+            }, {
+
+            })
+    }
+
+    fun getTimeElapsed() {
+        fitnessBinder!!.getCurrentTimeElapsedObservable()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ time ->
+                _timeElapsedLiveData.postValue(time)
             }, {
 
             })
@@ -175,7 +189,7 @@ class RunningViewModel(
             }
             .subscribe( {
                 _currentWorkoutLiveData.postValue(it)
-                getLocationData()
+                getLocationData() // Called here because it depends on currentWorkoutId
             }, {
             })
     }

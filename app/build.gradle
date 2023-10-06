@@ -90,6 +90,7 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.16.0'
     kapt 'com.github.bumptech.glide:compiler:4.14.2'
     implementation "com.github.bumptech.glide:compose:1.0.0-alpha.5"
+    implementation 'com.mapbox.maps:android:10.5.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

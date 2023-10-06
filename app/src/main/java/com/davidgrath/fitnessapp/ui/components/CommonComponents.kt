@@ -1,12 +1,14 @@
 package com.davidgrath.fitnessapp.ui.components
 
+import android.view.animation.LinearInterpolator
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,16 +21,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
@@ -40,9 +45,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
+import com.mapbox.geojson.Point
+import com.mapbox.maps.MapView
+import com.mapbox.maps.MapboxMap
+import com.mapbox.maps.Style
+import com.mapbox.maps.plugin.LocationPuck2D
+import com.mapbox.maps.plugin.animation.CameraAnimationsPlugin
+import com.mapbox.maps.plugin.animation.CameraAnimatorOptions
+import com.mapbox.maps.plugin.animation.camera
+import com.mapbox.maps.plugin.annotation.annotations
+import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.createPolylineAnnotationManager
+import com.mapbox.maps.plugin.locationcomponent.location
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.TimeZone
@@ -510,6 +529,229 @@ fun SimpleGradientButton(
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             content()
+        }
+    }
+}
+
+
+const val ZOOM_ANIMATION_DURATION = 400L
+const val MIN_ZOOM_LEVEL = 0.0
+const val MAX_ZOOM_LEVEL = 22.0
+const val DEFAULT_ZOOM = 15.0
+
+@Composable
+fun MapViewComponent(
+    isTrackingLocation: Boolean,
+    locationData: List<LocationDataUI>,
+    modifier: Modifier
+) {
+
+    val (zoomInEnabled, setZoomInEnabled) = remember {
+        mutableStateOf(false)
+    }
+    val (zoomOutEnabled, setZoomOutEnabled) = remember {
+        mutableStateOf(false)
+    }
+    val (polylineAnnotationManager, setPolylineAnnotationManager) = remember {
+        mutableStateOf<PolylineAnnotationManager?>(null)
+    }
+    val (cameraPlugin, setCameraPlugin) = remember {
+        mutableStateOf<CameraAnimationsPlugin?>(null)
+    }
+    val (mapboxMap, setMapboxMap) = remember {
+        mutableStateOf<MapboxMap?>(null)
+    }
+
+    Box(modifier) {
+        AndroidView(factory = {
+            val mapView = MapView(it, null)
+            val locationComponentPlugin = mapView.location
+            locationComponentPlugin.updateSettings {
+                this.enabled = true
+                this.locationPuck = LocationPuck2D(
+                    bearingImage = AppCompatResources.getDrawable(
+                        it,
+                        R.drawable.baseline_navigation_24
+                    )
+                )
+            }
+            mapView.camera.addCameraZoomChangeListener {
+                //TODO There's probably a more effective way to manipulate colors with tint lists or
+                // some other means
+                if (it < MAX_ZOOM_LEVEL) {
+                    setZoomInEnabled(true)
+                } else {
+                    setZoomInEnabled(false)
+                }
+                if (it > MIN_ZOOM_LEVEL) {
+                    setZoomOutEnabled(true)
+                } else {
+                    setZoomOutEnabled(false)
+                }
+            }
+
+            val annotationApi = mapView.annotations
+            setPolylineAnnotationManager(annotationApi.createPolylineAnnotationManager())
+            setCameraPlugin(mapView.camera)
+            setMapboxMap(mapView.getMapboxMap())
+
+            mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS)
+            mapView
+
+            //TODO I copied these snippets from another project that's View-based. There should
+            // be a way to handle these in Compose
+
+            //Fragment.onSaveInstanceState
+            //                outState.putDouble("map_view_camera_bearing", mapView.getMapboxMap().cameraState.bearing)
+            //                outState.putDouble("map_view_camera_zoom", mapView.getMapboxMap().cameraState.zoom)
+            //                outState.putDouble("map_view_camera_center_long", mapView.getMapboxMap().cameraState.center.longitude())
+            //                outState.putDouble("map_view_camera_center_lat", mapView.getMapboxMap().cameraState.center.latitude())
+            //                outState.putDouble("map_view_camera_pitch", mapView.getMapboxMap().cameraState.pitch)
+
+            //Fragment.onViewStateRestored
+            //                savedInstanceState?.let {
+            //                    val bearing = it.getDouble("map_view_camera_bearing")
+            //                    val zoom = it.getDouble("map_view_camera_zoom")
+            //                    val centerLongitude = it.getDouble("map_view_camera_center_long")
+            //                    val centerLatitude = it.getDouble("map_view_camera_center_lat")
+            //                    val pitch = it.getDouble("map_view_camera_pitch")
+            //                    mapView.getMapboxMap().setCamera(
+            //                        CameraOptions.Builder()
+            //                            .bearing(bearing)
+            //                            .zoom(zoom)
+            //                            .center(Point.fromLngLat(centerLongitude, centerLatitude))
+            //                            .pitch(pitch)
+            //                            .build()
+            //                    )
+            //                }
+        },
+            update = { mapView ->
+                if (isTrackingLocation) {
+                    if (locationData.isEmpty()) {
+
+                    } else if (locationData.size == 1) {
+                        val points = locationData.map {
+                            Point.fromLngLat(it.longitude, it.latitude)
+                        }
+                        val centerAnimatorOptions =
+                            CameraAnimatorOptions.cameraAnimatorOptions(points.last())
+                        val centerAnimator =
+                            cameraPlugin!!.createCenterAnimator(centerAnimatorOptions) {
+                                duration = ZOOM_ANIMATION_DURATION
+                                interpolator = LinearInterpolator()
+                            }
+                        cameraPlugin.registerAnimators(centerAnimator)
+                        centerAnimator.start()
+                    } else {
+                        val points = locationData.map {
+                            Point.fromLngLat(it.longitude, it.latitude)
+                        }
+                        val centerAnimatorOptions =
+                            CameraAnimatorOptions.cameraAnimatorOptions(points.last())
+                        val centerAnimator =
+                            cameraPlugin!!.createCenterAnimator(centerAnimatorOptions) {
+                                duration = ZOOM_ANIMATION_DURATION
+                                interpolator = LinearInterpolator()
+                            }
+                        cameraPlugin.registerAnimators(centerAnimator)
+                        centerAnimator.start()
+                        //                        val simplified = PolylineUtils.simplify(points)
+                        val polylineAnnotationOptions =
+                            PolylineAnnotationOptions().withPoints(
+                                points
+                            )
+                                .withLineWidth(5.0)
+                                .withLineColor(android.graphics.Color.BLACK)
+                        polylineAnnotationManager?.create(
+                            polylineAnnotationOptions
+                        )
+                    }
+                } else {
+                    polylineAnnotationManager?.deleteAll()
+                }
+            })
+
+        Column(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .border(2.dp, Color.Black)
+        ) {
+            val zoomInAlpha = if (zoomInEnabled) {
+                1f
+            } else {
+                .6f
+            }
+            val zoomInClickable = if(zoomInEnabled) {
+                Modifier.clickable {
+                    val currentZoom = mapboxMap!!.cameraState.zoom
+                    if (currentZoom < MAX_ZOOM_LEVEL) {
+                        val newZoom = if (currentZoom + 1 >= MAX_ZOOM_LEVEL) {
+                            MAX_ZOOM_LEVEL
+                        } else {
+                            currentZoom + 1
+                        }
+                        val zoomAnimatorOptions =
+                            CameraAnimatorOptions.cameraAnimatorOptions(newZoom)
+                        val zoomAnimator = cameraPlugin!!.createZoomAnimator(zoomAnimatorOptions) {
+                            duration = ZOOM_ANIMATION_DURATION
+                            interpolator = LinearInterpolator()
+                        }
+                        cameraPlugin.registerAnimators(zoomAnimator)
+                        zoomAnimator.start()
+                    }
+                }
+            } else {
+                Modifier
+            }
+            Box(Modifier
+                .background(Color.White)
+                .padding(4.dp)
+                .alpha(zoomInAlpha)
+                .then(zoomInClickable)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_zoom_in_24),
+                    contentDescription = "zoom in"
+                )
+            }
+            val zoomOutAlpha = if (zoomOutEnabled) {
+                1f
+            } else {
+                .6f
+            }
+            val zoomOutClickable = if(zoomOutEnabled) {
+                Modifier.clickable {
+                    val currentZoom = mapboxMap!!.cameraState.zoom
+                    if(currentZoom > MIN_ZOOM_LEVEL) {
+                        val newZoom = if(currentZoom - 1 <= MIN_ZOOM_LEVEL) {
+                            MIN_ZOOM_LEVEL
+                        } else {
+                            currentZoom - 1
+                        }
+                        val zoomAnimatorOptions = CameraAnimatorOptions.cameraAnimatorOptions(newZoom)
+                        val zoomAnimator = cameraPlugin!!.createZoomAnimator(zoomAnimatorOptions) {
+                            duration = ZOOM_ANIMATION_DURATION
+                            interpolator = LinearInterpolator()
+                        }
+                        cameraPlugin.registerAnimators(zoomAnimator)
+                        zoomAnimator.start()
+                    }
+                }
+            } else {
+                Modifier
+            }
+            Box(Modifier
+                .background(Color.White)
+                .padding(4.dp)
+                .alpha(zoomOutAlpha)
+                .then(zoomOutClickable)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_zoom_out_24),
+                    contentDescription = "zoom out"
+                )
+            }
         }
     }
 }

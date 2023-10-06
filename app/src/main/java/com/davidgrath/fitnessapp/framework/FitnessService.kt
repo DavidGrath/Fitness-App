@@ -271,6 +271,10 @@ class FitnessService: Service() {
             return currentWorkoutSubject
         }
 
+        fun getCurrentTimeElapsedObservable() : Observable<Long> {
+            return timerDurationSubject
+        }
+
         fun cancelCurrentWorkout() : Single<Unit> {
             return if(currentWorkout != "NONE") {
                 when(currentWorkout) {

@@ -44,6 +44,9 @@ class SwimmingViewModel(
     private var currentWorkoutDisposable : Disposable? = null
     val currentWorkoutLiveData : LiveData<SwimmingWorkout> = _currentWorkoutLiveData
 
+    private val _timeElapsedLiveData = MutableLiveData<Long>()
+    val timeElapsedLiveData : LiveData<Long> = _timeElapsedLiveData
+
     fun getWorkoutsInPastWeek() {
         _pastWeekWorkoutsLiveData.postValue(SimpleResult.Processing())
         val calendar = Calendar.getInstance()
@@ -138,6 +141,17 @@ class SwimmingViewModel(
             }
             .subscribe({
                 _isSwimmingLiveData.postValue(it)
+            }, {
+
+            })
+    }
+
+    fun getTimeElapsed() {
+        fitnessBinder!!.getCurrentTimeElapsedObservable()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ time ->
+                _timeElapsedLiveData.postValue(time)
             }, {
 
             })

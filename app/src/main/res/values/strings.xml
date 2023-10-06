@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Fitness App</string>
+    <string name="mapbox_access_token">pk.eyJ1IjoiZGF2aWRncmF0aCIsImEiOiJjbDBjZHBqYWcwYXhnM2JvbXZvN2I4bmV3In0.I-EEsxBWCBqOpgZ5-mYYyg</string>
 </resources>

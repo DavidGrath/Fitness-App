@@ -149,8 +149,9 @@ fun SwimmingNavHost(
             }
             val isSwimming = viewModel.isSwimmingLiveData.observeAsState().value
             val currentWorkout = viewModel.currentWorkoutLiveData.observeAsState().value
+            val timeElapsed = viewModel.timeElapsedLiveData.observeAsState().value
             SwimmingWorkoutScreen(
-                elapsedTimeMillis = currentWorkout?.duration?:0,
+                elapsedTimeMillis = timeElapsed?:0,
                 caloriesBurned = currentWorkout?.kCalBurned?:0,
                 isSwimming = isSwimming?: false,
                 onStartSwimming = {
