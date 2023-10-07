@@ -1,4 +1,4 @@
-package com.davidgrath.fitnessapp.ui.swimming
+package com.davidgrath.fitnessapp.ui.walking
 
 import android.content.ComponentName
 import android.content.Intent
@@ -12,9 +12,9 @@ import com.davidgrath.fitnessapp.framework.FitnessApp
 import com.davidgrath.fitnessapp.framework.FitnessService
 import com.davidgrath.fitnessapp.ui.FitnessAppTheme
 
-class SwimmingActivity : ComponentActivity() {
+class WalkingActivity : ComponentActivity() {
 
-    lateinit var viewModel: SwimmingViewModel
+    lateinit var viewModel: WalkingViewModel
     private var binder: FitnessService.FitnessBinder? = null
 
     private val servConn = object: ServiceConnection {
@@ -35,11 +35,12 @@ class SwimmingActivity : ComponentActivity() {
         startService(serviceIntent)
         bindService(serviceIntent, servConn, BIND_AUTO_CREATE)
 
-        val swimmingRepository = (application as FitnessApp).swimmingRepository
-        viewModel = ViewModelProvider(this, SwimmingViewModelFactory(swimmingRepository)).get(SwimmingViewModel::class.java)
+        val walkingRepository = (application as FitnessApp).walkingRepository
+        viewModel = ViewModelProvider(this, WalkingViewModelFactory(walkingRepository)).get(
+            WalkingViewModel::class.java)
         setContent {
             FitnessAppTheme {
-                SwimmingScreen(viewModel)
+                WalkingScreen(viewModel)
             }
         }
     }
@@ -48,4 +49,5 @@ class SwimmingActivity : ComponentActivity() {
         super.onStop()
         unbindService(servConn)
     }
+
 }

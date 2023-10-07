@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.components
 
+import android.util.Log
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.animation.AnimatedContent
@@ -28,9 +29,13 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -50,6 +55,8 @@ import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
 import com.mapbox.geojson.Point
+import com.mapbox.maps.CameraState
+import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapView
 import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.Style
@@ -62,6 +69,7 @@ import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPolylineAnnotationManager
 import com.mapbox.maps.plugin.locationcomponent.location
+import com.mapbox.maps.toCameraOptions
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.TimeZone
@@ -539,6 +547,34 @@ const val MIN_ZOOM_LEVEL = 0.0
 const val MAX_ZOOM_LEVEL = 22.0
 const val DEFAULT_ZOOM = 15.0
 
+val CameraStateSaver = Saver<CameraState?, Array<Float>> ( //Float[] because there's no Double[] in Bundle
+    save = {
+        if(it == null) {
+            emptyArray<Float>()
+        } else {
+            arrayOf(
+                it.bearing.toFloat(), it.zoom.toFloat(),
+                it.center.latitude().toFloat(), it.center.longitude().toFloat(),
+                it.pitch.toFloat(), it.padding.top.toFloat(), it.padding.left.toFloat(),
+                it.padding.bottom.toFloat(), it.padding.right.toFloat()
+            )
+        }
+    },
+    restore = {
+        if(it.isEmpty()) {
+            null
+        } else {
+            val bearing = it[0].toDouble()
+            val zoom = it[1].toDouble()
+            val point = Point.fromLngLat(it[3].toDouble(), it[2].toDouble())
+            val pitch = it[4].toDouble()
+            val padding =
+                EdgeInsets(it[5].toDouble(), it[6].toDouble(), it[7].toDouble(), it[8].toDouble())
+            CameraState(point, padding, zoom, bearing, pitch)
+        }
+    }
+)
+
 @Composable
 fun MapViewComponent(
     isTrackingLocation: Boolean,
@@ -547,11 +583,12 @@ fun MapViewComponent(
 ) {
 
     val (zoomInEnabled, setZoomInEnabled) = remember {
-        mutableStateOf(false)
+        mutableStateOf(true)
     }
     val (zoomOutEnabled, setZoomOutEnabled) = remember {
-        mutableStateOf(false)
+        mutableStateOf(true)
     }
+
     val (polylineAnnotationManager, setPolylineAnnotationManager) = remember {
         mutableStateOf<PolylineAnnotationManager?>(null)
     }
@@ -560,6 +597,9 @@ fun MapViewComponent(
     }
     val (mapboxMap, setMapboxMap) = remember {
         mutableStateOf<MapboxMap?>(null)
+    }
+    val (cameraState, setCameraState) = rememberSaveable(stateSaver = CameraStateSaver) {
+        mutableStateOf<CameraState?>(null)
     }
 
     Box(modifier) {
@@ -576,8 +616,6 @@ fun MapViewComponent(
                 )
             }
             mapView.camera.addCameraZoomChangeListener {
-                //TODO There's probably a more effective way to manipulate colors with tint lists or
-                // some other means
                 if (it < MAX_ZOOM_LEVEL) {
                     setZoomInEnabled(true)
                 } else {
@@ -589,43 +627,23 @@ fun MapViewComponent(
                     setZoomOutEnabled(false)
                 }
             }
-
-            val annotationApi = mapView.annotations
-            setPolylineAnnotationManager(annotationApi.createPolylineAnnotationManager())
+            mapView.getMapboxMap().addOnCameraChangeListener {
+                setCameraState(mapView.getMapboxMap().cameraState)
+            }
+            setPolylineAnnotationManager(mapView.annotations.createPolylineAnnotationManager())
             setCameraPlugin(mapView.camera)
             setMapboxMap(mapView.getMapboxMap())
-
             mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS)
+            if(cameraState != null) {
+                mapView.getMapboxMap().setCamera(cameraState.toCameraOptions())
+            }
             mapView
-
-            //TODO I copied these snippets from another project that's View-based. There should
-            // be a way to handle these in Compose
-
-            //Fragment.onSaveInstanceState
-            //                outState.putDouble("map_view_camera_bearing", mapView.getMapboxMap().cameraState.bearing)
-            //                outState.putDouble("map_view_camera_zoom", mapView.getMapboxMap().cameraState.zoom)
-            //                outState.putDouble("map_view_camera_center_long", mapView.getMapboxMap().cameraState.center.longitude())
-            //                outState.putDouble("map_view_camera_center_lat", mapView.getMapboxMap().cameraState.center.latitude())
-            //                outState.putDouble("map_view_camera_pitch", mapView.getMapboxMap().cameraState.pitch)
-
-            //Fragment.onViewStateRestored
-            //                savedInstanceState?.let {
-            //                    val bearing = it.getDouble("map_view_camera_bearing")
-            //                    val zoom = it.getDouble("map_view_camera_zoom")
-            //                    val centerLongitude = it.getDouble("map_view_camera_center_long")
-            //                    val centerLatitude = it.getDouble("map_view_camera_center_lat")
-            //                    val pitch = it.getDouble("map_view_camera_pitch")
-            //                    mapView.getMapboxMap().setCamera(
-            //                        CameraOptions.Builder()
-            //                            .bearing(bearing)
-            //                            .zoom(zoom)
-            //                            .center(Point.fromLngLat(centerLongitude, centerLatitude))
-            //                            .pitch(pitch)
-            //                            .build()
-            //                    )
-            //                }
         },
             update = { mapView ->
+//                val polylineAnnotationManager = mapView.annotations.createPolylineAnnotationManager()
+//                val cameraPlugin = mapView.camera
+//                val mapboxMap = mapView.getMapboxMap()
+
                 if (isTrackingLocation) {
                     if (locationData.isEmpty()) {
 
@@ -633,38 +651,44 @@ fun MapViewComponent(
                         val points = locationData.map {
                             Point.fromLngLat(it.longitude, it.latitude)
                         }
-                        val centerAnimatorOptions =
-                            CameraAnimatorOptions.cameraAnimatorOptions(points.last())
-                        val centerAnimator =
-                            cameraPlugin!!.createCenterAnimator(centerAnimatorOptions) {
-                                duration = ZOOM_ANIMATION_DURATION
-                                interpolator = LinearInterpolator()
-                            }
-                        cameraPlugin.registerAnimators(centerAnimator)
-                        centerAnimator.start()
+                        cameraPlugin?.let {
+                            val centerAnimatorOptions =
+                                CameraAnimatorOptions.cameraAnimatorOptions(points.last())
+                            val centerAnimator =
+                                cameraPlugin.createCenterAnimator(centerAnimatorOptions) {
+                                    duration = ZOOM_ANIMATION_DURATION
+                                    interpolator = LinearInterpolator()
+                                }
+                            cameraPlugin.registerAnimators(centerAnimator)
+                            centerAnimator.start()
+                        }
                     } else {
                         val points = locationData.map {
                             Point.fromLngLat(it.longitude, it.latitude)
                         }
-                        val centerAnimatorOptions =
-                            CameraAnimatorOptions.cameraAnimatorOptions(points.last())
-                        val centerAnimator =
-                            cameraPlugin!!.createCenterAnimator(centerAnimatorOptions) {
-                                duration = ZOOM_ANIMATION_DURATION
-                                interpolator = LinearInterpolator()
-                            }
-                        cameraPlugin.registerAnimators(centerAnimator)
-                        centerAnimator.start()
-                        //                        val simplified = PolylineUtils.simplify(points)
-                        val polylineAnnotationOptions =
-                            PolylineAnnotationOptions().withPoints(
-                                points
+                        cameraPlugin?.let {
+                            val centerAnimatorOptions =
+                                CameraAnimatorOptions.cameraAnimatorOptions(points.last())
+                            val centerAnimator =
+                                cameraPlugin.createCenterAnimator(centerAnimatorOptions) {
+                                    duration = ZOOM_ANIMATION_DURATION
+                                    interpolator = LinearInterpolator()
+                                }
+                            cameraPlugin.registerAnimators(centerAnimator)
+                            centerAnimator.start()
+                        }
+                        polylineAnnotationManager?.let {
+                            // val simplified = PolylineUtils.simplify(points)
+                            val polylineAnnotationOptions =
+                                PolylineAnnotationOptions().withPoints(
+                                    points
+                                )
+                                    .withLineWidth(5.0)
+                                    .withLineColor(android.graphics.Color.BLACK)
+                            polylineAnnotationManager.create(
+                                polylineAnnotationOptions
                             )
-                                .withLineWidth(5.0)
-                                .withLineColor(android.graphics.Color.BLACK)
-                        polylineAnnotationManager?.create(
-                            polylineAnnotationOptions
-                        )
+                        }
                     }
                 } else {
                     polylineAnnotationManager?.deleteAll()
@@ -684,31 +708,34 @@ fun MapViewComponent(
             }
             val zoomInClickable = if(zoomInEnabled) {
                 Modifier.clickable {
-                    val currentZoom = mapboxMap!!.cameraState.zoom
+                    val currentZoom = mapboxMap?.cameraState?.zoom?: DEFAULT_ZOOM
                     if (currentZoom < MAX_ZOOM_LEVEL) {
                         val newZoom = if (currentZoom + 1 >= MAX_ZOOM_LEVEL) {
                             MAX_ZOOM_LEVEL
                         } else {
                             currentZoom + 1
                         }
-                        val zoomAnimatorOptions =
-                            CameraAnimatorOptions.cameraAnimatorOptions(newZoom)
-                        val zoomAnimator = cameraPlugin!!.createZoomAnimator(zoomAnimatorOptions) {
-                            duration = ZOOM_ANIMATION_DURATION
-                            interpolator = LinearInterpolator()
+                        cameraPlugin?.let {
+                            val zoomAnimatorOptions =
+                                CameraAnimatorOptions.cameraAnimatorOptions(newZoom)
+                            val zoomAnimator = cameraPlugin.createZoomAnimator(zoomAnimatorOptions) {
+                                duration = ZOOM_ANIMATION_DURATION
+                                interpolator = LinearInterpolator()
+                            }
+                            cameraPlugin.registerAnimators(zoomAnimator)
+                            zoomAnimator.start()
                         }
-                        cameraPlugin.registerAnimators(zoomAnimator)
-                        zoomAnimator.start()
                     }
                 }
             } else {
                 Modifier
             }
-            Box(Modifier
-                .background(Color.White)
-                .padding(4.dp)
-                .alpha(zoomInAlpha)
-                .then(zoomInClickable)
+            Box(
+                Modifier
+                    .background(Color.White)
+                    .padding(4.dp)
+                    .alpha(zoomInAlpha)
+                    .then(zoomInClickable)
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_zoom_in_24),
@@ -722,30 +749,35 @@ fun MapViewComponent(
             }
             val zoomOutClickable = if(zoomOutEnabled) {
                 Modifier.clickable {
-                    val currentZoom = mapboxMap!!.cameraState.zoom
+                    val currentZoom = mapboxMap?.cameraState?.zoom?: DEFAULT_ZOOM
                     if(currentZoom > MIN_ZOOM_LEVEL) {
                         val newZoom = if(currentZoom - 1 <= MIN_ZOOM_LEVEL) {
                             MIN_ZOOM_LEVEL
                         } else {
                             currentZoom - 1
                         }
-                        val zoomAnimatorOptions = CameraAnimatorOptions.cameraAnimatorOptions(newZoom)
-                        val zoomAnimator = cameraPlugin!!.createZoomAnimator(zoomAnimatorOptions) {
-                            duration = ZOOM_ANIMATION_DURATION
-                            interpolator = LinearInterpolator()
+                        cameraPlugin?.let {
+                            val zoomAnimatorOptions =
+                                CameraAnimatorOptions.cameraAnimatorOptions(newZoom)
+                            val zoomAnimator =
+                                cameraPlugin.createZoomAnimator(zoomAnimatorOptions) {
+                                    duration = ZOOM_ANIMATION_DURATION
+                                    interpolator = LinearInterpolator()
+                                }
+                            cameraPlugin.registerAnimators(zoomAnimator)
+                            zoomAnimator.start()
                         }
-                        cameraPlugin.registerAnimators(zoomAnimator)
-                        zoomAnimator.start()
                     }
                 }
             } else {
                 Modifier
             }
-            Box(Modifier
-                .background(Color.White)
-                .padding(4.dp)
-                .alpha(zoomOutAlpha)
-                .then(zoomOutClickable)
+            Box(
+                Modifier
+                    .background(Color.White)
+                    .padding(4.dp)
+                    .alpha(zoomOutAlpha)
+                    .then(zoomOutClickable)
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_zoom_out_24),

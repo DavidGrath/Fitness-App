@@ -41,6 +41,7 @@ import com.davidgrath.fitnessapp.ui.profile.ProfileScreen
 import com.davidgrath.fitnessapp.ui.running.RunningActivity
 import com.davidgrath.fitnessapp.ui.settings.SettingsScreen
 import com.davidgrath.fitnessapp.ui.swimming.SwimmingActivity
+import com.davidgrath.fitnessapp.ui.walking.WalkingActivity
 
 
 @Composable
@@ -200,7 +201,9 @@ fun HomeNavHost(
                     BasicNavScreen.SwimmingDashboardNav -> {
                         context.startActivity(Intent(context, SwimmingActivity::class.java))
                     }
-                    BasicNavScreen.WalkingDashboardNav -> {}
+                    BasicNavScreen.WalkingDashboardNav -> {
+                        context.startActivity(Intent(context, WalkingActivity::class.java))
+                    }
                     BasicNavScreen.YogaDashboardNav -> {}
                     else -> {
                         navController.navigate(it.path)

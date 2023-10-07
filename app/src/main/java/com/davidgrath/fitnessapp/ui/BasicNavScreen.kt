@@ -9,6 +9,8 @@ sealed class BasicNavScreen(val path: String) {
     object RunningHistoryNav : BasicNavScreen("home/running/history")
     object RunningWorkoutNav : BasicNavScreen("home/running/workout")
     object WalkingDashboardNav : BasicNavScreen("home/walking")
+    object WalkingHistoryNav : BasicNavScreen("home/walking/history")
+    object WalkingWorkoutNav : BasicNavScreen("home/walking/workout")
     object CyclingDashboardNav : BasicNavScreen("home/cycling")
     object GymDashboardNav : BasicNavScreen("home/gym")
     object YogaDashboardNav : BasicNavScreen("home/yoga")

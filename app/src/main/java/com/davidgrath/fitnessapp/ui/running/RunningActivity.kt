@@ -44,4 +44,9 @@ class RunningActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(servConn)
+    }
 }
