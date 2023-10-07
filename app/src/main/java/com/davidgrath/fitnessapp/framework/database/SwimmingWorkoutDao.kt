@@ -83,7 +83,7 @@ class SwimmingWorkoutDao {
         }
     }
 
-    fun getWorkoutsSummaryRangeSingle(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary> {
+    fun getWorkoutsSummaryByDateRangeSingle(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary> {
         return Single.just(workoutList).map {
             val filtered = it.filter {
                 if(startDate != null) {

@@ -44,6 +44,6 @@ class WalkingRepositoryImpl(
     }
 
     override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
-        return walkingWorkoutDao.getWorkoutsSummaryRangeSingle(startDate, endDate)
+        return walkingWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startDate, endDate)
     }
 }

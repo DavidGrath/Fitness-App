@@ -37,6 +37,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
+import com.davidgrath.fitnessapp.ui.cycling.CyclingActivity
 import com.davidgrath.fitnessapp.ui.profile.ProfileScreen
 import com.davidgrath.fitnessapp.ui.running.RunningActivity
 import com.davidgrath.fitnessapp.ui.settings.SettingsScreen
@@ -193,7 +194,9 @@ fun HomeNavHost(
             val context = LocalContext.current
             ChooseActivityScreen {
                 when(it) {
-                    BasicNavScreen.CyclingDashboardNav -> {}
+                    BasicNavScreen.CyclingDashboardNav -> {
+                        context.startActivity(Intent(context, CyclingActivity::class.java))
+                    }
                     BasicNavScreen.GymDashboardNav -> {}
                     BasicNavScreen.RunningDashboardNav -> {
                         context.startActivity(Intent(context, RunningActivity::class.java))
