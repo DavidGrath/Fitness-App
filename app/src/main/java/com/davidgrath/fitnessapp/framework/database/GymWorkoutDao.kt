@@ -1,6 +1,7 @@
 package com.davidgrath.fitnessapp.framework.database
 
 import com.davidgrath.fitnessapp.data.entities.GymWorkout
+import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.util.dateAsEnd
 import com.davidgrath.fitnessapp.util.dateAsStart
 import io.reactivex.rxjava3.core.Observable
@@ -21,7 +22,8 @@ class GymWorkoutDao {
         behaviorSubject.onNext(workoutList)
         return Single.just(incrementId++)
     }
-    //READ
+
+    //region READ
     fun getAllWorkoutsSingle() : Single<List<GymWorkout>> {
         return Single.just(workoutList)
     }
@@ -66,6 +68,35 @@ class GymWorkoutDao {
             filtered
         }
     }
+
+    fun getWorkoutsSummaryByDateRangeSingle(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary> {
+        return Single.just(workoutList).map {
+            val filtered = it.filter {
+                if(startDate != null) {
+                    if(endDate != null) {
+                        dateAsStart(startDate).time <= it.date && it.date <= dateAsEnd(endDate).time
+                    } else {
+                        dateAsStart(startDate).time <= it.date
+                    }
+                } else {
+                    if(endDate != null) {
+                        it.date <= dateAsEnd(endDate).time
+                    } else {
+                        true
+                    }
+                }
+            }
+            val summary = WorkoutSummary(
+                filtered.sumOf { it.kCalBurned },
+                filtered.size,
+                (filtered.sumOf { it.duration } / 60_000).toInt()
+            )
+            summary
+
+        }
+    }
+    //endregion
+
     //UPDATE
     fun setWorkoutDurationAndKCalBurned(workoutId: Int, duration: Long, kCalBurned: Int) : Single<Int> {
         val workoutIndex = workoutList.indexOfFirst { it.id == workoutId }

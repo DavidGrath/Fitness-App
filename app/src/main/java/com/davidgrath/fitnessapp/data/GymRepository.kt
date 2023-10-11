@@ -1,5 +1,7 @@
 package com.davidgrath.fitnessapp.data
 
+import com.davidgrath.fitnessapp.data.entities.GymWorkout
+import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.database.GymRoutineDao
 import com.davidgrath.fitnessapp.framework.database.GymSetDao
 import com.davidgrath.fitnessapp.framework.database.GymWorkoutDao
@@ -11,6 +13,8 @@ interface GymRepository {
     fun addWorkout(name: String): Single<Int>
     fun addRoutine(workoutId: Int, routineName: String): Single<Int>
     fun addSet(routineId: Int, setIdentifier: String, repCount: Int, timed: Boolean, timeTaken: Long): Single<Int>
+    fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Single<List<GymWorkout>>
+    fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary>
 }
 
 class GymRepositoryImpl(
@@ -34,6 +38,14 @@ class GymRepositoryImpl(
         timeTaken: Long): Single<Int> {
         val timestamp = Date().time
         return gymSetDao.insertSet(routineId, setIdentifier, timestamp, repCount, timed, timeTaken)
+    }
+
+    override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Single<List<GymWorkout>> {
+        return gymWorkoutDao.getWorkoutsByDateRangeSingle(startDate, endDate)
+    }
+
+    override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
+        return gymWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startDate, endDate)
     }
 }
 

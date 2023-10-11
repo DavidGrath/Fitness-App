@@ -6,6 +6,7 @@
       {"identifier":"HAMMER_CURL"},
       {"identifier":"BARBELL_CURL"},
       {"identifier":"TRICEPS_BENCH_DIPS"},
+      {"identifier":"STANDING_OVERHEAD_CABLE_TRICEPS_EXTENSION"},
       {"identifier":"CABLE_ROPE_TRICEPS_PUSHDOWN"}
     ]
   },
@@ -15,7 +16,8 @@
       {"identifier":"SINGLE_ARM_ROW"},
       {"identifier":"DEADLIFT"},
       {"identifier":"BENT_OVER_DUMBBELL_ROW"},
-      {"identifier":"LAT_PULLDOWN"}
+      {"identifier":"LAT_PULLDOWN"},
+      {"identifier":"SEATED_CABLE_ROW"}
     ]
   },
   {
@@ -24,7 +26,8 @@
       {"identifier":"CHEST_DIPS"},
       {"identifier":"BARBELL_BENCH_PRESS"},
       {"identifier":"DUMBBELL_FLY"},
-      {"identifier":"SEATED_PEC_DECK"}
+      {"identifier":"SEATED_PEC_DECK"},
+      {"identifier":"CABLE_CROSS_OVER"}
     ]
   },
   {

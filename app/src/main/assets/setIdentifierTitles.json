@@ -11,6 +11,9 @@
   "TRICEPS_BENCH_DIPS": {
     "default": "Triceps Bench dips"
   },
+  "STANDING_OVERHEAD_CABLE_TRICEPS_EXTENSION": {
+    "default": "Standing Overhead Cable Triceps Extension"
+  },
   "CABLE_ROPE_TRICEPS_PUSHDOWN": {
     "default": "Cable Rope Triceps Pushdown"
   },
@@ -26,8 +29,11 @@
   "LAT_PULLDOWN": {
     "default": "Lat Pulldown"
   },
+  "SEATED_CABLE_ROW": {
+    "default": "Seated Cable Row"
+  },
   "CHEST_DIPS": {
-    "default": "Triceps Bench dips"
+    "default": "Chest Dips"
   },
   "BARBELL_BENCH_PRESS": {
     "default": "Barbell Bench Press"
@@ -37,6 +43,9 @@
   },
   "SEATED_PEC_DECK": {
     "default": "Seated Pec Deck"
+  },
+  "CABLE_CROSS_OVER": {
+    "default": "Cable Cross-Over"
   },
   "DUMBELL_LUNGE": {
     "default": "Dumbbell Lunge"

@@ -81,6 +81,3 @@ class GymTestViewModel(
 //        return GymTestViewModel(gymRepository) as T
 //    }
 //}
-
-
-

@@ -6,6 +6,7 @@ public class Constants {
     public static final String UNIT_HEIGHT_CENTIMETERS = "centimeters";
     public static final String UNIT_WEIGHT_KG = "kilograms";
     public static final String UNIT_WEIGHT_POUNDS = "pounds";
+    public static final Character BULLET = '\u2022';
 
     public static final class PreferencesTitles {
         public static final String FIRST_NAME = "firstName";

@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -41,6 +42,7 @@
         <activity android:name=".ui.running.RunningActivity" />
         <activity android:name=".ui.walking.WalkingActivity" />
         <activity android:name=".ui.cycling.CyclingActivity" />
+        <activity android:name=".ui.gym.GymActivity" />
 
         <service android:name=".framework.FitnessService" android:foregroundServiceType="location"/>
     </application>

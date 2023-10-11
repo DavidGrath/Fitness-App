@@ -38,6 +38,7 @@ import androidx.navigation.compose.rememberNavController
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.cycling.CyclingActivity
+import com.davidgrath.fitnessapp.ui.gym.GymActivity
 import com.davidgrath.fitnessapp.ui.profile.ProfileScreen
 import com.davidgrath.fitnessapp.ui.running.RunningActivity
 import com.davidgrath.fitnessapp.ui.settings.SettingsScreen
@@ -197,7 +198,9 @@ fun HomeNavHost(
                     BasicNavScreen.CyclingDashboardNav -> {
                         context.startActivity(Intent(context, CyclingActivity::class.java))
                     }
-                    BasicNavScreen.GymDashboardNav -> {}
+                    BasicNavScreen.GymDashboardNav -> {
+                        context.startActivity(Intent(context, GymActivity::class.java))
+                    }
                     BasicNavScreen.RunningDashboardNav -> {
                         context.startActivity(Intent(context, RunningActivity::class.java))
                     }

@@ -14,6 +14,7 @@ import com.davidgrath.fitnessapp.data.WalkingRepositoryImpl
 import com.davidgrath.fitnessapp.data.YogaRepository
 import com.davidgrath.fitnessapp.data.YogaRepositoryImpl
 import com.davidgrath.fitnessapp.data.entities.GymRoutineTemplate
+import com.davidgrath.fitnessapp.data.entities.GymSetTutorial
 import com.davidgrath.fitnessapp.data.entities.SimpleIntlString
 import com.davidgrath.fitnessapp.data.entities.YogaSessionTemplate
 import com.davidgrath.fitnessapp.framework.database.CyclingLocationDataDao
@@ -55,6 +56,7 @@ class FitnessApp: Application() {
     lateinit var gymRepository: GymRepository
     lateinit var defaultGymRoutineTemplates: List<GymRoutineTemplate>
     lateinit var setIdentifierTitles: Map<String, SimpleIntlString>
+    lateinit var gymSetTutorials: Map<String, GymSetTutorial>
 
     lateinit var yogaWorkoutDao: YogaWorkoutDao
     lateinit var yogaAsanaDao: YogaAsanaDao
@@ -97,6 +99,10 @@ class FitnessApp: Application() {
         val identifierStream = assets.open("setIdentifierTitles.json")
         val mapTypeToken = object: TypeToken<Map<String, SimpleIntlString>>(){}.type
         setIdentifierTitles = gson.fromJson(InputStreamReader(identifierStream), mapTypeToken)
+
+        val tutorialStream = assets.open("gymSetTutorials.json")
+        val tutorialTypeToken = object: TypeToken<Map<String, GymSetTutorial>>(){}.type
+        gymSetTutorials = gson.fromJson(InputStreamReader(tutorialStream), tutorialTypeToken)
 
         yogaWorkoutDao = YogaWorkoutDao()
         yogaAsanaDao = YogaAsanaDao()

@@ -1,6 +1,5 @@
 package com.davidgrath.fitnessapp.ui.components
 
-import android.util.Log
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.animation.AnimatedContent
@@ -11,10 +10,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,14 +23,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
@@ -48,6 +45,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -463,6 +461,16 @@ fun SimpleAppBar(
     expanded: Boolean,
     onBackClicked: () -> Unit
 ) {
+    SimpleAppBar(title, expanded, MaterialTheme.colors.primary, onBackClicked)
+}
+
+@Composable
+fun SimpleAppBar(
+    title: String,
+    expanded: Boolean,
+    textColor: Color,
+    onBackClicked: () -> Unit
+) {
     Surface(elevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
         if(expanded) {
 
@@ -490,7 +498,7 @@ fun SimpleAppBar(
                         .padding(vertical = verticalPadding)
                         .align(Alignment.CenterHorizontally),
                     style = MaterialTheme.typography.h4,
-                    color = MaterialTheme.colors.primary
+                    color = textColor
                 )
             }
         } else {
@@ -509,7 +517,7 @@ fun SimpleAppBar(
                 Text(
                     title,
                     style = MaterialTheme.typography.h4,
-                    color = MaterialTheme.colors.primary
+                    color = textColor
                 )
             }
         }
@@ -522,22 +530,37 @@ fun SimpleGradientButton(
     modifier: Modifier,
     content: @Composable () -> Unit
 ) {
+    SimpleGradientButton(onClicked, modifier, 8.dp, true, content)
+}
+
+@Composable
+fun SimpleGradientButton(
+    onClicked: () -> Unit,
+    modifier: Modifier,
+    cornerRadius: Dp,
+    enabled: Boolean,
+    content: @Composable () -> Unit
+) {
     val colors = listOf(
         Color(0xFF49EEAF),
         Color(0xFF24D18F)
     )
-    Button(onClicked,
-        modifier,
-        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
-        contentPadding = PaddingValues()
+    val interactionSource = remember {
+        MutableInteractionSource()
+    }
+    Box(
+        modifier
+            .clickable(
+                onClick = onClicked,
+                interactionSource = interactionSource,
+                indication = rememberRipple(),
+                enabled = enabled
+            )
+            .background(brush = Brush.linearGradient(colors), RoundedCornerShape(cornerRadius))
+            .padding(horizontal = 32.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            Modifier
-                .background(brush = Brush.linearGradient(colors), RoundedCornerShape(8.dp))
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            content()
-        }
+        content()
     }
 }
 
