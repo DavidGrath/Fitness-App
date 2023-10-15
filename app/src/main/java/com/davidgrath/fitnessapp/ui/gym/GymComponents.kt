@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.gym
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -178,7 +180,7 @@ fun GymNavHost(
                     navController.popBackStack()
                 },
                 onStartWorkout = { i ->
-                    val pathWithArgs = BasicNavScreen.GymRoutineListNav.path+"/$routineIndex/sets/$i"
+                    val pathWithArgs = BasicNavScreen.GymRoutineListNav.path+"/$routineIndex/sets/0"
                     navController.navigate(pathWithArgs)
                 }
             )
@@ -189,8 +191,6 @@ fun GymNavHost(
                 navArgument("setId") {type = NavType.IntType},
             )
         ) { backStackEntry ->
-
-            val context = LocalContext.current
 
             val routineIndex = backStackEntry.arguments!!.getInt("routineId")
             val setIndex = backStackEntry.arguments!!.getInt("setId")
@@ -205,13 +205,13 @@ fun GymNavHost(
                 },
                 onNavigateNextSet = { gymRoutineIndex, gymSetIndex ->
                     val pathWithArgs = BasicNavScreen.GymRoutineListNav.path+"/$gymRoutineIndex/sets/$gymSetIndex"
-                    navController.navigate(pathWithArgs) {
-                        popUpTo(backStackEntry.destination.route!!)
-                    }
+                    navController.popBackStack(navController.currentBackStackEntry!!.destination.route!!, true)
+                    navController.navigate(pathWithArgs)
                 },
                 onNavigateRoutinesScreen = {
                     navController.navigate(BasicNavScreen.GymRoutineListNav.path) {
-                        popUpToRoute
+                        launchSingleTop = true
+                        popUpTo(BasicNavScreen.GymRoutineListNav.path)
                     }
                 }
             )
@@ -347,18 +347,6 @@ fun GymRoutineSetsScreen(
     }
     val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden, skipHalfExpanded = true)
     val tempVideoDetails = viewModel.tempVideoDetailsLiveData.observeAsState().value
-    val startWorkoutResult = viewModel.addWorkoutLiveData.observeAsState().value
-    val (startedWorkout, setStartedWorkout) = rememberSaveable {
-        //TODO very simple solution to the problem of consuming a "one-shot" LiveData. Improve
-        mutableStateOf(false)
-    }
-//    LaunchedEffect(key1 = startWorkoutResult) {
-//
-//    }
-    if(startWorkoutResult is SimpleResult.Success && !startedWorkout) {
-        onStartWorkout(selectedRoutineIndex)
-        setStartedWorkout(true)
-    }
 
     ModalBottomSheetLayout(sheetState = sheetState,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
@@ -443,7 +431,7 @@ fun GymRoutineSetsScreen(
                                     setCurrentTutorial(tutorial)
                                     setCurrentSetIdentifier(it)
                                     tutorial.youtubeVideoId?.let {
-                                        viewModel.tempFetchVideoTitle(it)
+                                        viewModel.tempFetchVideoDetails(it)
                                     }
                                     coroutineScope.launch {
                                         sheetState.show()
@@ -456,9 +444,17 @@ fun GymRoutineSetsScreen(
                         }
                     }
                 }
+                val lifecycleOwner = LocalLifecycleOwner.current
                 SimpleGradientButton(
                     {
-                        viewModel.addWorkout()
+                        coroutineScope.launch {
+                            viewModel.addWorkout()
+                            viewModel.addWorkoutLiveData.observe(lifecycleOwner) {
+                                if(it is SimpleResult.Success) {
+                                    onStartWorkout(selectedRoutineIndex)
+                                }
+                            }
+                        }
                     },
                     Modifier
                         .zIndex(1f)
@@ -536,7 +532,6 @@ fun GymSetScreen(
         }
         Divider(color = Color.Gray.copy(0.5f))
         val canGoPrevious = gymSetIndex > 0
-
         val canGoNext = gymSetIndex < currentRoutine.sets.size - 1
         Column(
             Modifier
@@ -579,32 +574,48 @@ fun GymSetScreen(
             } else {
                 endWorkoutResult !is SimpleResult.Processing
             }
-            LaunchedEffect(null) {
-                viewModel.resetNextSetResult()
-            }
-            LaunchedEffect(key1 = endWorkoutResult, key2 = endSetResult) {
-                if(!canGoNext && endWorkoutResult is SimpleResult.Success) {
-                    onNavigateRoutinesScreen()
-                } else if(canGoNext && endSetResult is SimpleResult.Success) {
-                    onNavigateNextSet(gymRoutineIndex, gymSetIndex + 1)
-                }
-            }
+            val coroutineScope = rememberCoroutineScope()
+            val lifecycleOwner = LocalLifecycleOwner.current
             SimpleGradientButton(onClicked = {
-                if (gymSetIndex + 1 >= currentRoutine.sets.size) {
-                    viewModel.endCurrentWorkout(repCount)
-                } else {
-                    viewModel.endSet(repCount)
+                coroutineScope.launch {
+                    if (canGoNext) {
+                        viewModel.endSet(repCount)
+                        viewModel.endSetLiveData.observe(lifecycleOwner) {
+                            if(it is SimpleResult.Success) {
+                                onNavigateNextSet(gymRoutineIndex, gymSetIndex + 1)
+                            }
+                        }
+                    } else {
+                        viewModel.endCurrentWorkout(repCount)
+                        viewModel.endCurrentWorkoutLiveData.observe(lifecycleOwner) {
+                            if(it is SimpleResult.Success) {
+                                onNavigateRoutinesScreen()
+                            }
+                        }
+                    }
+
                 }
+
             },
                 modifier = Modifier, 16.dp, nextButtonEnabled) {
                 Row {
-                    Text("Next", style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Image(
-                        painter = painterResource(id = R.drawable.arrow_right),
-                        contentDescription = "next",
-                        colorFilter = ColorFilter.tint(Color.White)
-                    )
+                    if(canGoNext) {
+                        Text(
+                            "Next",
+                            style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Image(
+                            painter = painterResource(id = R.drawable.arrow_right),
+                            contentDescription = "next",
+                            colorFilter = ColorFilter.tint(Color.White)
+                        )
+                    } else {
+                        Text(
+                            "Finish",
+                            style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
+                        )
+                    }
                 }
             }
         }

@@ -13,7 +13,6 @@ import com.davidgrath.fitnessapp.util.SimpleResult
 import com.google.gson.Gson
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.schedulers.Schedulers
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.BufferedInputStream
@@ -169,7 +168,7 @@ class GymViewModel(
     }
 
 
-    fun endCurrentWorkout(lastSetRepCount: Int)  {
+    fun endCurrentWorkout(lastSetRepCount: Int) {
         fitnessBinder!!.endGymSet(lastSetRepCount)
             .flatMap {
                 fitnessBinder!!.cancelCurrentWorkout()
@@ -183,11 +182,7 @@ class GymViewModel(
             })
     }
 
-    fun resetNextSetResult() {
-        _endSetLiveData.postValue(null)
-    }
-
-    fun tempFetchVideoTitle(videoId: String) {
+    fun tempFetchVideoDetails(videoId: String) {
 //        _tempVideoDetailsLiveData.postValue()
         viewModelScope.launch(Dispatchers.IO) {
             try {
