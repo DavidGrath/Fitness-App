@@ -43,6 +43,7 @@
         <activity android:name=".ui.walking.WalkingActivity" />
         <activity android:name=".ui.cycling.CyclingActivity" />
         <activity android:name=".ui.gym.GymActivity" />
+        <activity android:name=".ui.yoga.YogaActivity" />
 
         <service android:name=".framework.FitnessService" android:foregroundServiceType="location"/>
     </application>

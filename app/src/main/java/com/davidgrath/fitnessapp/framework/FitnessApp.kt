@@ -16,6 +16,7 @@ import com.davidgrath.fitnessapp.data.YogaRepositoryImpl
 import com.davidgrath.fitnessapp.data.entities.GymRoutineTemplate
 import com.davidgrath.fitnessapp.data.entities.GymSetTutorial
 import com.davidgrath.fitnessapp.data.entities.SimpleIntlString
+import com.davidgrath.fitnessapp.data.entities.YogaAsanaTutorial
 import com.davidgrath.fitnessapp.data.entities.YogaSessionTemplate
 import com.davidgrath.fitnessapp.framework.database.CyclingLocationDataDao
 import com.davidgrath.fitnessapp.framework.database.CyclingWorkoutDao
@@ -63,7 +64,7 @@ class FitnessApp: Application() {
     lateinit var yogaRepository: YogaRepository
     lateinit var defaultYogaSessionTemplates: List<YogaSessionTemplate>
     lateinit var asanaIdentifierTitles: Map<String, SimpleIntlString>
-
+    lateinit var yogaAsanaTutorials: Map<String, YogaAsanaTutorial>
 
 
     override fun onCreate() {
@@ -114,5 +115,9 @@ class FitnessApp: Application() {
         val asanaIdentifierStream = assets.open("asanaIdentifierTitles.json")
         val asanaTypeToken = object: TypeToken<Map<String, SimpleIntlString>>(){}.type
         asanaIdentifierTitles = gson.fromJson(InputStreamReader(asanaIdentifierStream), asanaTypeToken)
+
+        val asanaTutorialStream = assets.open("yogaAsanaTutorials.json")
+        val asanaTutorialTypeToken = object: TypeToken<Map<String, YogaAsanaTutorial>>(){}.type
+        yogaAsanaTutorials = gson.fromJson(InputStreamReader(asanaTutorialStream), asanaTutorialTypeToken)
     }
 }

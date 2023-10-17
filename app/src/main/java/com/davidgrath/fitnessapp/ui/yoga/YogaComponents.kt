@@ -1,4 +1,4 @@
-package com.davidgrath.fitnessapp.ui.gym
+package com.davidgrath.fitnessapp.ui.yoga
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -33,14 +33,12 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
@@ -57,10 +55,11 @@ import androidx.navigation.navArgument
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.davidgrath.fitnessapp.R
-import com.davidgrath.fitnessapp.data.entities.GymRoutineTemplate
-import com.davidgrath.fitnessapp.data.entities.GymSetTutorial
-import com.davidgrath.fitnessapp.data.entities.GymWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
+import com.davidgrath.fitnessapp.data.entities.YogaAsanaState
+import com.davidgrath.fitnessapp.data.entities.YogaAsanaTutorial
+import com.davidgrath.fitnessapp.data.entities.YogaSessionTemplate
+import com.davidgrath.fitnessapp.data.entities.YogaWorkout
 import com.davidgrath.fitnessapp.framework.FitnessApp
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
@@ -69,21 +68,21 @@ import com.davidgrath.fitnessapp.ui.components.SimpleGradientButton
 import com.davidgrath.fitnessapp.ui.components.WeekHistoryComponent
 import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
-import com.davidgrath.fitnessapp.util.Constants.BULLET
+import com.davidgrath.fitnessapp.util.Constants
 import com.davidgrath.fitnessapp.util.SimpleResult
-import com.davidgrath.fitnessapp.util.setIdentifierToIconMap
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 @Composable
-fun GymScreen(
-    viewModel: GymViewModel
+fun YogaScreen(
+    viewModel: YogaViewModel
 ) {
-
     val navController = rememberNavController()
     Scaffold { padding ->
-        GymNavHost(
+        YogaNavHost(
             navController,
             viewModel,
             Modifier
@@ -94,104 +93,101 @@ fun GymScreen(
 }
 
 @Composable
-fun GymNavHost(
+fun YogaNavHost(
     navController: NavHostController,
-    viewModel: GymViewModel,
+    viewModel: YogaViewModel,
     modifier: Modifier
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = BasicNavScreen.GymDashboardNav.path,
+    NavHost(navController = navController,
+        startDestination = BasicNavScreen.YogaDashboardNav.path,
         modifier
     ) {
-        composable(route = BasicNavScreen.GymDashboardNav.path) {
-            GymDashboardScreen(
+        composable(BasicNavScreen.YogaDashboardNav.path) {
+            YogaDashboardScreen(
                 viewModel,
                 {
                     navController.popBackStack()
                 },
                 {
-                    navController.navigate(BasicNavScreen.GymHistoryNav.path)
+                    navController.navigate(BasicNavScreen.YogaHistoryNav.path)
                 },
                 {
-                    navController.navigate(BasicNavScreen.GymRoutineListNav.path)
+                    navController.navigate(BasicNavScreen.YogaSessionListNav.path)
                 }
             )
         }
-        composable(route = BasicNavScreen.GymHistoryNav.path) {
-            GymHistoryScreen(
+        composable(BasicNavScreen.YogaHistoryNav.path) {
+            YogaHistoryScreen(
                 viewModel,
                 {
                     navController.popBackStack()
                 })
         }
-        composable(route = BasicNavScreen.GymRoutineListNav.path) {
-            GymRoutineListScreen(
+        composable(BasicNavScreen.YogaSessionListNav.path) {
+            YogaSessionListScreen(
                 {
                     navController.popBackStack()
                 },
                 {
-                    val pathWithArgs = BasicNavScreen.GymRoutineSetsNav.getPathWithArgs(it)
-                    navController.navigate(pathWithArgs)
-                })
-        }
-        composable(route = BasicNavScreen.GymRoutineSetsNav.path,
-            arguments = listOf(navArgument("routineId") {type = NavType.IntType})
-        ) { backStackEntry ->
-            val routineIndex = backStackEntry.arguments!!.getInt("routineId")
-            GymRoutineSetsScreen(
-                routineIndex,
-                viewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateFirstSet = { i ->
-                    val pathWithArgs = BasicNavScreen.GymSetNav.getPathWithArgs(routineIndex, 0)
+                    val pathWithArgs = BasicNavScreen.YogaSessionAsanasNav.getPathWithArgs(it)
                     navController.navigate(pathWithArgs)
                 }
             )
         }
-        composable(route = BasicNavScreen.GymSetNav.path,
-            arguments = listOf(
-                navArgument("routineId") {type = NavType.IntType},
-                navArgument("setId") {type = NavType.IntType},
-            )
+        composable(BasicNavScreen.YogaSessionAsanasNav.path,
+            listOf(navArgument("sessionId") {type = NavType.IntType})
         ) { backStackEntry ->
-
-            val routineIndex = backStackEntry.arguments!!.getInt("routineId")
-            val setIndex = backStackEntry.arguments!!.getInt("setId")
-
-            GymSetScreen(
-                gymRoutineIndex = routineIndex,
-                gymSetIndex = setIndex,
+            val sessionIndex = backStackEntry.arguments!!.getInt("sessionId")
+            YogaSessionAsanasScreen(
+                selectedSessionIndex = sessionIndex,
                 viewModel = viewModel,
                 onNavigateBack = {
-//                    navController.popBackStack()
-                                 //TODO Cancel workout
+                    navController.popBackStack()
                 },
-                onNavigateNextSet = { gymRoutineIndex, gymSetIndex ->
-                    val pathWithArgs = BasicNavScreen.GymSetNav.getPathWithArgs(gymRoutineIndex, gymSetIndex)
+                onNavigateFirstAsana = {
+                    val pathWithArgs = BasicNavScreen.YogaAsanaNav.getPathWithArgs(it, 0)
+                    navController.navigate(pathWithArgs)
+                }
+            )
+        }
+        composable(BasicNavScreen.YogaAsanaNav.path,
+            arguments = listOf(
+                navArgument("sessionId") {type = NavType.IntType},
+                navArgument("asanaId") {type = NavType.IntType},
+            )
+        ) { backStackEntry ->
+            val sessionIndex = backStackEntry.arguments!!.getInt("sessionId")
+            val asanaIndex = backStackEntry.arguments!!.getInt("asanaId")
+
+            YogaAsanaScreen(
+                sessionIndex,
+                asanaIndex,
+                viewModel,
+                {
+                    navController.popBackStack()
+                },
+                { yogaSessionIndex, yogaAsanaIndex ->
+                    val pathWithArgs = BasicNavScreen.YogaAsanaNav.getPathWithArgs(yogaSessionIndex, yogaAsanaIndex)
                     navController.popBackStack(navController.currentBackStackEntry!!.destination.route!!, true)
                     navController.navigate(pathWithArgs)
                 },
-                onNavigateRoutinesScreen = {
-                    navController.navigate(BasicNavScreen.GymRoutineListNav.path) {
+                {
+                    navController.navigate(BasicNavScreen.YogaSessionListNav.path) {
                         launchSingleTop = true
-                        popUpTo(BasicNavScreen.GymRoutineListNav.path)
+                        popUpTo(BasicNavScreen.YogaSessionListNav.path)
                     }
                 }
             )
         }
     }
-
 }
 
 @Composable
-fun GymDashboardScreen(
-    viewModel: GymViewModel,
+fun YogaDashboardScreen(
+    viewModel: YogaViewModel,
     onNavigateBack: () -> Unit,
     onNavigateDetailedHistory: () -> Unit,
-    onNavigateRoutinesScreen: () -> Unit
+    onNavigateSessionsScreen: () -> Unit
 ) {
     LaunchedEffect(key1 = null) {
         viewModel.getWorkoutsInPastWeek()
@@ -202,16 +198,16 @@ fun GymDashboardScreen(
 
     val weekWorkouts = when(weekWorkoutsResult) {
         is SimpleResult.Failure -> {
-            emptyList<GymWorkout>()
+            emptyList<YogaWorkout>()
         }
         is SimpleResult.Processing -> {
-            emptyList<GymWorkout>()
+            emptyList<YogaWorkout>()
         }
         is SimpleResult.Success -> {
             weekWorkoutsResult.data
         }
         null -> {
-            emptyList<GymWorkout>()
+            emptyList<YogaWorkout>()
         }
     }
 
@@ -228,13 +224,13 @@ fun GymDashboardScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Gym", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Yoga", expanded = true, onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)) {
-            WelcomeBanner(bannerButtonText = "Start Gym", onNavigateRoutinesScreen)
+            WelcomeBanner(bannerButtonText = "Start Yoga", onNavigateSessionsScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))
@@ -258,8 +254,8 @@ fun GymDashboardScreen(
 }
 
 @Composable
-fun GymHistoryScreen(
-    viewModel: GymViewModel,
+fun YogaHistoryScreen(
+    viewModel: YogaViewModel,
     onNavigateBack: () -> Unit
 ) {
     LaunchedEffect(key1 = null) {
@@ -276,7 +272,7 @@ fun GymHistoryScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Gym", expanded = false, onNavigateBack)
+        SimpleAppBar(title = "Yoga", expanded = false, onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())
@@ -296,24 +292,24 @@ fun GymHistoryScreen(
 }
 
 @Composable
-fun GymRoutineListScreen(
+fun YogaSessionListScreen(
     onNavigateBack: () -> Unit,
-    onRoutineSelected: (index: Int) -> Unit
+    onSessionSelected: (index: Int) -> Unit
 ) {
     val context = LocalContext.current
     val application = (context.applicationContext as FitnessApp)
-    val routines = application.defaultGymRoutineTemplates
+    val sessions = application.defaultYogaSessionTemplates
 
     Column(Modifier.fillMaxSize()) {
-        SimpleAppBar(title = "Gym", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Yoga", expanded = true, onNavigateBack)
         LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp),
             contentPadding = PaddingValues(vertical = 24.dp)
         ) {
-            itemsIndexed(routines, { index, item -> index }) { index, item ->
-                SimpleGymRoutineItem(
+            itemsIndexed(sessions, { index, item -> index }) { index, item ->
+                SimpleYogaSessionItem(
                     index = index,
-                    routineTemplate = item,
-                    onRoutineSelected = onRoutineSelected,
+                    sessionTemplate = item,
+                    onSessionSelected = onSessionSelected,
                     modifier = Modifier
                 )
             }
@@ -323,22 +319,22 @@ fun GymRoutineListScreen(
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalGlideComposeApi::class)
 @Composable
-fun GymRoutineSetsScreen(
-    selectedRoutineIndex: Int,
-    viewModel: GymViewModel,
+fun YogaSessionAsanasScreen(
+    selectedSessionIndex: Int,
+    viewModel: YogaViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateFirstSet: (routineIndex: Int) -> Unit
+    onNavigateFirstAsana: (sessionIndex: Int) -> Unit
 ) {
     val context = LocalContext.current
-    val routineTemplates = (context.applicationContext as FitnessApp).defaultGymRoutineTemplates
-    val setTutorials = (context.applicationContext as FitnessApp).gymSetTutorials
-    val setTitleMap = (context.applicationContext as FitnessApp).setIdentifierTitles
-    val routineTemplate = routineTemplates[selectedRoutineIndex]
+    val sessionTemplates = (context.applicationContext as FitnessApp).defaultYogaSessionTemplates
+    val asanaTutorials = (context.applicationContext as FitnessApp).yogaAsanaTutorials
+    val asanaTitleMap = (context.applicationContext as FitnessApp).asanaIdentifierTitles
+    val sessionTemplate = sessionTemplates[selectedSessionIndex]
     val coroutineScope = rememberCoroutineScope()
     val (currentTutorial, setCurrentTutorial) = remember {
-        mutableStateOf<GymSetTutorial?>(null)
+        mutableStateOf<YogaAsanaTutorial?>(null)
     }
-    val (currentSetIdentifier, setCurrentSetIdentifier) = remember {
+    val (currentAsanaIdentifier, setCurrentAsanaIdentifier) = remember {
         mutableStateOf<String>("")
     }
     val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden, skipHalfExpanded = true)
@@ -351,7 +347,7 @@ fun GymRoutineSetsScreen(
                 if (currentTutorial == null) {
                     return@ModalBottomSheetLayout
                 }
-                val title = setTitleMap[currentSetIdentifier]?._default ?: "Unknown"
+                val title = asanaTitleMap[currentAsanaIdentifier]?._default ?: "Unknown"
                 if (currentTutorial.youtubeVideoId != null) {
                     Text(
                         "Video",
@@ -360,7 +356,7 @@ fun GymRoutineSetsScreen(
                     Spacer(Modifier.height(8.dp))
                     if(!(tempVideoDetails?.thumbnailUrl.isNullOrEmpty())) {
                         GlideImage(model = tempVideoDetails?.thumbnailUrl, contentDescription = "YT thumbnail",
-                        Modifier.fillMaxWidth(),
+                            Modifier.fillMaxWidth(),
                         ) {
                             it.override(tempVideoDetails!!.thumbnailWidth!!, tempVideoDetails!!.thumbnailHeight!!)
                         }
@@ -384,7 +380,8 @@ fun GymRoutineSetsScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 currentTutorial.steps.map {
-                    Text(BULLET + " " + it,
+                    Text(
+                        Constants.BULLET + " " + it,
                         Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.body1)
                 }
@@ -404,28 +401,35 @@ fun GymRoutineSetsScreen(
             SimpleAppBar(title = "", expanded = false, onNavigateBack)
             Box {
                 Column {
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(Color.Red)
+                            .padding(horizontal = 16.dp)
                             .height(168.dp),
-                        contentAlignment = Alignment.Center
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            routineTemplate.routineName,
+                            sessionTemplate.sessionName,
                             style = MaterialTheme.typography.h4.copy(color = Color.White)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            sessionTemplate.sessionDescription,
+                            style = MaterialTheme.typography.body1.copy(color = Color.White)
                         )
                     }
                     LazyColumn(contentPadding = PaddingValues(bottom = 48.dp)) {
                         itemsIndexed(
-                            routineTemplate.sets,
+                            sessionTemplate.asanas,
                             { index, item -> index }) { index, item ->
-                            SimpleGymSetItem(
-                                gymSet = item,
+                            SimpleYogaAsanaItem(
+                                yogaAsana = item,
                                 onViewTutorial = {
-                                    val tutorial = setTutorials[it]!!
+                                    val tutorial = asanaTutorials[it]!!
                                     setCurrentTutorial(tutorial)
-                                    setCurrentSetIdentifier(it)
+                                    setCurrentAsanaIdentifier(it)
                                     tutorial.youtubeVideoId?.let {
                                         viewModel.tempFetchVideoDetails(it)
                                     }
@@ -434,7 +438,7 @@ fun GymRoutineSetsScreen(
                                     }
                                 }, modifier = Modifier
                             )
-                            if (index < routineTemplate.sets.size - 1) {
+                            if (index < sessionTemplate.asanas.size - 1) {
                                 Divider(color = Color.Gray.copy(.6f))
                             }
                         }
@@ -447,7 +451,7 @@ fun GymRoutineSetsScreen(
                             viewModel.addWorkout()
                             viewModel.addWorkoutLiveData.observe(lifecycleOwner) {
                                 if(it is SimpleResult.Success) {
-                                    onNavigateFirstSet(selectedRoutineIndex)
+                                    onNavigateFirstAsana(selectedSessionIndex)
                                 }
                             }
                         }
@@ -476,34 +480,37 @@ fun GymRoutineSetsScreen(
 
 
 @Composable
-fun GymSetScreen(
-    gymRoutineIndex: Int,
-    gymSetIndex: Int,
-    viewModel: GymViewModel,
+fun YogaAsanaScreen(
+    yogaSessionIndex: Int,
+    yogaAsanaIndex: Int,
+    viewModel: YogaViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateNextSet: (gymRoutineIndex: Int, gymSetIndex: Int) -> Unit,
-    onNavigateRoutinesScreen: () -> Unit
+    onNavigateNextAsana: (yogaSessionIndex: Int, yogaAsanaIndex: Int) -> Unit,
+    onNavigateSessionsScreen: () -> Unit
 ) {
+
     val context = LocalContext.current
-    val routineTemplates = (context.applicationContext as FitnessApp).defaultGymRoutineTemplates
-    val setTitleMap = (context.applicationContext as FitnessApp).setIdentifierTitles
+    val sessionTemplates = (context.applicationContext as FitnessApp).defaultYogaSessionTemplates
+    val asanaTitleMap = (context.applicationContext as FitnessApp).asanaIdentifierTitles
 
-    val currentRoutine = routineTemplates[gymRoutineIndex]
-    val currentGymSet = currentRoutine.sets[gymSetIndex]
-    val routineTitle = currentRoutine.routineName
-    val setTitle = setTitleMap[currentGymSet.identifier]?._default ?: "Unknown"
-
-    val (repCount, setRepCount) = rememberSaveable {
-        mutableStateOf(0)
-    }
+    val currentSession = sessionTemplates[yogaSessionIndex]
+    val currentYogaAsana = currentSession.asanas[yogaAsanaIndex]
+    val sessionTitle = currentSession.sessionName
+    val asanaTitle = asanaTitleMap[currentYogaAsana.identifier]?._default ?: "Unknown"
 
     LaunchedEffect(key1 = null) {
-        viewModel.startSet(currentGymSet.identifier)
+        viewModel.startAsana(currentYogaAsana.identifier, currentYogaAsana.durationMillis)
+        viewModel.getYogaAsanaState()
     }
+
+    val isDoingYoga = viewModel.isDoingYogaLiveData.observeAsState().value
+    val yogaAsanaState = viewModel.yogaAsanaStateLiveData.observeAsState().value?: YogaAsanaState(0, false)
+    val coroutineScope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     Column(Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally) {
-        SimpleAppBar(title = routineTitle, expanded = false, Color.Black, onNavigateBack)
+        SimpleAppBar(title = sessionTitle, expanded = false, Color.Black, onNavigateBack)
         Column(
             Modifier
                 .fillMaxWidth()
@@ -511,28 +518,19 @@ fun GymSetScreen(
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(modifier = Modifier.height(16.dp))
-            val iconId = setIdentifierToIconMap[currentGymSet.identifier]
-            if (iconId == null) {
-                Box(
-                    modifier = Modifier
-                        .size(144.dp)
-                        .background(Color.Yellow)
-                )
-            } else {
-                Image(
-                    painter = painterResource(id = iconId),
-                    contentDescription = null,
-                    Modifier.size(144.dp),
-                    alignment = Alignment.Center,
-                    contentScale = ContentScale.Crop
-                )
-            }
+
+            Box(
+                modifier = Modifier
+                    .size(144.dp)
+                    .background(Color.Yellow)
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
-            Text(setTitle, style = MaterialTheme.typography.h5)
+            Text(asanaTitle, style = MaterialTheme.typography.h5)
         }
         Divider(color = Color.Gray.copy(0.5f))
-        val canGoPrevious = gymSetIndex > 0
-        val canGoNext = gymSetIndex < currentRoutine.sets.size - 1
+        val canGoPrevious = yogaAsanaIndex > 0
+        val canGoNext = yogaAsanaIndex < currentSession.asanas.size - 1
         Column(
             Modifier
                 .fillMaxWidth()
@@ -541,80 +539,97 @@ fun GymSetScreen(
             verticalArrangement = Arrangement.SpaceEvenly,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row {
-                val counterText = String.format("%02d", repCount)
-                Text(counterText, style = MaterialTheme.typography.h3)
-                Column {
-                    Image(
-                        painter = painterResource(id = R.drawable.plus_circle),
-                        contentDescription = "increment",
-                        Modifier.clickable {
-                            if(repCount + 1 <= 99) {
-                                setRepCount(repCount + 1)
-                            }
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Image(
-                        painter = painterResource(id = R.drawable.minus_circle),
-                        contentDescription = "decrement",
-                        Modifier.clickable {
-                            if(repCount - 1 >= 0) {
-                                setRepCount(repCount - 1)
-                            }
-                        }
-                    )
+            var counterText = "00:00"
+            val duration = yogaAsanaState.timeLeft.toDuration(DurationUnit.MILLISECONDS)
+            duration.toComponents { hours, minutes, seconds, nanoseconds ->
+                val roundedSeconds = if(nanoseconds / 1_000_000 > 0) {
+                    seconds + 1
+                } else {
+                    seconds
                 }
+                val formatted = if(hours > 0) {
+                    String.format("%02d", hours) + ":" + String.format("%02d", minutes) + ":" + String.format("%02d", roundedSeconds)
+                } else {
+                    String.format("%02d", minutes) + ":" + String.format("%02d", roundedSeconds)
+                }
+                counterText = formatted
             }
+            Text(counterText, style = MaterialTheme.typography.h3)
 
-            val endSetResult = viewModel.endSetLiveData.observeAsState().value
+            val endAsanaResult = viewModel.endAsanaLiveData.observeAsState().value
             val endWorkoutResult = viewModel.endCurrentWorkoutLiveData.observeAsState().value
+
             val nextButtonEnabled = if (canGoNext) {
-                endSetResult !is SimpleResult.Processing
+                endAsanaResult !is SimpleResult.Processing
             } else {
                 endWorkoutResult !is SimpleResult.Processing
             }
-            val coroutineScope = rememberCoroutineScope()
-            val lifecycleOwner = LocalLifecycleOwner.current
             SimpleGradientButton(onClicked = {
                 coroutineScope.launch {
-                    if (canGoNext) {
-                        viewModel.endSet(repCount)
-                        viewModel.endSetLiveData.observe(lifecycleOwner) {
-                            if(it is SimpleResult.Success) {
-                                onNavigateNextSet(gymRoutineIndex, gymSetIndex + 1)
-                            }
+                    if(yogaAsanaState.timeLeft > 0) {
+                        if(yogaAsanaState.isPaused) {
+                            viewModel.resumeAsana()
+                        } else {
+                            viewModel.pauseAsana()
                         }
                     } else {
-                        viewModel.endCurrentWorkout(repCount)
-                        viewModel.endCurrentWorkoutLiveData.observe(lifecycleOwner) {
-                            if(it is SimpleResult.Success) {
-                                onNavigateRoutinesScreen()
+                        if (canGoNext) {
+                            viewModel.endAsana()
+                            viewModel.endAsanaLiveData.observe(lifecycleOwner) {
+                                if (it is SimpleResult.Success) {
+                                    onNavigateNextAsana(yogaSessionIndex, yogaAsanaIndex + 1)
+                                }
+                            }
+                        } else {
+                            viewModel.endCurrentWorkout()
+                            viewModel.endCurrentWorkoutLiveData.observe(lifecycleOwner) {
+                                if (it is SimpleResult.Success) {
+                                    onNavigateSessionsScreen()
+                                }
                             }
                         }
                     }
-
                 }
 
             },
                 modifier = Modifier, 16.dp, nextButtonEnabled) {
                 Row {
-                    if(canGoNext) {
-                        Text(
-                            "Next",
-                            style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Image(
-                            painter = painterResource(id = R.drawable.arrow_right),
-                            contentDescription = "next",
-                            colorFilter = ColorFilter.tint(Color.White)
-                        )
+                    if(yogaAsanaState.timeLeft > 0) {
+                        if(yogaAsanaState.isPaused) {
+                            Image(
+                                painter = painterResource(id = R.drawable.baseline_play_arrow_24_white),
+                                contentDescription = "play",
+                                colorFilter = ColorFilter.tint(Color.White)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Resume",
+                                style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.baseline_pause_24_white),
+                                contentDescription = "pause",
+                                colorFilter = ColorFilter.tint(Color.White)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Pause",
+                                style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
+                            )
+                        }
                     } else {
-                        Text(
-                            "Finish",
-                            style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
-                        )
+                        if(canGoNext) {
+                            Text(
+                                "Next",
+                                style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
+                            )
+                        } else {
+                            Text(
+                                "Finish",
+                                style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
+                            )
+                        }
                     }
                 }
             }
@@ -638,9 +653,23 @@ fun GymSetScreen(
                 Text("Previous")
             }
             Spacer(modifier = Modifier.weight(1f))
-            Row(Modifier.clickable {
-
-            }) {
+            val skipResult = viewModel.skipLiveData.observeAsState().value
+            val canSkip = (skipResult !is SimpleResult.Processing) and (yogaAsanaState.timeLeft > 0)
+            val skipClickModifier = if(canSkip) {
+                Modifier.clickable {
+//                    if(canGoNext) {
+                        viewModel.skipAsana()
+                        viewModel.skipLiveData.observe(lifecycleOwner) {
+                            if (it is SimpleResult.Success && canGoNext) {
+                                onNavigateNextAsana(yogaSessionIndex, yogaAsanaIndex + 1)
+                            }
+//                        }
+                    }
+                }
+            } else {
+                Modifier
+            }
+            Row(skipClickModifier) {
                 Image(
                     painter = painterResource(id = R.drawable.skip_next_previous),
                     contentDescription = "skip",
@@ -649,14 +678,15 @@ fun GymSetScreen(
             }
         }
     }
+
 }
 
 @Composable
-fun SimpleGymRoutineItem(
+fun SimpleYogaSessionItem(
 //    photoRawResId: Int,
     index: Int,
-    routineTemplate: GymRoutineTemplate,
-    onRoutineSelected: (index: Int) -> Unit,
+    sessionTemplate: YogaSessionTemplate,
+    onSessionSelected: (index: Int) -> Unit,
     modifier: Modifier
 ) {
     Box(
@@ -665,49 +695,40 @@ fun SimpleGymRoutineItem(
             .background(Color.Red)
             .height(168.dp)
             .clickable {
-                onRoutineSelected(index)
+                onSessionSelected(index)
             }
             .then(modifier),
         contentAlignment = Alignment.Center
     ) {
-        Text(routineTemplate.routineName,
+        Text(sessionTemplate.sessionName,
             style = MaterialTheme.typography.h4.copy(color = Color.White)
         )
     }
 }
 
 @Composable
-fun SimpleGymSetItem(
-    gymSet: GymRoutineTemplate.GymSetTemplate,
-    onViewTutorial: (setIdentifier: String) -> Unit,
+fun SimpleYogaAsanaItem(
+    yogaAsana: YogaSessionTemplate.YogaAsanaTemplate,
+    onViewTutorial: (asanaIdentifier: String) -> Unit,
     modifier: Modifier
 ) {
     Row(
         Modifier
             .clickable {
-                onViewTutorial(gymSet.identifier)
+                onViewTutorial(yogaAsana.identifier)
             }
             .fillMaxWidth()
             .padding(vertical = 16.dp, horizontal = 32.dp)
             .then(modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val iconId = setIdentifierToIconMap[gymSet.identifier]
-        if(iconId == null) {
-            Box(modifier = Modifier
-                .size(96.dp)
-                .background(Color.Yellow))
-        } else {
-            Image(painter = painterResource(id = iconId),
-                contentDescription = null,
-                Modifier.size(96.dp),
-                alignment = Alignment.Center,
-                contentScale = ContentScale.Crop)
-        }
+        Box(modifier = Modifier
+            .size(96.dp)
+            .background(Color.Yellow))
         Spacer(modifier = Modifier.width(16.dp))
         val context = LocalContext.current
-        val setTitleMap = (context.applicationContext as FitnessApp).setIdentifierTitles
-        val title = setTitleMap[gymSet.identifier]?._default ?: "Unknown"
+        val asanaTitleMap = (context.applicationContext as FitnessApp).asanaIdentifierTitles
+        val title = asanaTitleMap[yogaAsana.identifier]?._default ?: "Unknown"
         Text(title,
             style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
     }

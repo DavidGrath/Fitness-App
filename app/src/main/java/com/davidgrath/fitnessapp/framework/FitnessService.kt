@@ -938,6 +938,9 @@ class FitnessService: Service() {
         }
 
         fun skipYogaAsana() : Single<Int> {
+            if(currentYogaAsanaIdentifier.isBlank()) {
+                return Single.just(0)
+            }
             yogaAsanaTimerUpdateFuture?.cancel(true)
             yogaAsanaTimeLeftUpdateFuture?.cancel(true)
             val timestamp = Date().time

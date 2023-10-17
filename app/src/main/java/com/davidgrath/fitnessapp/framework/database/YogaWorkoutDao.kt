@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.framework.database
 
+import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.data.entities.YogaWorkout
 import com.davidgrath.fitnessapp.util.dateAsEnd
 import com.davidgrath.fitnessapp.util.dateAsStart
@@ -23,7 +24,7 @@ class YogaWorkoutDao {
         return Single.just(incrementId++)
     }
 
-    //READ
+    //region READ
     fun getAllWorkoutsSingle() : Single<List<YogaWorkout>> {
         return Single.just(workoutList)
     }
@@ -48,7 +49,7 @@ class YogaWorkoutDao {
         }
     }
 
-    fun getAllWorkoutsByDateRangeSingle(startDate: Date?, endDate: Date?): Single<List<YogaWorkout>> {
+    fun getWorkoutsByDateRangeSingle(startDate: Date?, endDate: Date?): Single<List<YogaWorkout>> {
         return Single.just(workoutList).map {
             val filtered = it.filter {
                 if(startDate != null) {
@@ -68,6 +69,34 @@ class YogaWorkoutDao {
             filtered
         }
     }
+
+    fun getWorkoutsSummaryByDateRangeSingle(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary> {
+        return Single.just(workoutList).map {
+            val filtered = it.filter {
+                if (startDate != null) {
+                    if (endDate != null) {
+                        dateAsStart(startDate).time <= it.date && it.date <= dateAsEnd(endDate).time
+                    } else {
+                        dateAsStart(startDate).time <= it.date
+                    }
+                } else {
+                    if (endDate != null) {
+                        it.date <= dateAsEnd(endDate).time
+                    } else {
+                        true
+                    }
+                }
+            }
+            val summary = WorkoutSummary(
+                filtered.sumOf { it.kCalBurned },
+                filtered.size,
+                (filtered.sumOf { it.duration } / 60_000).toInt()
+            )
+            summary
+
+        }
+    }
+    //endregion
 
     //UPDATE
     fun setWorkoutDurationAndKCalBurned(workoutId: Int, duration: Long, kCalBurned: Int) : Single<Int> {

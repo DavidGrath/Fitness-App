@@ -17,9 +17,29 @@ sealed class BasicNavScreen(val path: String) {
     object GymDashboardNav : BasicNavScreen("home/gym")
     object GymHistoryNav : BasicNavScreen("home/gym/history")
     object GymRoutineListNav : BasicNavScreen("home/gym/routines")
-    object GymRoutineSetsNav : BasicNavScreen("home/gym/routines/{routineId}/sets")
-    object GymSetNav : BasicNavScreen("home/gym/routines/{routineId}/sets/{setId}")
+    object GymRoutineSetsNav : BasicNavScreen("home/gym/routines/{routineId}/sets") {
+        fun getPathWithArgs(routineId: Int) : String {
+            return "home/gym/routines/$routineId/sets"
+        }
+    }
+    object GymSetNav : BasicNavScreen("home/gym/routines/{routineId}/sets/{setId}") {
+        fun getPathWithArgs(routineId: Int, setId: Int) : String {
+            return "home/gym/routines/$routineId/sets/$setId"
+        }
+    }
     object YogaDashboardNav : BasicNavScreen("home/yoga")
+    object YogaHistoryNav : BasicNavScreen("home/yoga/history")
+    object YogaSessionListNav : BasicNavScreen("home/yoga/sessions")
+    object YogaSessionAsanasNav : BasicNavScreen("home/yoga/sessions/{sessionId}/asanas") {
+        fun getPathWithArgs(sessionId: Int) : String {
+            return "home/yoga/sessions/$sessionId/asanas"
+        }
+    }
+    object YogaAsanaNav : BasicNavScreen("home/yoga/sessions/{sessionId}/asanas/{asanaId}") {
+        fun getPathWithArgs(sessionId: Int, asanaId: Int) : String {
+            return "home/yoga/sessions/$sessionId/asanas/$asanaId"
+        }
+    }
 
     object ProfileNav : BasicNavScreen("profile")
 

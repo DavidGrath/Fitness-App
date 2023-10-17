@@ -550,13 +550,13 @@ fun SimpleGradientButton(
     }
     Box(
         modifier
+            .background(brush = Brush.linearGradient(colors), RoundedCornerShape(cornerRadius))
             .clickable(
                 onClick = onClicked,
                 interactionSource = interactionSource,
                 indication = rememberRipple(),
                 enabled = enabled
             )
-            .background(brush = Brush.linearGradient(colors), RoundedCornerShape(cornerRadius))
             .padding(horizontal = 32.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {

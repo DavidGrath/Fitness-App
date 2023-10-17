@@ -1,4 +1,4 @@
-package com.davidgrath.fitnessapp.ui.gym
+package com.davidgrath.fitnessapp.ui.entities
 
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName

@@ -44,6 +44,7 @@ import com.davidgrath.fitnessapp.ui.running.RunningActivity
 import com.davidgrath.fitnessapp.ui.settings.SettingsScreen
 import com.davidgrath.fitnessapp.ui.swimming.SwimmingActivity
 import com.davidgrath.fitnessapp.ui.walking.WalkingActivity
+import com.davidgrath.fitnessapp.ui.yoga.YogaActivity
 
 
 @Composable
@@ -210,7 +211,9 @@ fun HomeNavHost(
                     BasicNavScreen.WalkingDashboardNav -> {
                         context.startActivity(Intent(context, WalkingActivity::class.java))
                     }
-                    BasicNavScreen.YogaDashboardNav -> {}
+                    BasicNavScreen.YogaDashboardNav -> {
+                        context.startActivity(Intent(context, YogaActivity::class.java))
+                    }
                     else -> {
                         navController.navigate(it.path)
                     }
@@ -228,7 +231,7 @@ fun HomeNavHost(
             SwimmingHistory {
                 navController.popBackStack()
             }
-        }*/
+        }
         composable(route = BasicNavScreen.CyclingDashboardNav.path) {
             Box(
                 modifier = Modifier
@@ -263,7 +266,7 @@ fun HomeNavHost(
                     .background(Color.Cyan)
                     .fillMaxSize()
             )
-        }
+        }*/
         composable(route = BasicNavScreen.ProfileNav.path) {
             ProfileScreen()
         }
