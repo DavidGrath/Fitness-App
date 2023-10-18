@@ -37,6 +37,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
+import com.davidgrath.fitnessapp.ui.components.navigateSingleTopTo
 import com.davidgrath.fitnessapp.ui.cycling.CyclingActivity
 import com.davidgrath.fitnessapp.ui.gym.GymActivity
 import com.davidgrath.fitnessapp.ui.profile.ProfileScreen
@@ -157,7 +158,7 @@ fun NavBar(
         )
         BottomNavigationItem(
             selected = root.equals("profile", true),
-            onClick = { navController.navigate(BasicNavScreen.ProfileNav.path) },
+            onClick = { navController.navigateSingleTopTo(BasicNavScreen.ProfileNav.path) },
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.account),
@@ -169,7 +170,7 @@ fun NavBar(
         )
         BottomNavigationItem(
             selected = root.equals("settings", true),
-            onClick = { navController.navigate(BasicNavScreen.SettingsNav.path) },
+            onClick = { navController.navigateSingleTopTo(BasicNavScreen.SettingsNav.path) },
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.settings),
@@ -268,10 +269,18 @@ fun HomeNavHost(
             )
         }*/
         composable(route = BasicNavScreen.ProfileNav.path) {
-            ProfileScreen()
+            ProfileScreen(
+                {
+                    navController.popBackStack()
+                }
+            )
         }
         composable(route = BasicNavScreen.SettingsNav.path) {
-            SettingsScreen()
+            SettingsScreen(
+                {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 

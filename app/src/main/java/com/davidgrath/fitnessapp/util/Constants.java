@@ -13,11 +13,17 @@ public class Constants {
         public static final String LAST_NAME = "lastName";
         public static final String EMAIL = "email";
         public static final String GENDER = "gender";
+        /**
+         * integer, so I don't forget
+         */
         public static final String HEIGHT = "height";
         public static final String HEIGHT_UNIT = "heightUnit";
         public static final String BIRTH_DATE_DAY = "birthDateDay";
         public static final String BIRTH_DATE_MONTH = "birthDateMonth";
         public static final String BIRTH_DATE_YEAR = "birthDateYear";
+        /**
+         * float, so I don't forget
+         */
         public static final String WEIGHT = "weight";
         public static final String WEIGHT_UNIT = "weightUnit";
     }

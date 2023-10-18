@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,11 +23,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Button
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
+import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.TextFieldDefaults.indicatorLine
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -43,12 +49,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
@@ -811,18 +820,38 @@ fun MapViewComponent(
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TempLocationListItem(
-    locationData: LocationDataUI
+fun UnderlineTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier
 ) {
-    Row(Modifier.fillMaxWidth()) {
-        Text(locationData.latitude.toString(),
-            Modifier.weight(1f),
-            style = MaterialTheme.typography.body1
-        )
-        Text(locationData.longitude.toString(),
-            Modifier.weight(1f),
-            style = MaterialTheme.typography.body1
+    val interactionSource = remember {
+        MutableInteractionSource()
+    }
+    BasicTextField(
+        value = value, onValueChange = onValueChange,
+        interactionSource = interactionSource,
+        textStyle = MaterialTheme.typography.h5
+            .copy(MaterialTheme.colors.primary),
+        modifier = modifier
+            .indicatorLine(
+                true,
+                false,
+                interactionSource,
+                TextFieldDefaults.textFieldColors(),
+                2.dp,
+                2.dp
+            )) { innerTextField ->
+        TextFieldDefaults.TextFieldDecorationBox(
+            value = value,
+            innerTextField = innerTextField,
+            enabled = true,
+            singleLine = true,
+            visualTransformation = VisualTransformation.None,
+            interactionSource = interactionSource,
+            contentPadding = PaddingValues(bottom = 4.dp),
         )
     }
 }
@@ -880,4 +909,14 @@ fun CalendarComponentPreview() {
 //            CalendarComponent(calendar, {}, dates.toTypedArray(), Calendar.SUNDAY, TimeZone.getDefault().id)
 //        }
 //    }
+}
+
+fun NavHostController.navigateSingleTopTo(route: String) {
+    return navigate(route) {
+        popUpTo(this@navigateSingleTopTo.graph.findStartDestination().id) {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
 }

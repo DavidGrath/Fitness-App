@@ -572,7 +572,7 @@ fun BirthDateScreen(
                     update = {
                         val calendar = GregorianCalendar()
                         calendar.clear()
-                        calendar.set(year, month - 1, 1) //0-based month list
+                        calendar.set(year, month, 1)
                         val maxDaysForMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
                         it.maxValue = maxDaysForMonth
                         if(day !in 1..maxDaysForMonth) {
@@ -587,8 +587,8 @@ fun BirthDateScreen(
                     factory = { context ->
                         val view = NumberPicker(context)
                         view.wrapSelectorWheel = true
-                        view.minValue = 1
-                        view.maxValue = 12
+                        view.minValue = 0
+                        view.maxValue = 11
                         view.displayedValues = displayMonths
                         view.setOnValueChangedListener { picker, old, new ->
                             setMonth(new)
@@ -596,8 +596,8 @@ fun BirthDateScreen(
                         view
                     },
                     update = {
-                        if(month !in 1..12) {
-                            setMonth(1)
+                        if(month !in 0..11) {
+                            setMonth(0)
                         } else {
                             it.value = month
                         }
