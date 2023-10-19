@@ -2,9 +2,7 @@ package com.davidgrath.fitnessapp.ui.home
 
 import android.content.Intent
 import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,16 +38,19 @@ import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.navigateSingleTopTo
 import com.davidgrath.fitnessapp.ui.cycling.CyclingActivity
 import com.davidgrath.fitnessapp.ui.gym.GymActivity
+import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModel
 import com.davidgrath.fitnessapp.ui.profile.ProfileScreen
 import com.davidgrath.fitnessapp.ui.running.RunningActivity
+import com.davidgrath.fitnessapp.ui.settings.PrivacyPolicyScreen
 import com.davidgrath.fitnessapp.ui.settings.SettingsScreen
+import com.davidgrath.fitnessapp.ui.settings.TermsAndConditionsScreen
 import com.davidgrath.fitnessapp.ui.swimming.SwimmingActivity
 import com.davidgrath.fitnessapp.ui.walking.WalkingActivity
 import com.davidgrath.fitnessapp.ui.yoga.YogaActivity
 
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(viewModel: OnboardingViewModel) {
 
     val navController = rememberNavController()
     Scaffold(
@@ -59,6 +60,7 @@ fun HomeScreen() {
     ) { padding ->
         HomeNavHost(
             navController,
+            viewModel,
             Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -186,6 +188,7 @@ fun NavBar(
 @Composable
 fun HomeNavHost(
     navController: NavHostController,
+    viewModel: OnboardingViewModel,
     modifier: Modifier
 ) {
     NavHost(
@@ -270,6 +273,7 @@ fun HomeNavHost(
         }*/
         composable(route = BasicNavScreen.ProfileNav.path) {
             ProfileScreen(
+                viewModel,
                 {
                     navController.popBackStack()
                 }
@@ -278,9 +282,25 @@ fun HomeNavHost(
         composable(route = BasicNavScreen.SettingsNav.path) {
             SettingsScreen(
                 {
+                    navController.navigate(BasicNavScreen.PrivacyPolicyNav.path)
+                },
+                {
+                    navController.navigate(BasicNavScreen.TermsAndConditionsNav.path)
+                },
+                {
                     navController.popBackStack()
                 }
             )
+        }
+        composable(route = BasicNavScreen.PrivacyPolicyNav.path) {
+            PrivacyPolicyScreen( {
+                navController.popBackStack()
+            })
+        }
+        composable(route = BasicNavScreen.TermsAndConditionsNav.path) {
+            TermsAndConditionsScreen({
+                navController.popBackStack()
+            })
         }
     }
 

@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
@@ -40,15 +42,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -825,16 +834,32 @@ fun MapViewComponent(
 fun UnderlineTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
+    isEmail: Boolean = false,
+    textStyle: TextStyle = MaterialTheme.typography.h5.copy(MaterialTheme.colors.primary),
+    onDone: (() -> Unit) = { }
 ) {
     val interactionSource = remember {
         MutableInteractionSource()
     }
+    val focusManager = LocalFocusManager.current
+    val keyboardOptions = if(isEmail) {
+        KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
+    } else {
+        KeyboardOptions(imeAction = ImeAction.Next)
+    }
     BasicTextField(
         value = value, onValueChange = onValueChange,
         interactionSource = interactionSource,
-        textStyle = MaterialTheme.typography.h5
-            .copy(MaterialTheme.colors.primary),
+        singleLine = true,
+        textStyle = textStyle,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = KeyboardActions(onAny = {
+            if(!focusManager.moveFocus(FocusDirection.Down)) {
+                focusManager.clearFocus()
+            }
+            onDone()
+        }),
         modifier = modifier
             .indicatorLine(
                 true,

@@ -2,6 +2,7 @@ package com.davidgrath.fitnessapp.ui.profile
 
 import android.content.Context
 import android.widget.NumberPicker
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,12 +29,15 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,10 +45,13 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.ui.components.SimpleAppBar
 import com.davidgrath.fitnessapp.ui.components.UnderlineTextField
+import com.davidgrath.fitnessapp.ui.onboarding.OnboardingScreenState
+import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModel
 import com.davidgrath.fitnessapp.util.Constants
 import com.davidgrath.fitnessapp.util.feetAndInchesToInches
 import com.davidgrath.fitnessapp.util.getTensPart
 import com.davidgrath.fitnessapp.util.inchesToFeetAndInches
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.GregorianCalendar
@@ -53,36 +60,29 @@ import kotlin.math.floor
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ProfileScreen(
+    viewModel: OnboardingViewModel,
     onNavigateBack: () -> Unit
 ) {
+
+    val screenState = viewModel.screenStateLiveData.observeAsState().value?: OnboardingScreenState()
+
     Column(modifier = Modifier
         .fillMaxSize()) {
 
         val scrollState = rememberScrollState()
         val context = LocalContext.current
-        val preferences = context.getSharedPreferences(Constants.MAIN_PREFERENCES_NAME, Context.MODE_PRIVATE)
-
-        val (firstName, setFirstName) = remember {
-            mutableStateOf(preferences.getString(Constants.PreferencesTitles.FIRST_NAME, "")!!)
-        }
-        val (lastName, setLastName) = remember {
-            mutableStateOf(preferences.getString(Constants.PreferencesTitles.LAST_NAME, "")!!)
-        }
-        val (email, setEmail) = remember {
-            mutableStateOf(preferences.getString(Constants.PreferencesTitles.EMAIL, "")!!)
-        }
-        val (gender, setGender) = remember {
-            mutableStateOf(preferences.getString(Constants.PreferencesTitles.GENDER, "male")!!)
-        }
+        val lifecycleOwner = LocalLifecycleOwner.current
+        val coroutineScope = rememberCoroutineScope()
 
         SimpleAppBar("User Profile", false, onNavigateBack)
-        Spacer(Modifier.height(8.dp))
+
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp)
         ) {
+            Spacer(Modifier.height(16.dp))
             Text("General Settings", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
             Spacer(Modifier.height(16.dp))
 
@@ -95,17 +95,38 @@ fun ProfileScreen(
             Spacer(Modifier.height(16.dp))
             Text("First Name", style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
-            UnderlineTextField(value = firstName, onValueChange = setFirstName, modifier = Modifier.fillMaxWidth())
+            UnderlineTextField(value = screenState.firstName, onValueChange = viewModel::setFirstName,
+                modifier = Modifier.fillMaxWidth(), textStyle = MaterialTheme.typography.body1.copy(MaterialTheme.colors.primary)) {
+                coroutineScope.launch {
+                    viewModel.submitNameAndEmail().observe(lifecycleOwner) {
+
+                    }
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
             Text("Last Name", style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
-            UnderlineTextField(value = lastName, onValueChange = setLastName, modifier = Modifier.fillMaxWidth())
+            UnderlineTextField(value = screenState.lastName, onValueChange = viewModel::setLastName,
+                modifier = Modifier.fillMaxWidth(), textStyle = MaterialTheme.typography.body1.copy(MaterialTheme.colors.primary)) {
+                coroutineScope.launch {
+                    viewModel.submitNameAndEmail().observe(lifecycleOwner) {
+
+                    }
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
-            Text("Last Name", style = MaterialTheme.typography.body1)
+            Text("Email", style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
-            UnderlineTextField(value = email, onValueChange = setEmail, modifier = Modifier.fillMaxWidth())
+            UnderlineTextField(value = screenState.email, onValueChange = viewModel::setEmail,
+                modifier = Modifier.fillMaxWidth(), true, MaterialTheme.typography.body1.copy(MaterialTheme.colors.primary)) {
+                coroutineScope.launch {
+                    viewModel.submitNameAndEmail().observe(lifecycleOwner) {
+
+                    }
+                }
+            }
 
             val defaultInteractionSource = remember {
                 MutableInteractionSource()
@@ -121,14 +142,12 @@ fun ProfileScreen(
                 mutableStateOf(false)
             }
 
-            val (calendar, setCalendar) = remember {
-                mutableStateOf(Calendar.getInstance().also {
-                    it.set(
-                        preferences.getInt(Constants.PreferencesTitles.BIRTH_DATE_YEAR, 1984),
-                        preferences.getInt(Constants.PreferencesTitles.BIRTH_DATE_MONTH, 0),
-                        preferences.getInt(Constants.PreferencesTitles.BIRTH_DATE_DAY, 1)
-                    )
-                })
+            val calendar = Calendar.getInstance().also {
+                it.set(
+                    screenState.birthDateYear,
+                    screenState.birthDateMonth,
+                    screenState.birthDateDay
+                )
             }
             Spacer(Modifier.height(16.dp))
             Text("Birthdate", style = MaterialTheme.typography.body1)
@@ -148,26 +167,27 @@ fun ProfileScreen(
             if(isBirthdateDialogShowing) {
                 BirthdateDialog(initialBirthdate = calendar,
                     onSaveBirthdate = { c ->
-                        setCalendar(c)
+                        viewModel.setBirthDate(
+                            c.get(Calendar.DAY_OF_MONTH),
+                            c.get(Calendar.MONTH),
+                            c.get(Calendar.YEAR),
+                        )
+                        coroutineScope.launch {
+                            viewModel.submitBirthDate().observe(lifecycleOwner) {}
+                        }
                     },
                     onDismiss = {
                         setIsBirthdateDialogShowing(false)
                     })
             }
 
-            val (height, setHeight) = remember {
-                mutableStateOf(preferences.getInt(Constants.PreferencesTitles.HEIGHT, 0))
-            }
-            val (heightUnit, setHeightUnit) = remember {
-                mutableStateOf(preferences.getString(Constants.PreferencesTitles.HEIGHT_UNIT, Constants.UNIT_HEIGHT_CENTIMETERS)!!)
-            }
             val (isHeightDialogShowing, setIsHeightDialogShowing) = remember {
                 mutableStateOf(false)
             }
-            val heightString = if(heightUnit == Constants.UNIT_HEIGHT_CENTIMETERS) {
-                "$height cm"
+            val heightString = if(screenState.heightUnit == Constants.UNIT_HEIGHT_CENTIMETERS) {
+                "${screenState.height} cm"
             } else {
-                val feetAndInches = inchesToFeetAndInches(height)
+                val feetAndInches = inchesToFeetAndInches(screenState.height)
                 "${feetAndInches.first}'${feetAndInches.second}\""
             }
             Spacer(Modifier.height(16.dp))
@@ -187,30 +207,25 @@ fun ProfileScreen(
                     .background(indicatorColor))
             if(isHeightDialogShowing) {
                 HeightDialog(
-                    initialHeight = height,
-                    initialHeightUnit = heightUnit,
+                    initialHeight = screenState.height,
+                    initialHeightUnit = screenState.heightUnit,
                     onSaveHeight = { h, u ->
-                        setHeight(h)
-                        setHeightUnit(u)
+                        viewModel.setHeight(h, u)
+                        coroutineScope.launch {
+                            viewModel.submitHeight().observe(lifecycleOwner) {}
+                        }
                     },
                     onDismiss = {
                         setIsHeightDialogShowing(false)
                     })
             }
-
-            val (weight, setWeight) = remember {
-                mutableStateOf(preferences.getFloat(Constants.PreferencesTitles.WEIGHT, 0f))
-            }
-            val (weightUnit, setWeightUnit) = remember {
-                mutableStateOf(preferences.getString(Constants.PreferencesTitles.WEIGHT_UNIT, Constants.UNIT_WEIGHT_KG)!!)
-            }
             val (isWeightDialogShowing, setIsWeightDialogShowing) = remember {
                 mutableStateOf(false)
             }
-            val weightString = if(weightUnit == Constants.UNIT_WEIGHT_KG) {
-                "$weight kg"
+            val weightString = if(screenState.weightUnit == Constants.UNIT_WEIGHT_KG) {
+                "${screenState.weight} kg"
             } else {
-                "$weight pounds"
+                "${screenState.weight} pounds"
             }
             Spacer(Modifier.height(16.dp))
             Text("Weight", style = MaterialTheme.typography.body1)
@@ -228,10 +243,12 @@ fun ProfileScreen(
                     .fillMaxWidth()
                     .background(indicatorColor))
             if(isWeightDialogShowing) {
-                WeightDialog(initialWeight = weight, initialWeightUnit = weightUnit,
+                WeightDialog(initialWeight = screenState.weight, initialWeightUnit = screenState.weightUnit,
                     onSaveWeight = { w, u ->
-                        setWeight(w)
-                        setWeightUnit(u)
+                        viewModel.setWeight(w, u)
+                        coroutineScope.launch {
+                            viewModel.submitWeight().observe(lifecycleOwner) {}
+                        }
                     },
                     onDismiss = {
                         setIsWeightDialogShowing(false)
@@ -242,12 +259,12 @@ fun ProfileScreen(
             val otherColor = Color.Black
             Spacer(Modifier.height(16.dp))
             Row {
-                val maleIconColor = if (gender.equals("male", true)) {
+                val maleIconColor = if (screenState.gender.equals("male", true)) {
                     primaryColor
                 } else {
                     otherColor
                 }
-                val femaleIconColor = if (gender.equals("female", true)) {
+                val femaleIconColor = if (screenState.gender.equals("female", true)) {
                     primaryColor
                 } else {
                     otherColor
@@ -257,7 +274,10 @@ fun ProfileScreen(
                     contentDescription = "male",
                     Modifier
                         .clickable {
-                            setGender("male")
+                            viewModel.setGender("male")
+                            coroutineScope.launch {
+                                viewModel.submitGender().observe(lifecycleOwner) {}
+                            }
                         }
                         .padding(8.dp)
                         .size(24.dp),
@@ -269,7 +289,10 @@ fun ProfileScreen(
                     contentDescription = "female",
                     Modifier
                         .clickable {
-                            setGender("female")
+                            viewModel.setGender("female")
+                            coroutineScope.launch {
+                                viewModel.submitGender().observe(lifecycleOwner) {}
+                            }
                         }
                         .padding(8.dp)
                         .size(24.dp),
@@ -307,19 +330,21 @@ fun WeightDialog(
         },
         confirmButton = {
             Text("Save",
-                Modifier.padding(8.dp)
+                Modifier
+                    .padding(8.dp)
                     .clickable {
-                    onSaveWeight(dialogWeight, dialogWeightUnit)
-                    onDismiss()
-                }
+                        onSaveWeight(dialogWeight, dialogWeightUnit)
+                        onDismiss()
+                    }
             )
         },
         dismissButton = {
             Text("Cancel",
-                Modifier.padding(8.dp)
+                Modifier
+                    .padding(8.dp)
                     .clickable {
-                    onDismiss()
-                }
+                        onDismiss()
+                    }
             )
         },
         text = {
@@ -467,19 +492,21 @@ fun HeightDialog(
         },
         confirmButton = {
             Text("Save",
-                Modifier.padding(8.dp)
+                Modifier
+                    .padding(8.dp)
                     .clickable {
-                    onSaveHeight(dialogHeight, dialogHeightUnit)
-                    onDismiss()
-                }
+                        onSaveHeight(dialogHeight, dialogHeightUnit)
+                        onDismiss()
+                    }
             )
         },
         dismissButton = {
             Text("Cancel",
-                Modifier.padding(8.dp)
+                Modifier
+                    .padding(8.dp)
                     .clickable {
-                    onDismiss()
-                }
+                        onDismiss()
+                    }
             )
         },
         text = {
@@ -621,22 +648,27 @@ fun BirthdateDialog(
         },
         confirmButton = {
             Text("Set",
-                Modifier.padding(8.dp)
+                Modifier
+                    .padding(8.dp)
                     .clickable {
-                    onSaveBirthdate(Calendar.getInstance().also {
-                        it.clear()
-                        it.set(dialogYear, dialogMonth, dialogDay)
-                    })
-                    onDismiss()
-                }
+                        onSaveBirthdate(
+                            Calendar
+                                .getInstance()
+                                .also {
+                                    it.clear()
+                                    it.set(dialogYear, dialogMonth, dialogDay)
+                                })
+                        onDismiss()
+                    }
             )
         },
         dismissButton = {
             Text("Cancel",
-                Modifier.padding(8.dp)
+                Modifier
+                    .padding(8.dp)
                     .clickable {
-                    onDismiss()
-                }
+                        onDismiss()
+                    }
             )
         },
         text = {

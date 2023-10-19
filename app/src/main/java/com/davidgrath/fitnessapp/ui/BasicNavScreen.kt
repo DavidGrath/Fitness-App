@@ -44,5 +44,7 @@ sealed class BasicNavScreen(val path: String) {
     object ProfileNav : BasicNavScreen("profile")
 
     object SettingsNav : BasicNavScreen("settings")
+    object PrivacyPolicyNav : BasicNavScreen("settings/privacy-policy")
+    object TermsAndConditionsNav : BasicNavScreen("settings/terms-and-conditions")
 
 }
