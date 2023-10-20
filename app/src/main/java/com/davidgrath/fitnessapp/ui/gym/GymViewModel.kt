@@ -6,9 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.davidgrath.fitnessapp.data.GymRepository
-import com.davidgrath.fitnessapp.data.entities.GymWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.FitnessService
+import com.davidgrath.fitnessapp.framework.database.entities.GymWorkout
 import com.davidgrath.fitnessapp.ui.entities.TempVideoDetails
 import com.davidgrath.fitnessapp.util.SimpleResult
 import com.google.gson.Gson
@@ -26,7 +26,7 @@ class GymViewModel(
     private val gymRepository: GymRepository
 ): ViewModel() {
 
-    var currentWorkoutId: Int = -1
+    var currentWorkoutId: Long = -1
         private set
 
     private val _pastWeekWorkoutsLiveData = MutableLiveData<SimpleResult<List<GymWorkout>>>()

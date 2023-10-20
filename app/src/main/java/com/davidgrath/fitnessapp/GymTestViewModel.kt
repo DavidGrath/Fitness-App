@@ -12,7 +12,7 @@ class GymTestViewModel(
 //    private val gymRepository: GymRepository
 ): ViewModel() {
 
-    var currentWorkoutId: Int = -1
+    var currentWorkoutId: Long = -1
     private set
 
     //TODO this is basically illegal by architecture standards but I'm not abstracting just yet

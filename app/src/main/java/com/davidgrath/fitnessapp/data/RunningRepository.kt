@@ -1,19 +1,20 @@
 package com.davidgrath.fitnessapp.data
 
-import com.davidgrath.fitnessapp.data.entities.RunningLocationData
-import com.davidgrath.fitnessapp.data.entities.RunningWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
-import com.davidgrath.fitnessapp.framework.database.RunningLocationDataDao
-import com.davidgrath.fitnessapp.framework.database.RunningWorkoutDao
+import com.davidgrath.fitnessapp.framework.database.dao.RunningLocationDataDao
+import com.davidgrath.fitnessapp.framework.database.dao.RunningWorkoutDao
+import com.davidgrath.fitnessapp.framework.database.entities.RunningLocationData
+import com.davidgrath.fitnessapp.framework.database.entities.RunningWorkout
+import com.davidgrath.fitnessapp.util.dateAsStart
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import java.util.Date
 
 interface RunningRepository {
-    fun getWorkout(workoutId: Int): Observable<RunningWorkout>
+    fun getWorkout(workoutId: Long): Observable<RunningWorkout>
     fun getAllWorkoutsSingle() : Single<List<RunningWorkout>>
-    fun getWorkoutLocationData(workoutId: Int) : Observable<List<RunningLocationData>>
-    fun getWorkoutLocationDataSingle(workoutId: Int) : Single<List<RunningLocationData>>
+    fun getWorkoutLocationData(workoutId: Long) : Observable<List<RunningLocationData>>
+    fun getWorkoutLocationDataSingle(workoutId: Long) : Single<List<RunningLocationData>>
     fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Single<List<RunningWorkout>>
     fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary>
 }
@@ -23,7 +24,7 @@ class RunningRepositoryImpl(
     private val runningLocationDataDao: RunningLocationDataDao
 ) : RunningRepository {
 
-    override fun getWorkout(workoutId: Int): Observable<RunningWorkout> {
+    override fun getWorkout(workoutId: Long): Observable<RunningWorkout> {
         return runningWorkoutDao.getWorkout(workoutId)
     }
 
@@ -31,19 +32,39 @@ class RunningRepositoryImpl(
         return runningWorkoutDao.getAllWorkoutsSingle()
     }
 
-    override fun getWorkoutLocationData(workoutId: Int): Observable<List<RunningLocationData>> {
+    override fun getWorkoutLocationData(workoutId: Long): Observable<List<RunningLocationData>> {
         return runningLocationDataDao.getWorkoutLocationData(workoutId)
     }
 
-    override fun getWorkoutLocationDataSingle(workoutId: Int): Single<List<RunningLocationData>> {
+    override fun getWorkoutLocationDataSingle(workoutId: Long): Single<List<RunningLocationData>> {
         return runningLocationDataDao.getWorkoutLocationDataSingle(workoutId)
     }
 
     override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Single<List<RunningWorkout>> {
-        return runningWorkoutDao.getWorkoutsByDateRangeSingle(startDate, endDate)
+        val startTime = if(startDate != null) {
+            dateAsStart(startDate).time
+        } else {
+            -1
+        }
+        val endTime = if(endDate != null) {
+            dateAsStart(endDate).time
+        } else {
+            -1
+        }
+        return runningWorkoutDao.getWorkoutsByDateRangeSingle(startTime, endTime)
     }
 
     override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
-        return runningWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startDate, endDate)
+        val startTime = if(startDate != null) {
+            dateAsStart(startDate).time
+        } else {
+            -1
+        }
+        val endTime = if(endDate != null) {
+            dateAsStart(endDate).time
+        } else {
+            -1
+        }
+        return runningWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startTime, endTime)
     }
 }

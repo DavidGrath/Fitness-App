@@ -35,9 +35,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.davidgrath.fitnessapp.R
-import com.davidgrath.fitnessapp.data.entities.CyclingWorkout
-import com.davidgrath.fitnessapp.data.entities.RunningWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
+import com.davidgrath.fitnessapp.framework.database.entities.CyclingWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
 import com.davidgrath.fitnessapp.ui.components.MapViewComponent
@@ -47,7 +46,6 @@ import com.davidgrath.fitnessapp.ui.components.WeekHistoryComponent
 import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
-import com.davidgrath.fitnessapp.ui.running.RunningViewModel
 import com.davidgrath.fitnessapp.util.SimpleResult
 import java.util.Calendar
 import java.util.TimeZone

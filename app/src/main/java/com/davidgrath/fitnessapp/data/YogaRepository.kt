@@ -1,17 +1,18 @@
 package com.davidgrath.fitnessapp.data
 
-import com.davidgrath.fitnessapp.data.entities.GymWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
-import com.davidgrath.fitnessapp.data.entities.YogaWorkout
-import com.davidgrath.fitnessapp.framework.database.YogaAsanaDao
-import com.davidgrath.fitnessapp.framework.database.YogaWorkoutDao
+import com.davidgrath.fitnessapp.framework.database.dao.YogaAsanaDao
+import com.davidgrath.fitnessapp.framework.database.dao.YogaWorkoutDao
+import com.davidgrath.fitnessapp.framework.database.entities.YogaAsana
+import com.davidgrath.fitnessapp.framework.database.entities.YogaWorkout
+import com.davidgrath.fitnessapp.util.dateAsStart
 import io.reactivex.rxjava3.core.Single
 import java.util.Date
 import java.util.TimeZone
 
 interface YogaRepository {
-    fun addWorkout(name: String): Single<Int>
-    fun addAsana(workoutId: Int, setIdentifier: String, timeTaken: Long): Single<Int>
+    fun addWorkout(name: String): Single<Long>
+    fun addAsana(workoutId: Long, asanaIdentifier: String, timeTaken: Long): Single<Long>
     fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Single<List<YogaWorkout>>
     fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary>
 }
@@ -21,22 +22,44 @@ class YogaRepositoryImpl(
     private val yogaAsanaDao: YogaAsanaDao
 ) : YogaRepository {
 
-    override fun addWorkout(name: String): Single<Int> {
+    override fun addWorkout(name: String): Single<Long> {
         val timestamp = Date().time
         val timeZone = TimeZone.getDefault()
-        return yogaWorkoutDao.insertWorkout(timestamp, timeZone.id, name)
+        val yogaWorkout = YogaWorkout(null, timestamp, timeZone.id, name)
+        return yogaWorkoutDao.insertWorkout(yogaWorkout)
     }
 
-    override fun addAsana(workoutId: Int, setIdentifier: String, timeTaken: Long): Single<Int> {
+    override fun addAsana(workoutId: Long, asanaIdentifier: String, timeTaken: Long): Single<Long> {
         val timestamp = Date().time
-        return yogaAsanaDao.insertAsana(workoutId, setIdentifier, timestamp, timeTaken)
+        val yogaAsana = YogaAsana(null, workoutId, asanaIdentifier, timestamp, timeTaken)
+        return yogaAsanaDao.insertAsana(yogaAsana)
     }
 
     override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Single<List<YogaWorkout>> {
-        return yogaWorkoutDao.getWorkoutsByDateRangeSingle(startDate, endDate)
+        val startTime = if(startDate != null) {
+            dateAsStart(startDate).time
+        } else {
+            -1
+        }
+        val endTime = if(endDate != null) {
+            dateAsStart(endDate).time
+        } else {
+            -1
+        }
+        return yogaWorkoutDao.getWorkoutsByDateRangeSingle(startTime, endTime)
     }
 
     override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
-        return yogaWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startDate, endDate)
+        val startTime = if(startDate != null) {
+            dateAsStart(startDate).time
+        } else {
+            -1
+        }
+        val endTime = if(endDate != null) {
+            dateAsStart(endDate).time
+        } else {
+            -1
+        }
+        return yogaWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startTime, endTime)
     }
 }

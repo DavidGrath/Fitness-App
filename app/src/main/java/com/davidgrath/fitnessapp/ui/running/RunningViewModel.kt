@@ -5,9 +5,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.davidgrath.fitnessapp.data.RunningRepository
-import com.davidgrath.fitnessapp.data.entities.RunningWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.FitnessService
+import com.davidgrath.fitnessapp.framework.database.entities.RunningWorkout
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
 import com.davidgrath.fitnessapp.util.SimpleResult
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
@@ -20,7 +20,7 @@ class RunningViewModel(
     private val runningRepository: RunningRepository
 ) : ViewModel() {
 
-    var currentWorkoutId: Int = -1
+    var currentWorkoutId: Long = -1
         private set
 
     //TODO this is basically illegal by architecture standards but I'm not abstracting just yet

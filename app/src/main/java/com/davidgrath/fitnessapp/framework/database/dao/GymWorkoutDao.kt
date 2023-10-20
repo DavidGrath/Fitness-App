@@ -1,14 +1,44 @@
-package com.davidgrath.fitnessapp.framework.database
+package com.davidgrath.fitnessapp.framework.database.dao
 
-import com.davidgrath.fitnessapp.data.entities.GymWorkout
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
-import com.davidgrath.fitnessapp.util.dateAsEnd
-import com.davidgrath.fitnessapp.util.dateAsStart
+import com.davidgrath.fitnessapp.framework.database.entities.GymWorkout
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
-import io.reactivex.rxjava3.subjects.BehaviorSubject
-import java.util.Date
 
+@Dao
+abstract class GymWorkoutDao {
+
+    //CREATE
+    @Insert
+    abstract fun insertWorkout(gymWorkout: GymWorkout) : Single<Long>
+
+    //region READ
+    @Query("SELECT * FROM GymWorkout")
+    abstract fun getAllWorkoutsSingle() : Single<List<GymWorkout>>
+    @Query("SELECT * FROM GymWorkout WHERE id = :workoutId")
+    abstract fun getWorkout(workoutId: Long) : Observable<GymWorkout>
+    @Query("SELECT * FROM GymWorkout WHERE id = :workoutId")
+    abstract fun getWorkoutSingle(workoutId: Long): Single<GymWorkout>
+    @Query("SELECT * FROM GymWorkout WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END)" +
+            " AND (CASE WHEN :endDate == -1 THEN 1 ELSE :endDate <= date END)")
+    abstract fun getWorkoutsByDateRangeSingle(startDate: Long = -1, endDate: Long = -1): Single<List<GymWorkout>>
+    @Query("SELECT SUM(kCalBurned) AS totalCaloriesBurned, COUNT(*) AS workoutCount, (SUM(duration)/60000) AS timeSpentMinutes FROM GymWorkout" +
+            " WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END) AND " +
+            "(CASE WHEN :endDate == -1 THEN 1 ELSE :endDate <= date END)")
+    abstract fun getWorkoutsSummaryByDateRangeSingle(startDate: Long? = -1, endDate: Long = -1): Single<WorkoutSummary>
+
+    //endregion
+
+    //UPDATE
+    @Query("UPDATE GymWorkout SET duration = :duration, kCalBurned = :kCalBurned WHERE id = :workoutId")
+    abstract fun setWorkoutDurationAndKCalBurned(workoutId: Long, duration: Long, kCalBurned: Int) : Single<Int>
+    //DELETE
+}
+
+/*
 class GymWorkoutDao {
     private val workoutList = ArrayList<GymWorkout>()
     private var incrementId = 1
@@ -110,4 +140,4 @@ class GymWorkoutDao {
         }
     }
     //DELETE
-}
+}*/

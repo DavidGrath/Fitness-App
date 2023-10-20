@@ -1,7 +1,20 @@
 <resources>
     <string name="app_name">Fitness App</string>
-    <string name="mapbox_access_token">pk.eyJ1IjoiZGF2aWRncmF0aCIsImEiOiJjbDBjZHBqYWcwYXhnM2JvbXZvN2I4bmV3In0.I-EEsxBWCBqOpgZ5-mYYyg</string>
-<!--    <string name="privacy_policy_part_1">Protecting your privacy policy is very important to us. We hope the following statement will help you understand how our app deals with personal identifiable information (\'PII\') you may occasionally provide to us via internet (the Google Play Platform).-->
+    <string name="mapbox_access_token" translatable="false">pk.eyJ1IjoiZGF2aWRncmF0aCIsImEiOiJjbDBjZHBqYWcwYXhnM2JvbXZvN2I4bmV3In0.I-EEsxBWCBqOpgZ5-mYYyg</string>
+    <string name="settings_language_name">English</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_label_general_settings">General Settings</string>
+    <string name="settings_label_more_settings">More</string>
+    <string name="settings_item_sync_google_fit">Sync to Google Fit</string>
+    <string name="settings_item_remind_to_workout">Remind me to workout</string>
+    <string name="settings_item_units">Units</string>
+    <string name="settings_item_languages">Language options</string>
+    <string name="settings_item_restart_progress">Restart progress</string>
+    <string name="settings_item_support_and_feedback">Support &amp; Feedback</string>
+    <string name="settings_item_terms_and_conditions">Terms &amp; Conditions</string>
+    <string name="settings_item_privacy_policy">Privacy Policy</string>
+    <string name="settings_item_log_out">Log out</string>
+    <!--    <string name="privacy_policy_part_1">Protecting your privacy policy is very important to us. We hope the following statement will help you understand how our app deals with personal identifiable information (\'PII\') you may occasionally provide to us via internet (the Google Play Platform).-->
 
 <!--Generally, we do not collect any PII from you when you download our Android applications. To be specific, we do not require the consumers to get registered before downloading the application, nor do we keep track of the consumer's visit of our application, we even don't have a Server to store such PII.-->
 <!--</string>-->

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FITNESS_APP</string>
+    <string name="settings_language_name">ENGLISH</string>
+
+    <!--Settings-->
+    <string name="settings_title">SETTINGS</string>
+    <string name="settings_label_general_settings">GENERAL_SETTINGS</string>
+    <string name="settings_label_more_settings">MORE</string>
+    <string name="settings_item_sync_google_fit">SYNC_TO_GOOGLE_FIT</string>
+    <string name="settings_item_remind_to_workout">REMIND_ME_TO_WORKOUT</string>
+    <string name="settings_item_units">UNITS</string>
+    <string name="settings_item_languages">LANGUAGE_OPTIONS</string>
+    <string name="settings_item_restart_progress">RESTART_PROGRESS</string>
+    <string name="settings_item_support_and_feedback">SUPPORT_&amp;_FEEDBACK</string>
+    <string name="settings_item_terms_and_conditions">TERMS_&amp;_CONDITIONS</string>
+    <string name="settings_item_privacy_policy">PRIVACY_POLICY</string>
+    <string name="settings_item_log_out">LOG_OUT</string>
+</resources>

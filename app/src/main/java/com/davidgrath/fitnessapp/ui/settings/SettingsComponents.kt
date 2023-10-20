@@ -2,7 +2,9 @@ package com.davidgrath.fitnessapp.ui.settings
 
 import android.text.Html
 import android.text.SpannableStringBuilder
+import android.text.TextUtils
 import android.text.style.BackgroundColorSpan
+import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -18,28 +20,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.RadioButton
 import androidx.compose.material.Switch
 import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import androidx.core.text.layoutDirection
 import androidx.core.text.set
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.ui.components.SimpleAppBar
+import com.davidgrath.fitnessapp.util.Constants
+import java.util.Locale
 
 
 @Composable
@@ -58,7 +69,7 @@ fun SettingsScreen(
             mutableStateOf(false)
         }
 
-        SimpleAppBar("Settings", false, onNavigateBack)
+        SimpleAppBar(stringResource(R.string.settings_title), false, onNavigateBack)
         Column(
             Modifier
                 .verticalScroll(scrollState)
@@ -66,20 +77,40 @@ fun SettingsScreen(
             Spacer(Modifier.height(16.dp))
             Column {
                 Text(
-                    "General Settings",
+                    stringResource(R.string.settings_label_general_settings),
                     style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                 )
                 Spacer(Modifier.height(16.dp))
-                SimpleSettingsItem(R.drawable.sync,"Sync to Google Fit", {},
+                SimpleSettingsItem(R.drawable.sync, stringResource(R.string.settings_item_sync_google_fit), {},
                     checkable = true, syncToGoogleFitChecked, setSyncToGoogleFitChecked)
-                SimpleSettingsItem(R.drawable.bell_outline,"Remind me to workout", {},
+                SimpleSettingsItem(R.drawable.bell_outline, stringResource(R.string.settings_item_remind_to_workout), {},
                     checkable = true, remindWorkout, setRemindWorkout)
-                SimpleSettingsItem(iconResId = R.drawable.ruler, text = "Units", onClick = {}, checkable = false)
-                SimpleSettingsItem(iconResId = R.drawable.translate, text = "Language options", onClick = {}, checkable = false)
-                SimpleSettingsItem(iconResId = R.drawable.restart, text = "Restart Progress", onClick = {}, checkable = false)
+                SimpleSettingsItem(iconResId = R.drawable.ruler, text = stringResource(R.string.settings_item_units), onClick = {}, checkable = false)
+                val (languageIndex, setLanguageIndex) = rememberSaveable {
+                    mutableStateOf(-1)
+                }
+                val (isLanguageDialogShowing, setIsLanguageDialogShowing) = remember {
+                    mutableStateOf(false)
+                }
+                SimpleSettingsItem(iconResId = R.drawable.translate, text = stringResource(R.string.settings_item_languages),
+                    onClick = {
+                        setIsLanguageDialogShowing(true)
+                    },
+                    checkable = false)
+                if(isLanguageDialogShowing) {
+                    LanguageOptionsDialog(
+                        languageList = Constants.supportedLanguages,
+                        selectedLanguageIndex = languageIndex,
+                        onLanguagePicked = { i ->
+                            setLanguageIndex(i)
+                            setIsLanguageDialogShowing(false)
+                        }
+                    )
+                }
+                SimpleSettingsItem(iconResId = R.drawable.restart, text = stringResource(R.string.settings_item_restart_progress), onClick = {}, checkable = false)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -88,22 +119,22 @@ fun SettingsScreen(
 
             Column {
                 Text(
-                    "More",
+                    stringResource(R.string.settings_label_more_settings),
                     style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                 )
                 Spacer(Modifier.height(16.dp))
-                SimpleSettingsItem(iconResId = R.drawable.face_agent, text = "Support & Feedback", onClick = {}, checkable = false)
-                SimpleSettingsItem(iconResId = R.drawable.pen, text = "Terms & Conditions", onClick = onNavigateTermsAndConditions, checkable = false)
-                SimpleSettingsItem(iconResId = R.drawable.shield, text = "Privacy Policy", onClick = onNavigatePrivacyPolicy, checkable = false)
+                SimpleSettingsItem(iconResId = R.drawable.face_agent, text = stringResource(R.string.settings_item_support_and_feedback), onClick = {}, checkable = false)
+                SimpleSettingsItem(iconResId = R.drawable.pen, text = stringResource(R.string.settings_item_terms_and_conditions), onClick = onNavigateTermsAndConditions, checkable = false)
+                SimpleSettingsItem(iconResId = R.drawable.shield, text = stringResource(R.string.settings_item_privacy_policy), onClick = onNavigatePrivacyPolicy, checkable = false)
             }
             Spacer(Modifier.height(16.dp))
             Divider(Modifier.fillMaxWidth())
             Spacer(Modifier.height(16.dp))
 
-            SimpleSettingsItem(iconResId = R.drawable.logout, text = "Log out", onClick = {}, checkable = false)
+            SimpleSettingsItem(iconResId = R.drawable.logout, text = stringResource(R.string.settings_item_log_out), onClick = {}, checkable = false)
 
             Spacer(Modifier.height(16.dp))
         }
@@ -170,6 +201,59 @@ fun TermsAndConditionsScreen(
             Text(termsAndConditions, style = MaterialTheme.typography.body1)
         }
     }
+}
+
+@Composable
+fun LanguageOptionsDialog(
+    languageList: Array<String>,
+    selectedLanguageIndex: Int,
+    onLanguagePicked: (languageIndex: Int) -> Unit
+) {
+    val (selectedItemIndex, setSelectedItemIndex) = remember {
+        mutableStateOf(selectedLanguageIndex)
+    }
+    val scrollState = rememberScrollState()
+    AlertDialog(onDismissRequest = {},
+        buttons = {},
+        text = {
+            Column(
+                Modifier
+                    .verticalScroll(scrollState)
+                    .selectableGroup()
+            ) {
+                languageList.forEachIndexed { i, lang ->
+                    val locale = Locale(lang)
+                    val displayLanguage = locale.getDisplayLanguage(locale)
+                    Row(
+                        Modifier
+                            .height(48.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                if (selectedItemIndex == i) {
+                                    onLanguagePicked(i)
+                                } else {
+                                    setSelectedItemIndex(i)
+                                }
+                            },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = selectedItemIndex == i,
+                            onClick = null
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        val textDirectionInt = TextUtils.getLayoutDirectionFromLocale(locale)
+                        val textDirection = if(textDirectionInt == View.LAYOUT_DIRECTION_RTL) {
+                            TextDirection.Rtl
+                        } else {
+                            TextDirection.Ltr
+                        }
+                        Text(displayLanguage, Modifier.fillMaxWidth(), style = MaterialTheme.typography.body1.copy(textDirection = textDirection))
+                    }
+
+                }
+            }
+        }
+    )
 }
 
 @Composable

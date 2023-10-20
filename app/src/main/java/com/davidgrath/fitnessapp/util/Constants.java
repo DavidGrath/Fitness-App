@@ -1,5 +1,9 @@
 package com.davidgrath.fitnessapp.util;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
 public class Constants {
     public static final String MAIN_PREFERENCES_NAME = "FitnessApp";
     public static final String UNIT_HEIGHT_INCHES = "inches";
@@ -26,5 +30,25 @@ public class Constants {
          */
         public static final String WEIGHT = "weight";
         public static final String WEIGHT_UNIT = "weightUnit";
+        public static final String CHOSEN_LANGUAGE_CODE = "chosenLanguageCode";
+        public static final String CHOSEN_COUNTRY_CODE = "chosenCountryCode";
     }
+
+    public static final String[] supportedLanguages = new String[]{
+            "en",
+            "fr",
+            "it",
+            "de",
+            "es",
+            "pt",
+            "nl",
+            "pl",
+            "zh",
+            "ja",
+            "tr",
+            "ar",
+            "ur",
+            "id",
+            "vi"
+    };
 }

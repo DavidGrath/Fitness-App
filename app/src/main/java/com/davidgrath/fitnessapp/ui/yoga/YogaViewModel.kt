@@ -8,8 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.davidgrath.fitnessapp.data.YogaRepository
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.data.entities.YogaAsanaState
-import com.davidgrath.fitnessapp.data.entities.YogaWorkout
 import com.davidgrath.fitnessapp.framework.FitnessService
+import com.davidgrath.fitnessapp.framework.database.entities.YogaWorkout
 import com.davidgrath.fitnessapp.ui.entities.TempVideoDetails
 import com.davidgrath.fitnessapp.util.SimpleResult
 import com.google.gson.Gson
@@ -27,7 +27,7 @@ class YogaViewModel(
     private val yogaRepository: YogaRepository
 ): ViewModel() {
 
-    var currentWorkoutId: Int = -1
+    var currentWorkoutId: Long = -1
         private set
 
     private val _addWorkoutLiveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())

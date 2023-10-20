@@ -1,20 +1,19 @@
 package com.davidgrath.fitnessapp
 
+//import com.google.android.gms.common.api.ResolvableApiException
+//import com.google.android.gms.location.LocationRequest
+//import com.google.android.gms.location.LocationServices
+//import com.google.android.gms.location.LocationSettingsRequest
+//import com.google.android.gms.location.Priority
 import android.Manifest
 import android.content.ComponentName
-import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import android.view.View
 import android.view.View.OnClickListener
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.ListView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -26,10 +25,8 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Text
-import androidx.compose.material.swipeable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,8 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -47,21 +42,7 @@ import com.davidgrath.fitnessapp.data.CyclingRepository
 import com.davidgrath.fitnessapp.data.RunningRepository
 import com.davidgrath.fitnessapp.data.SwimmingRepository
 import com.davidgrath.fitnessapp.data.WalkingRepository
-import com.davidgrath.fitnessapp.data.entities.CyclingLocationData
-import com.davidgrath.fitnessapp.data.entities.RunningLocationData
-import com.davidgrath.fitnessapp.data.entities.WalkingLocationData
-import com.davidgrath.fitnessapp.framework.FitnessApp
 import com.davidgrath.fitnessapp.framework.FitnessService
-import com.davidgrath.fitnessapp.ui.home.HomeActivity
-import com.davidgrath.fitnessapp.ui.onboarding.OnboardingActivity
-//import com.google.android.gms.common.api.ResolvableApiException
-//import com.google.android.gms.location.LocationRequest
-//import com.google.android.gms.location.LocationServices
-//import com.google.android.gms.location.LocationSettingsRequest
-//import com.google.android.gms.location.Priority
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.schedulers.Schedulers
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity(), OnClickListener {

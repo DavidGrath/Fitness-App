@@ -1,14 +1,15 @@
 package com.davidgrath.fitnessapp.data
 
-import com.davidgrath.fitnessapp.data.entities.SwimmingWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
-import com.davidgrath.fitnessapp.framework.database.SwimmingWorkoutDao
+import com.davidgrath.fitnessapp.framework.database.dao.SwimmingWorkoutDao
+import com.davidgrath.fitnessapp.framework.database.entities.SwimmingWorkout
+import com.davidgrath.fitnessapp.util.dateAsStart
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import java.util.Date
 
 interface SwimmingRepository {
-    fun getWorkout(workoutId: Int): Observable<SwimmingWorkout>
+    fun getWorkout(workoutId: Long): Observable<SwimmingWorkout>
     fun getAllWorkoutsSingle() : Single<List<SwimmingWorkout>>
     fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Single<List<SwimmingWorkout>>
     fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary>
@@ -18,7 +19,7 @@ class SwimmingRepositoryImpl(
     private val swimmingWorkoutDao: SwimmingWorkoutDao
 ) : SwimmingRepository {
 
-    override fun getWorkout(workoutId: Int): Observable<SwimmingWorkout> {
+    override fun getWorkout(workoutId: Long): Observable<SwimmingWorkout> {
         return swimmingWorkoutDao.getWorkout(workoutId)
     }
 
@@ -27,10 +28,30 @@ class SwimmingRepositoryImpl(
     }
 
     override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Single<List<SwimmingWorkout>> {
-        return swimmingWorkoutDao.getWorkoutsByDateRangeSingle(startDate, endDate)
+        val startTime = if(startDate != null) {
+            dateAsStart(startDate).time
+        } else {
+            -1
+        }
+        val endTime = if(endDate != null) {
+            dateAsStart(endDate).time
+        } else {
+            -1
+        }
+        return swimmingWorkoutDao.getWorkoutsByDateRangeSingle(startTime, endTime)
     }
 
     override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
-        return swimmingWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startDate, endDate)
+        val startTime = if(startDate != null) {
+            dateAsStart(startDate).time
+        } else {
+            -1
+        }
+        val endTime = if(endDate != null) {
+            dateAsStart(endDate).time
+        } else {
+            -1
+        }
+        return swimmingWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startTime, endTime)
     }
 }

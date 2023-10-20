@@ -1,10 +1,31 @@
-package com.davidgrath.fitnessapp.framework.database
+package com.davidgrath.fitnessapp.framework.database.dao
 
-import com.davidgrath.fitnessapp.data.entities.YogaAsana
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.davidgrath.fitnessapp.framework.database.entities.YogaAsana
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 
+@Dao
+abstract class YogaAsanaDao {
+
+    //CREATE
+    @Insert
+    abstract fun insertAsana(yogaAsana: YogaAsana) : Single<Long>
+
+    //READ
+    @Query("SELECT * FROM YogaAsana WHERE workoutId = :workoutId")
+    abstract fun getAllAsanasByWorkoutId(workoutId: Long) : Observable<List<YogaAsana>>
+    @Query("SELECT * FROM YogaAsana WHERE workoutId = :workoutId")
+    abstract fun getAllAsanasByWorkoutIdSingle(workoutId: Long) : Single<List<YogaAsana>>
+
+    //UPDATE
+
+    //DELETE
+}
+
+/*
 class YogaAsanaDao {
 
     private val workoutAsanaList = ArrayList<YogaAsana>()
@@ -39,3 +60,4 @@ class YogaAsanaDao {
 
     //DELETE
 }
+*/

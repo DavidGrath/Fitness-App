@@ -1,10 +1,28 @@
-package com.davidgrath.fitnessapp.framework.database
+package com.davidgrath.fitnessapp.framework.database.dao
 
-import com.davidgrath.fitnessapp.data.entities.CyclingLocationData
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.davidgrath.fitnessapp.framework.database.entities.CyclingLocationData
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 
+@Dao
+abstract class CyclingLocationDataDao {
+
+    //CREATE
+    @Insert
+    abstract fun insertWorkoutLocationData(cyclingLocationData: CyclingLocationData) : Single<Long>
+    //READ
+    @Query("SELECT * FROM CyclingLocationData WHERE workoutId = :workoutId")
+    abstract fun getWorkoutLocationData(workoutId: Long) : Observable<List<CyclingLocationData>>
+    @Query("SELECT * FROM CyclingLocationData WHERE workoutId = :workoutId")
+    abstract fun getWorkoutLocationDataSingle(workoutId: Long) : Single<List<CyclingLocationData>>
+    //UPDATE
+    //DELETE
+}
+
+/*
 class CyclingLocationDataDao {
 
     private val cyclingLocationData = ArrayList<CyclingLocationData>()
@@ -35,4 +53,4 @@ class CyclingLocationDataDao {
     }
     //UPDATE
     //DELETE
-}
+}*/

@@ -1,51 +1,73 @@
 package com.davidgrath.fitnessapp.data
 
-import com.davidgrath.fitnessapp.data.entities.GymWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
-import com.davidgrath.fitnessapp.framework.database.GymRoutineDao
-import com.davidgrath.fitnessapp.framework.database.GymSetDao
-import com.davidgrath.fitnessapp.framework.database.GymWorkoutDao
+import com.davidgrath.fitnessapp.framework.database.dao.GymSetDao
+import com.davidgrath.fitnessapp.framework.database.dao.GymWorkoutDao
+import com.davidgrath.fitnessapp.framework.database.entities.GymSet
+import com.davidgrath.fitnessapp.framework.database.entities.GymWorkout
+import com.davidgrath.fitnessapp.util.dateAsStart
 import io.reactivex.rxjava3.core.Single
 import java.util.Date
 import java.util.TimeZone
 
 interface GymRepository {
-    fun addWorkout(name: String): Single<Int>
-    fun addRoutine(workoutId: Int, routineName: String): Single<Int>
-    fun addSet(routineId: Int, setIdentifier: String, repCount: Int, timed: Boolean, timeTaken: Long): Single<Int>
+    fun addWorkout(name: String): Single<Long>
+//    fun addRoutine(workoutId: Int, routineName: String): Single<Int>
+    fun addSet(workoutId: Long, setIdentifier: String, repCount: Int, timed: Boolean, timeTaken: Long): Single<Long>
     fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Single<List<GymWorkout>>
     fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary>
 }
 
 class GymRepositoryImpl(
     private val gymWorkoutDao: GymWorkoutDao,
-    private val gymRoutineDao: GymRoutineDao,
+//    private val gymRoutineDao: GymRoutineDao,
     private val gymSetDao: GymSetDao
 ): GymRepository {
 
-    override fun addWorkout(name: String): Single<Int> {
+    override fun addWorkout(name: String): Single<Long> {
         val timestamp = Date().time
         val timeZone = TimeZone.getDefault()
-        return gymWorkoutDao.insertWorkout(timestamp, timeZone.id, name)
+        return gymWorkoutDao.insertWorkout(GymWorkout(null, timestamp, timeZone.id, name))
     }
 
-    override fun addRoutine(workoutId: Int, routineName: String): Single<Int> {
+    /*override fun addRoutine(workoutId: Int, routineName: String): Single<Int> {
         val timestamp = Date().time
         return gymRoutineDao.insertRoutine(workoutId, timestamp, routineName)
-    }
+    }*/
 
-    override fun addSet(routineId: Int, setIdentifier: String, repCount: Int, timed: Boolean,
-        timeTaken: Long): Single<Int> {
+    override fun addSet(workoutId: Long, setIdentifier: String, repCount: Int, timed: Boolean,
+        timeTaken: Long): Single<Long> {
         val timestamp = Date().time
-        return gymSetDao.insertSet(routineId, setIdentifier, timestamp, repCount, timed, timeTaken)
+        val gymSet = GymSet(null, workoutId, setIdentifier, timestamp, repCount, timeTaken)
+        return gymSetDao.insertSet(gymSet)
     }
 
     override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Single<List<GymWorkout>> {
-        return gymWorkoutDao.getWorkoutsByDateRangeSingle(startDate, endDate)
+        val startTime = if(startDate != null) {
+            dateAsStart(startDate).time
+        } else {
+            -1
+        }
+        val endTime = if(endDate != null) {
+            dateAsStart(endDate).time
+        } else {
+            -1
+        }
+        return gymWorkoutDao.getWorkoutsByDateRangeSingle(startTime, endTime)
     }
 
     override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
-        return gymWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startDate, endDate)
+        val startTime = if(startDate != null) {
+            dateAsStart(startDate).time
+        } else {
+            -1
+        }
+        val endTime = if(endDate != null) {
+            dateAsStart(endDate).time
+        } else {
+            -1
+        }
+        return gymWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startTime, endTime)
     }
 }
 

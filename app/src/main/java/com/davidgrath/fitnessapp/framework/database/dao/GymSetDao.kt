@@ -1,10 +1,31 @@
-package com.davidgrath.fitnessapp.framework.database
+package com.davidgrath.fitnessapp.framework.database.dao
 
-import com.davidgrath.fitnessapp.data.entities.GymSet
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.davidgrath.fitnessapp.framework.database.entities.GymSet
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 
+@Dao
+abstract class GymSetDao {
+
+    //CREATE
+    @Insert
+    abstract fun insertSet(gymSet: GymSet) : Single<Long>
+
+    //READ
+    @Query("SELECT * FROM GymSet WHERE workoutId = :workoutId")
+    abstract fun getAllSetsByWorkoutId(workoutId: Long) : Observable<List<GymSet>>
+    @Query("SELECT * FROM GymSet WHERE workoutId = :workoutId")
+    abstract fun getAllSetsByWorkoutIdSingle(workoutId: Long) : Single<List<GymSet>>
+
+    //UPDATE
+
+    //DELETE
+}
+
+/*
 class GymSetDao {
     private val workoutSetList = ArrayList<GymSet>()
     private var incrementId = 1
@@ -12,7 +33,7 @@ class GymSetDao {
 
     //CREATE
     fun insertSet(workoutId: Int, setIdentifier: String, timestamp: Long, repCount: Int,
-                   timed: Boolean, timeTaken: Long) : Single<Int> {
+                  timed: Boolean, timeTaken: Long) : Single<Int> {
         workoutSetList.add(
             GymSet(incrementId, workoutId, setIdentifier, timestamp, repCount, timed, timeTaken)
         )
@@ -38,4 +59,4 @@ class GymSetDao {
     //UPDATE
 
     //DELETE
-}
+}*/

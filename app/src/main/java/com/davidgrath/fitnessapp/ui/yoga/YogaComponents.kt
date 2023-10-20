@@ -59,8 +59,8 @@ import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.data.entities.YogaAsanaState
 import com.davidgrath.fitnessapp.data.entities.YogaAsanaTutorial
 import com.davidgrath.fitnessapp.data.entities.YogaSessionTemplate
-import com.davidgrath.fitnessapp.data.entities.YogaWorkout
 import com.davidgrath.fitnessapp.framework.FitnessApp
+import com.davidgrath.fitnessapp.framework.database.entities.YogaWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
 import com.davidgrath.fitnessapp.ui.components.SimpleAppBar

@@ -59,9 +59,9 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.GymRoutineTemplate
 import com.davidgrath.fitnessapp.data.entities.GymSetTutorial
-import com.davidgrath.fitnessapp.data.entities.GymWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.FitnessApp
+import com.davidgrath.fitnessapp.framework.database.entities.GymWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
 import com.davidgrath.fitnessapp.ui.components.SimpleAppBar

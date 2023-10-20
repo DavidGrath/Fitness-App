@@ -35,8 +35,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.davidgrath.fitnessapp.R
-import com.davidgrath.fitnessapp.data.entities.RunningWorkout
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
+import com.davidgrath.fitnessapp.framework.database.entities.RunningWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
 import com.davidgrath.fitnessapp.ui.components.MapViewComponent
