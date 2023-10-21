@@ -473,20 +473,13 @@ fun fillMonth(year: Int, month: Int, firstDayOfWeek: Int, timeZoneId: String) : 
     return monthMatrix
 }
 
-@Composable
-fun SimpleAppBar(
-    title: String,
-    expanded: Boolean,
-    onBackClicked: () -> Unit
-) {
-    SimpleAppBar(title, expanded, MaterialTheme.colors.primary, onBackClicked)
-}
 
 @Composable
 fun SimpleAppBar(
     title: String,
     expanded: Boolean,
-    textColor: Color,
+    centeredWhileCollapsed: Boolean = false,
+    textColor: Color = MaterialTheme.colors.primary,
     onBackClicked: () -> Unit
 ) {
     Surface(elevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
@@ -532,10 +525,16 @@ fun SimpleAppBar(
                         }
 
                 )
+                val textAlign = if(centeredWhileCollapsed) {
+                    TextAlign.Start
+                } else {
+                    TextAlign.Center
+                }
                 Text(
                     title,
-                    style = MaterialTheme.typography.h4,
-                    color = textColor
+                    style = MaterialTheme.typography.h4.copy(textAlign = textAlign),
+                    color = textColor,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

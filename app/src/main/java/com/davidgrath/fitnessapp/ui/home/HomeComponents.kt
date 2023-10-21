@@ -50,6 +50,7 @@ import com.davidgrath.fitnessapp.ui.running.runningNavGraph
 import com.davidgrath.fitnessapp.ui.settings.PrivacyPolicyScreen
 import com.davidgrath.fitnessapp.ui.settings.SettingsScreen
 import com.davidgrath.fitnessapp.ui.settings.TermsAndConditionsScreen
+import com.davidgrath.fitnessapp.ui.settings.settingsNavGraph
 import com.davidgrath.fitnessapp.ui.swimming.SwimmingActivity
 import com.davidgrath.fitnessapp.ui.swimming.SwimmingViewModel
 import com.davidgrath.fitnessapp.ui.swimming.swimmingNavGraph
@@ -173,7 +174,7 @@ fun NavBar(
         val parts = currentRoute?.split("/")
         val root = parts?.get(0)?:""
         BottomNavigationItem(
-            selected = root.equals("home", true),
+            selected = root.equals(BasicNavScreen.ChooseActivityNav.path, true),
             onClick = { navController.navigate(BasicNavScreen.ChooseActivityNav.path) },
             icon = {
                 Icon(painter = painterResource(id = R.drawable.home), contentDescription = "home")
@@ -182,7 +183,7 @@ fun NavBar(
             unselectedContentColor = Color.Gray
         )
         BottomNavigationItem(
-            selected = root.equals("profile", true),
+            selected = root.equals(BasicNavScreen.ProfileNav.path, true),
             onClick = { navController.navigateSingleTopTo(BasicNavScreen.ProfileNav.path) },
             icon = {
                 Icon(
@@ -194,7 +195,7 @@ fun NavBar(
             unselectedContentColor = Color.Gray
         )
         BottomNavigationItem(
-            selected = root.equals("settings", true),
+            selected = root.equals(BasicNavScreen.SettingsNav.path, true),
             onClick = { navController.navigateSingleTopTo(BasicNavScreen.SettingsNav.path) },
             icon = {
                 Icon(
@@ -245,29 +246,7 @@ fun HomeNavHost(
                 }
             )
         }
-        composable(route = BasicNavScreen.SettingsNav.path) {
-            SettingsScreen(
-                {
-                    navController.navigate(BasicNavScreen.PrivacyPolicyNav.path)
-                },
-                {
-                    navController.navigate(BasicNavScreen.TermsAndConditionsNav.path)
-                },
-                {
-                    navController.popBackStack()
-                }
-            )
-        }
-        composable(route = BasicNavScreen.PrivacyPolicyNav.path) {
-            PrivacyPolicyScreen( {
-                navController.popBackStack()
-            })
-        }
-        composable(route = BasicNavScreen.TermsAndConditionsNav.path) {
-            TermsAndConditionsScreen({
-                navController.popBackStack()
-            })
-        }
+        settingsNavGraph(navController)
     }
 
 }

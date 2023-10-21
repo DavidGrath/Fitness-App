@@ -187,7 +187,7 @@ fun SwimmingDashboard(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Swimming", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Swimming", expanded = true, onBackClicked = onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -227,7 +227,7 @@ fun SwimmingHistory(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Swimming", expanded = false, onNavigateBack)
+        SimpleAppBar(title = "Swimming", expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())
@@ -257,7 +257,7 @@ fun SwimmingWorkoutScreen(
 ) {
     Column(Modifier.fillMaxSize()) { // Don't know why I'm pointing this out now, but
         // fillMaxSize is basically match_parent+match_parent
-        SimpleAppBar(title = "Swimming", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Swimming", expanded = true, onBackClicked = onNavigateBack)
         Column(
             Modifier
                 .fillMaxWidth()

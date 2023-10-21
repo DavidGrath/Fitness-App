@@ -6,7 +6,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.davidgrath.fitnessapp.data.UserDataRepository
+import com.davidgrath.fitnessapp.util.Constants
 import com.davidgrath.fitnessapp.util.SimpleResult
+import com.davidgrath.fitnessapp.util.centimetersToInches
+import com.davidgrath.fitnessapp.util.inchesToCentimeters
+import com.davidgrath.fitnessapp.util.kilogramsToPounds
+import com.davidgrath.fitnessapp.util.poundsToKilograms
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.schedulers.Schedulers
 
@@ -117,7 +122,13 @@ class OnboardingViewModel(
     }
 
     fun setHeight(height: Int, unit: String) {
-        screenState = screenState.copy(height = height, heightUnit = unit)
+        var h = height
+        if(screenState.heightUnit == Constants.UNIT_HEIGHT_CENTIMETERS && unit == Constants.UNIT_HEIGHT_INCHES) {
+            h = centimetersToInches(height)
+        } else if(screenState.heightUnit == Constants.UNIT_HEIGHT_INCHES && unit == Constants.UNIT_HEIGHT_CENTIMETERS) {
+            h = inchesToCentimeters(height)
+        }
+        screenState = screenState.copy(height = h, heightUnit = unit)
         _screenStateLiveData.postValue(screenState)
     }
 
@@ -127,7 +138,13 @@ class OnboardingViewModel(
     }
 
     fun setWeight(weight: Float, unit: String) {
-        screenState = screenState.copy(weight = weight, weightUnit = unit)
+        var w = weight
+        if(screenState.weightUnit == Constants.UNIT_WEIGHT_KG && unit == Constants.UNIT_WEIGHT_POUNDS) {
+            w = kilogramsToPounds(weight)
+        } else if(screenState.weightUnit == Constants.UNIT_WEIGHT_POUNDS && unit == Constants.UNIT_WEIGHT_KG) {
+            w = poundsToKilograms(weight)
+        }
+        screenState = screenState.copy(weight = w, weightUnit = unit)
         _screenStateLiveData.postValue(screenState)
     }
 

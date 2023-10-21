@@ -10,6 +10,10 @@ public class Constants {
     public static final String UNIT_HEIGHT_CENTIMETERS = "centimeters";
     public static final String UNIT_WEIGHT_KG = "kilograms";
     public static final String UNIT_WEIGHT_POUNDS = "pounds";
+    public static final String UNIT_DISTANCE_MILES = "miles";
+    public static final String UNIT_DISTANCE_KILOMETERS = "kilometers";
+    public static final String UNIT_TEMPERATURE_CELSIUS = "celsius";
+    public static final String UNIT_TEMPERATURE_FAHRENHEIT = "fahrenheit";
     public static final Character BULLET = '\u2022';
 
     public static final class PreferencesTitles {
@@ -30,6 +34,8 @@ public class Constants {
          */
         public static final String WEIGHT = "weight";
         public static final String WEIGHT_UNIT = "weightUnit";
+        public static final String DISTANCE_UNIT = "distanceUnit";
+        public static final String TEMPERATURE_UNIT = "temperatureUnit";
         public static final String CHOSEN_LANGUAGE_CODE = "chosenLanguageCode";
         public static final String CHOSEN_COUNTRY_CODE = "chosenCountryCode";
     }

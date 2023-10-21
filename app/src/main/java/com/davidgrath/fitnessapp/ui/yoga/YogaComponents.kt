@@ -220,7 +220,7 @@ fun YogaDashboardScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Yoga", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Yoga", expanded = true, onBackClicked = onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -268,7 +268,7 @@ fun YogaHistoryScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Yoga", expanded = false, onNavigateBack)
+        SimpleAppBar(title = "Yoga", expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())
@@ -297,7 +297,7 @@ fun YogaSessionListScreen(
     val sessions = application.defaultYogaSessionTemplates
 
     Column(Modifier.fillMaxSize()) {
-        SimpleAppBar(title = "Yoga", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Yoga", expanded = true, onBackClicked = onNavigateBack)
         LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp),
             contentPadding = PaddingValues(vertical = 24.dp)
         ) {
@@ -394,7 +394,7 @@ fun YogaSessionAsanasScreen(
         }
     ) {
         Column() {
-            SimpleAppBar(title = "", expanded = false, onNavigateBack)
+            SimpleAppBar(title = "", expanded = false, onBackClicked = onNavigateBack)
             Box {
                 Column {
                     Column(
@@ -506,7 +506,7 @@ fun YogaAsanaScreen(
 
     Column(Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally) {
-        SimpleAppBar(title = sessionTitle, expanded = false, Color.Black, onNavigateBack)
+        SimpleAppBar(title = sessionTitle, expanded = false, textColor = Color.Black, onBackClicked = onNavigateBack)
         Column(
             Modifier
                 .fillMaxWidth()

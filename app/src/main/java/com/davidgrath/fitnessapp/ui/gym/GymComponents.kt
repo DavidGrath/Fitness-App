@@ -223,7 +223,7 @@ fun GymDashboardScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Gym", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Gym", expanded = true, onBackClicked =  onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -271,7 +271,7 @@ fun GymHistoryScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Gym", expanded = false, onNavigateBack)
+        SimpleAppBar(title = "Gym", expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())
@@ -300,7 +300,7 @@ fun GymRoutineListScreen(
     val routines = application.defaultGymRoutineTemplates
 
     Column(Modifier.fillMaxSize()) {
-        SimpleAppBar(title = "Gym", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Gym", expanded = true, onBackClicked = onNavigateBack)
         LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp),
             contentPadding = PaddingValues(vertical = 24.dp)
         ) {
@@ -396,7 +396,7 @@ fun GymRoutineSetsScreen(
         }
     ) {
         Column() {
-            SimpleAppBar(title = "", expanded = false, onNavigateBack)
+            SimpleAppBar(title = "", expanded = false, onBackClicked = onNavigateBack)
             Box {
                 Column {
                     Box(
@@ -498,7 +498,7 @@ fun GymSetScreen(
 
     Column(Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally) {
-        SimpleAppBar(title = routineTitle, expanded = false, Color.Black, onNavigateBack)
+        SimpleAppBar(title = routineTitle, expanded = false, textColor = Color.Black, onBackClicked = onNavigateBack)
         Column(
             Modifier
                 .fillMaxWidth()

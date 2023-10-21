@@ -6,6 +6,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.TimeZone
 import kotlin.math.floor
+import kotlin.math.roundToInt
 
 fun inchesToFeetAndInches(inches: Int) : Pair<Int, Int> {
     return (inches / 12) to (inches % 12)
@@ -13,6 +14,23 @@ fun inchesToFeetAndInches(inches: Int) : Pair<Int, Int> {
 
 fun feetAndInchesToInches(feet: Int, inches: Int) : Int {
     return (feet * 12) + inches
+}
+
+
+fun poundsToKilograms(quantity: Float) : Float {
+    return quantity / 2.20462f
+}
+
+fun kilogramsToPounds(quantity: Float) : Float {
+    return quantity * 2.20462f
+}
+
+fun inchesToCentimeters(quantity: Int) : Int {
+    return (quantity * 2.54f).roundToInt()
+}
+
+fun centimetersToInches(quantity: Int) : Int {
+    return (quantity / 2.54f).roundToInt()
 }
 
 //Today I learned why BigDecimal exists - floats are unreliable

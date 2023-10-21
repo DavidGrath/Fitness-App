@@ -184,7 +184,7 @@ fun CyclingDashboard(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Cycling", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Cycling", expanded = true, onBackClicked = onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -224,7 +224,7 @@ fun CyclingHistory(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Cycling", expanded = false, onNavigateBack)
+        SimpleAppBar(title = "Cycling", expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())

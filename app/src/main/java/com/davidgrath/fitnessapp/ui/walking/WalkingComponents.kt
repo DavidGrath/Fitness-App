@@ -182,7 +182,7 @@ fun WalkingDashboard(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Walking", expanded = true, onNavigateBack)
+        SimpleAppBar(title = "Walking", expanded = true, onBackClicked = onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -222,7 +222,7 @@ fun WalkingHistory(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Walking", expanded = false, onNavigateBack)
+        SimpleAppBar(title = "Walking", expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())

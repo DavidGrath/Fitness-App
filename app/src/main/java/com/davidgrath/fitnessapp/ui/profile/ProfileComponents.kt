@@ -74,7 +74,7 @@ fun ProfileScreen(
         val lifecycleOwner = LocalLifecycleOwner.current
         val coroutineScope = rememberCoroutineScope()
 
-        SimpleAppBar("User Profile", false, onNavigateBack)
+        SimpleAppBar("User Profile", false, onBackClicked = onNavigateBack)
 
         Column(
             Modifier

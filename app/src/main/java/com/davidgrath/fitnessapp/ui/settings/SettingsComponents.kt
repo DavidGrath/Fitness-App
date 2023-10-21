@@ -1,15 +1,10 @@
 package com.davidgrath.fitnessapp.ui.settings
 
-import android.text.Html
-import android.text.SpannableStringBuilder
+import android.content.Context
+import android.content.SharedPreferences
 import android.text.TextUtils
-import android.text.style.BackgroundColorSpan
 import android.view.View
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,8 +26,10 @@ import androidx.compose.material.Switch
 import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,23 +37,70 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
-import androidx.core.text.layoutDirection
-import androidx.core.text.set
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.composable
+import androidx.navigation.navigation
 import com.davidgrath.fitnessapp.R
+import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.SimpleAppBar
 import com.davidgrath.fitnessapp.util.Constants
+import com.davidgrath.fitnessapp.util.Constants.PreferencesTitles
+import com.davidgrath.fitnessapp.util.centimetersToInches
+import com.davidgrath.fitnessapp.util.inchesToCentimeters
+import com.davidgrath.fitnessapp.util.kilogramsToPounds
+import com.davidgrath.fitnessapp.util.poundsToKilograms
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 
+fun NavGraphBuilder.settingsNavGraph(navController: NavHostController) {
+//    navigation(BasicNavScreen.SettingsNav.allButLastSegment(),
+//        BasicNavScreen.SettingsNav.lastSegment()
+    navigation("home",
+        "s"
+    ) {
+        composable(route = BasicNavScreen.SettingsNav.path) {
+            SettingsScreen(
+                {
+                    navController.navigate(BasicNavScreen.PrivacyPolicyNav.path)
+                },
+                {
+                    navController.navigate(BasicNavScreen.TermsAndConditionsNav.path)
+                },
+                {
+                    navController.navigate(BasicNavScreen.SettingsUnitsNav.path)
+                },
+                {
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable(route = BasicNavScreen.PrivacyPolicyNav.path) {
+            PrivacyPolicyScreen( {
+                navController.popBackStack()
+            })
+        }
+        composable(route = BasicNavScreen.TermsAndConditionsNav.path) {
+            TermsAndConditionsScreen({
+                navController.popBackStack()
+            })
+        }
+        composable(route = BasicNavScreen.SettingsUnitsNav.path) {
+            SettingsUnitsScreen({
+                navController.popBackStack()
+            })
+        }
+    }
+}
 @Composable
 fun SettingsScreen(
     onNavigatePrivacyPolicy: () -> Unit,
     onNavigateTermsAndConditions: () -> Unit,
+    onNavigateUnits: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -69,7 +113,7 @@ fun SettingsScreen(
             mutableStateOf(false)
         }
 
-        SimpleAppBar(stringResource(R.string.settings_title), false, onNavigateBack)
+        SimpleAppBar(stringResource(R.string.settings_title), false, onBackClicked = onNavigateBack)
         Column(
             Modifier
                 .verticalScroll(scrollState)
@@ -88,7 +132,10 @@ fun SettingsScreen(
                     checkable = true, syncToGoogleFitChecked, setSyncToGoogleFitChecked)
                 SimpleSettingsItem(R.drawable.bell_outline, stringResource(R.string.settings_item_remind_to_workout), {},
                     checkable = true, remindWorkout, setRemindWorkout)
-                SimpleSettingsItem(iconResId = R.drawable.ruler, text = stringResource(R.string.settings_item_units), onClick = {}, checkable = false)
+                SimpleSettingsItem(iconResId = R.drawable.ruler, text = stringResource(R.string.settings_item_units),
+                    onClick = {
+                        onNavigateUnits()
+                }, checkable = false)
                 val (languageIndex, setLanguageIndex) = rememberSaveable {
                     mutableStateOf(-1)
                 }
@@ -101,11 +148,14 @@ fun SettingsScreen(
                     },
                     checkable = false)
                 if(isLanguageDialogShowing) {
-                    LanguageOptionsDialog(
-                        languageList = Constants.supportedLanguages,
-                        selectedLanguageIndex = languageIndex,
-                        onLanguagePicked = { i ->
+                    GenericOptionsDialog(
+                        optionsList = Constants.supportedLanguages,
+                        selectedOptionsIndex = languageIndex,
+                        onOptionPicked = { i ->
                             setLanguageIndex(i)
+                            setIsLanguageDialogShowing(false)
+                        },
+                        {
                             setIsLanguageDialogShowing(false)
                         }
                     )
@@ -147,7 +197,7 @@ fun PrivacyPolicyScreen(
 ) {
     Column(Modifier.fillMaxSize()) {
         val scrollState = rememberScrollState()
-        SimpleAppBar("Privacy Policy", expanded = false, onNavigateBack)
+        SimpleAppBar("Privacy Policy", expanded = false, onBackClicked = onNavigateBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -183,7 +233,7 @@ fun TermsAndConditionsScreen(
 ) {
     Column(Modifier.fillMaxSize()) {
         val scrollState = rememberScrollState()
-        SimpleAppBar("Terms & Conditions", expanded = false, onNavigateBack)
+        SimpleAppBar("Terms & Conditions", expanded = false, onBackClicked = onNavigateBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -204,16 +254,190 @@ fun TermsAndConditionsScreen(
 }
 
 @Composable
-fun LanguageOptionsDialog(
-    languageList: Array<String>,
-    selectedLanguageIndex: Int,
-    onLanguagePicked: (languageIndex: Int) -> Unit
+fun SettingsUnitsScreen(
+    onNavigateBack: () -> Unit
+) {
+
+    val distanceUnits = arrayOf(Constants.UNIT_DISTANCE_KILOMETERS, Constants.UNIT_DISTANCE_MILES)
+    val distanceUnitsDisplay = arrayOf("Metric (km)", "Imperial (mi)")
+    val temperatureUnits = arrayOf(Constants.UNIT_TEMPERATURE_CELSIUS, Constants.UNIT_TEMPERATURE_FAHRENHEIT)
+    val temperatureUnitsDisplay = arrayOf("Celsius", "Fahrenheit")
+    val weightUnits = arrayOf(Constants.UNIT_WEIGHT_KG, Constants.UNIT_WEIGHT_POUNDS)
+    val weightUnitsDisplay = arrayOf("Kilograms", "Pounds")
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val preferences = remember {
+        context.getSharedPreferences(Constants.MAIN_PREFERENCES_NAME, Context.MODE_PRIVATE)
+    }
+    val (currentDistanceUnit, setCurrentDistanceUnit)  = remember {
+        mutableStateOf(preferences.getString(PreferencesTitles.DISTANCE_UNIT, Constants.UNIT_DISTANCE_KILOMETERS)!!)
+    }
+    val (currentTemperatureUnit, setCurrentTemperatureUnit)  = remember {
+        mutableStateOf(preferences.getString(PreferencesTitles.TEMPERATURE_UNIT, Constants.UNIT_TEMPERATURE_CELSIUS)!!)
+    }
+    val (currentWeightUnit, setCurrentWeightUnit)  = remember {
+        mutableStateOf(preferences.getString(PreferencesTitles.WEIGHT_UNIT, Constants.UNIT_WEIGHT_KG)!!)
+    }
+
+    Column(Modifier.fillMaxSize()) {
+        SimpleAppBar(title = "Units", expanded = false, centeredWhileCollapsed = true, onBackClicked = onNavigateBack)
+
+        val (currentDialogUnitType, setCurrentUnitDialogType) = remember {
+            mutableStateOf("")
+        }
+        val (isDialogShowing, setIsDialogShowing)  = remember {
+            mutableStateOf(false)
+        }
+
+        Column(
+            Modifier
+                .padding(16.dp)
+                .fillMaxSize()) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        setCurrentUnitDialogType("distance")
+                        setIsDialogShowing(true)
+                    }) {
+                Text("Distance", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+                Spacer(Modifier.height(4.dp))
+                val t = getDisplayTextForUnit("distance", preferences)
+                Text(t, style = MaterialTheme.typography.body2)
+            }
+            Spacer(Modifier.height(8.dp))
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        setCurrentUnitDialogType("temperature")
+                        setIsDialogShowing(true)
+                    }) {
+                Text("Temperature", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+                Spacer(Modifier.height(4.dp))
+                val t = getDisplayTextForUnit("temperature", preferences)
+                Text(t, style = MaterialTheme.typography.body2)
+            }
+            Spacer(Modifier.height(8.dp))
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        setCurrentUnitDialogType("weight")
+                        setIsDialogShowing(true)
+                    }) {
+                Text("Weight", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+                Spacer(Modifier.height(4.dp))
+                val t = getDisplayTextForUnit("weight", preferences)
+                Text(t, style = MaterialTheme.typography.body2)
+            }
+            if(isDialogShowing) {
+                val options: Array<String>
+                val currentOptionsIndex: Int
+                when(currentDialogUnitType) {
+                    "distance" -> {
+                        options = distanceUnitsDisplay
+                        currentOptionsIndex = distanceUnits.indexOf(currentDistanceUnit)
+                    }
+                    "temperature" -> {
+                        options = temperatureUnitsDisplay
+                        currentOptionsIndex = temperatureUnits.indexOf(currentTemperatureUnit)
+                    }
+                    "weight" -> {
+                        options = weightUnitsDisplay
+                        currentOptionsIndex = weightUnits.indexOf(currentWeightUnit)
+                    }
+                    else -> {
+                        options = distanceUnits
+                        currentOptionsIndex = distanceUnits.indexOf(currentDistanceUnit)
+                    }
+                }
+
+                GenericOptionsDialog(optionsList = options,
+                    selectedOptionsIndex = currentOptionsIndex,
+                    onOptionPicked = {
+                        coroutineScope.launch {
+                            when (currentDialogUnitType) {
+                                "distance" -> {
+                                    setCurrentDistanceUnit(distanceUnits[it])
+                                    preferences.edit().putString(PreferencesTitles.DISTANCE_UNIT, distanceUnits[it])
+                                        .apply()
+                                }
+                                "temperature" -> {
+                                    setCurrentTemperatureUnit(temperatureUnits[it])
+                                    preferences.edit().putString(PreferencesTitles.TEMPERATURE_UNIT, temperatureUnits[it])
+                                        .apply()
+                                }
+                                "weight" -> {
+                                    val unit = weightUnits[it]
+                                    val editor = preferences.edit()
+                                    val w = preferences.getFloat(PreferencesTitles.WEIGHT, 0f)
+                                    if(currentWeightUnit == Constants.UNIT_WEIGHT_POUNDS && unit == Constants.UNIT_WEIGHT_KG) {
+                                        editor.putFloat(PreferencesTitles.WEIGHT, poundsToKilograms(w))
+                                    } else if(currentWeightUnit == Constants.UNIT_WEIGHT_KG && unit == Constants.UNIT_WEIGHT_POUNDS) {
+                                        editor.putFloat(PreferencesTitles.WEIGHT, kilogramsToPounds(w))
+                                    }
+                                    setCurrentWeightUnit(weightUnits[it])
+                                    editor
+                                        .putString(PreferencesTitles.WEIGHT_UNIT, unit)
+                                        .apply()
+                                }
+                            }
+                            setIsDialogShowing(false)
+                        }
+                    },
+                    onDismiss = {
+                        setIsDialogShowing(false)
+                    }
+                )
+            }
+        }
+    }
+}
+
+//TODO Maybe there's some ISO/Internationalization standard to make this neater
+fun getDisplayTextForUnit(unitType: String, preferences: SharedPreferences): String {
+    return when(unitType) {
+        "distance" -> {
+            when(preferences.getString(PreferencesTitles.DISTANCE_UNIT, Constants.UNIT_DISTANCE_KILOMETERS)) {
+                Constants.UNIT_DISTANCE_KILOMETERS -> "Metric (km)"
+                Constants.UNIT_DISTANCE_MILES -> "Imperial (mi)"
+                else -> "Metric (km)"
+            }
+        }
+        "temperature" -> {
+            when(preferences.getString(PreferencesTitles.TEMPERATURE_UNIT, Constants.UNIT_TEMPERATURE_CELSIUS)) {
+                Constants.UNIT_TEMPERATURE_CELSIUS -> "Celsius"
+                Constants.UNIT_TEMPERATURE_FAHRENHEIT -> "Fahrenheit"
+                else -> "Celsius"
+            }
+        }
+        "weight" -> {
+            when(preferences.getString(PreferencesTitles.WEIGHT_UNIT, Constants.UNIT_WEIGHT_KG)) {
+                Constants.UNIT_WEIGHT_KG -> "Kilograms"
+                Constants.UNIT_WEIGHT_POUNDS -> "Pounds"
+                else -> "Kilograms"
+            }
+        }
+        else -> {
+            "unknown"
+        }
+    }
+}
+
+
+@Composable
+fun GenericOptionsDialog(
+    optionsList: Array<String>,
+    selectedOptionsIndex: Int,
+    onOptionPicked: (optionIndex: Int) -> Unit,
+    onDismiss: () -> Unit
 ) {
     val (selectedItemIndex, setSelectedItemIndex) = remember {
-        mutableStateOf(selectedLanguageIndex)
+        mutableStateOf(selectedOptionsIndex)
     }
     val scrollState = rememberScrollState()
-    AlertDialog(onDismissRequest = {},
+    AlertDialog(onDismissRequest = onDismiss,
         buttons = {},
         text = {
             Column(
@@ -221,16 +445,16 @@ fun LanguageOptionsDialog(
                     .verticalScroll(scrollState)
                     .selectableGroup()
             ) {
-                languageList.forEachIndexed { i, lang ->
-                    val locale = Locale(lang)
-                    val displayLanguage = locale.getDisplayLanguage(locale)
+                optionsList.forEachIndexed { i, lang ->
+//                    val locale = Locale(lang)
+//                    val displayLanguage = locale.getDisplayLanguage(locale)
                     Row(
                         Modifier
                             .height(48.dp)
                             .fillMaxWidth()
                             .clickable {
                                 if (selectedItemIndex == i) {
-                                    onLanguagePicked(i)
+                                    onOptionPicked(i)
                                 } else {
                                     setSelectedItemIndex(i)
                                 }
@@ -241,13 +465,14 @@ fun LanguageOptionsDialog(
                             onClick = null
                         )
                         Spacer(Modifier.width(8.dp))
-                        val textDirectionInt = TextUtils.getLayoutDirectionFromLocale(locale)
-                        val textDirection = if(textDirectionInt == View.LAYOUT_DIRECTION_RTL) {
-                            TextDirection.Rtl
-                        } else {
-                            TextDirection.Ltr
-                        }
-                        Text(displayLanguage, Modifier.fillMaxWidth(), style = MaterialTheme.typography.body1.copy(textDirection = textDirection))
+//                        val textDirectionInt = TextUtils.getLayoutDirectionFromLocale(locale)
+//                        val textDirection = if(textDirectionInt == View.LAYOUT_DIRECTION_RTL) {
+//                            TextDirection.Rtl
+//                        } else {
+//                            TextDirection.Ltr
+//                        }
+//                        Text(displayLanguage, Modifier.fillMaxWidth(), style = MaterialTheme.typography.body1.copy(textDirection = textDirection))
+                        Text(lang, Modifier.fillMaxWidth(), style = MaterialTheme.typography.body1)
                     }
 
                 }
