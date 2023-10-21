@@ -40,7 +40,7 @@ class CyclingActivity : ComponentActivity() {
             CyclingViewModel::class.java)
         setContent {
             FitnessAppTheme {
-                CyclingScreen(viewModel)
+//                CyclingScreen(viewModel)
             }
         }
     }

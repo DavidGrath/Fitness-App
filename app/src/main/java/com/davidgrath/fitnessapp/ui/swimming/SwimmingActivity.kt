@@ -39,7 +39,7 @@ class SwimmingActivity : ComponentActivity() {
         viewModel = ViewModelProvider(this, SwimmingViewModelFactory(swimmingRepository)).get(SwimmingViewModel::class.java)
         setContent {
             FitnessAppTheme {
-                SwimmingScreen(viewModel)
+//                SwimmingScreen(viewModel)
             }
         }
     }

@@ -40,7 +40,7 @@ class GymActivity : ComponentActivity() {
             GymViewModel::class.java)
         setContent {
             FitnessAppTheme {
-                GymScreen(viewModel)
+//                GymScreen(viewModel)
             }
         }
     }

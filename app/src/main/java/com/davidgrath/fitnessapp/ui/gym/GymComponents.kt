@@ -48,12 +48,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.davidgrath.fitnessapp.R
@@ -76,7 +78,7 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
 
-@Composable
+/*@Composable
 fun GymScreen(
     viewModel: GymViewModel
 ) {
@@ -91,22 +93,15 @@ fun GymScreen(
                 .padding(padding)
         )
     }
-}
+}*/
 
-@Composable
-fun GymNavHost(
-    navController: NavHostController,
-    viewModel: GymViewModel,
-    modifier: Modifier
-) {
-    NavHost(
-        navController = navController,
-        startDestination = BasicNavScreen.GymDashboardNav.path,
-        modifier
-    ) {
+fun NavGraphBuilder.gymNavGraph(navController: NavHostController, gymViewModel: GymViewModel) {
+    navigation(startDestination = BasicNavScreen.GymDashboardNav.allButLastSegment(),
+        route = BasicNavScreen.GymDashboardNav.lastSegment()) {
+
         composable(route = BasicNavScreen.GymDashboardNav.path) {
             GymDashboardScreen(
-                viewModel,
+                gymViewModel,
                 {
                     navController.popBackStack()
                 },
@@ -120,7 +115,7 @@ fun GymNavHost(
         }
         composable(route = BasicNavScreen.GymHistoryNav.path) {
             GymHistoryScreen(
-                viewModel,
+                gymViewModel,
                 {
                     navController.popBackStack()
                 })
@@ -141,7 +136,7 @@ fun GymNavHost(
             val routineIndex = backStackEntry.arguments!!.getInt("routineId")
             GymRoutineSetsScreen(
                 routineIndex,
-                viewModel,
+                gymViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
@@ -164,10 +159,10 @@ fun GymNavHost(
             GymSetScreen(
                 gymRoutineIndex = routineIndex,
                 gymSetIndex = setIndex,
-                viewModel = viewModel,
+                viewModel = gymViewModel,
                 onNavigateBack = {
 //                    navController.popBackStack()
-                                 //TODO Cancel workout
+                    //TODO Cancel workout
                 },
                 onNavigateNextSet = { gymRoutineIndex, gymSetIndex ->
                     val pathWithArgs = BasicNavScreen.GymSetNav.getPathWithArgs(gymRoutineIndex, gymSetIndex)
@@ -182,8 +177,8 @@ fun GymNavHost(
                 }
             )
         }
-    }
 
+    }
 }
 
 @Composable

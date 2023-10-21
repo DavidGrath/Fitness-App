@@ -30,10 +30,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navigation
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.database.entities.WalkingWorkout
@@ -52,7 +54,7 @@ import java.util.TimeZone
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-@Composable
+/*@Composable
 fun WalkingScreen(
     viewModel: WalkingViewModel
 ) {
@@ -67,27 +69,18 @@ fun WalkingScreen(
                 .padding(padding)
         )
     }
-}
+}*/
+fun NavGraphBuilder.walkingNavGraph(navController: NavHostController, walkingViewModel: WalkingViewModel) {
+    navigation(BasicNavScreen.WalkingDashboardNav.allButLastSegment(), BasicNavScreen.WalkingDashboardNav.lastSegment()) {
 
-@Composable
-fun WalkingNavHost(
-    navController: NavHostController,
-    viewModel: WalkingViewModel,
-    modifier: Modifier
-) {
-    NavHost(
-        navController = navController,
-        startDestination = BasicNavScreen.WalkingDashboardNav.path,
-        modifier
-    ) {
         composable(route = BasicNavScreen.WalkingDashboardNav.path) {
 
             LaunchedEffect(key1 = null) {
-                viewModel.getWorkoutsInPastWeek()
-                viewModel.getFullWorkoutsSummary()
+                walkingViewModel.getWorkoutsInPastWeek()
+                walkingViewModel.getFullWorkoutsSummary()
             }
-            val weekWorkoutsResult = viewModel.pastWeekWorkoutsLiveData.observeAsState().value
-            val workoutSummaryResult = viewModel.fullWorkoutSummaryLiveData.observeAsState().value
+            val weekWorkoutsResult = walkingViewModel.pastWeekWorkoutsLiveData.observeAsState().value
+            val workoutSummaryResult = walkingViewModel.fullWorkoutSummaryLiveData.observeAsState().value
 
             val weekWorkouts = when(weekWorkoutsResult) {
                 is SimpleResult.Failure -> {
@@ -129,9 +122,9 @@ fun WalkingNavHost(
         }
         composable(route = BasicNavScreen.WalkingHistoryNav.path) {
             LaunchedEffect(key1 = null) {
-                viewModel.getWorkouts()
+                walkingViewModel.getWorkouts()
             }
-            val workouts = viewModel.pastWorkoutsLiveData.observeAsState().value
+            val workouts = walkingViewModel.pastWorkoutsLiveData.observeAsState().value
             when(workouts) {
                 is SimpleResult.Failure -> {}
                 is SimpleResult.Processing -> {}
@@ -151,30 +144,30 @@ fun WalkingNavHost(
         }
         composable(route = BasicNavScreen.WalkingWorkoutNav.path) {
             LaunchedEffect(key1 = null) {
-                viewModel.getIsWalking()
-                viewModel.getTimeElapsed()
+                walkingViewModel.getIsWalking()
+                walkingViewModel.getTimeElapsed()
             }
-            val isWalking = viewModel.isWalkingLiveData.observeAsState().value
-            val currentWorkout = viewModel.currentWorkoutLiveData.observeAsState().value
-            val locationData = viewModel.locationDataLiveData.observeAsState().value
-            val timeElapsed = viewModel.timeElapsedLiveData.observeAsState().value
+            val isWalking = walkingViewModel.isWalkingLiveData.observeAsState().value
+            val currentWorkout = walkingViewModel.currentWorkoutLiveData.observeAsState().value
+            val locationData = walkingViewModel.locationDataLiveData.observeAsState().value
+            val timeElapsed = walkingViewModel.timeElapsedLiveData.observeAsState().value
             WalkingWorkoutScreen(
                 elapsedTimeMillis = timeElapsed?:0,
                 caloriesBurned = currentWorkout?.kCalBurned?:0,
                 isWalking = isWalking?: false,
                 locationData = locationData?: emptyList(),
                 onStartWalking = {
-                    viewModel.startWalking()
+                    walkingViewModel.startWalking()
                 },
                 onStopWalking = {
-                    viewModel.stopWalking()
+                    walkingViewModel.stopWalking()
                 },
                 onNavigateBack = {
                     navController.popBackStack()
                 })
         }
-    }
 
+    }
 }
 
 @Composable

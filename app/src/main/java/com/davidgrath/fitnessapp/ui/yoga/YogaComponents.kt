@@ -46,12 +46,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.davidgrath.fitnessapp.R
@@ -76,7 +78,7 @@ import java.util.TimeZone
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-@Composable
+/*@Composable
 fun YogaScreen(
     viewModel: YogaViewModel
 ) {
@@ -90,21 +92,14 @@ fun YogaScreen(
                 .padding(padding)
         )
     }
-}
+}*/
 
-@Composable
-fun YogaNavHost(
-    navController: NavHostController,
-    viewModel: YogaViewModel,
-    modifier: Modifier
-) {
-    NavHost(navController = navController,
-        startDestination = BasicNavScreen.YogaDashboardNav.path,
-        modifier
-    ) {
+fun NavGraphBuilder.yogaNavGraph(navController: NavHostController, yogaViewModel: YogaViewModel) {
+    navigation(BasicNavScreen.YogaDashboardNav.allButLastSegment(), BasicNavScreen.YogaDashboardNav.lastSegment()) {
+
         composable(BasicNavScreen.YogaDashboardNav.path) {
             YogaDashboardScreen(
-                viewModel,
+                yogaViewModel,
                 {
                     navController.popBackStack()
                 },
@@ -118,7 +113,7 @@ fun YogaNavHost(
         }
         composable(BasicNavScreen.YogaHistoryNav.path) {
             YogaHistoryScreen(
-                viewModel,
+                yogaViewModel,
                 {
                     navController.popBackStack()
                 })
@@ -140,7 +135,7 @@ fun YogaNavHost(
             val sessionIndex = backStackEntry.arguments!!.getInt("sessionId")
             YogaSessionAsanasScreen(
                 selectedSessionIndex = sessionIndex,
-                viewModel = viewModel,
+                viewModel = yogaViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
@@ -162,7 +157,7 @@ fun YogaNavHost(
             YogaAsanaScreen(
                 sessionIndex,
                 asanaIndex,
-                viewModel,
+                yogaViewModel,
                 {
                     navController.popBackStack()
                 },
@@ -179,6 +174,7 @@ fun YogaNavHost(
                 }
             )
         }
+
     }
 }
 

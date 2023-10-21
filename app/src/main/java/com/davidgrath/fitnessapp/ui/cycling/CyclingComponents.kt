@@ -30,10 +30,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navigation
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.database.entities.CyclingWorkout
@@ -52,7 +54,7 @@ import java.util.TimeZone
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-@Composable
+/*@Composable
 fun CyclingScreen(
     viewModel: CyclingViewModel
 ) {
@@ -67,27 +69,21 @@ fun CyclingScreen(
                 .padding(padding)
         )
     }
-}
+}*/
 
-@Composable
-fun CyclingNavHost(
-    navController: NavHostController,
-    viewModel: CyclingViewModel,
-    modifier: Modifier
-) {
-    NavHost(
-        navController = navController,
-        startDestination = BasicNavScreen.CyclingDashboardNav.path,
-        modifier
-    ) {
+fun NavGraphBuilder.cyclingNavGraph(navController: NavHostController, cyclingViewModel: CyclingViewModel) {
+//    navigation(startDestination = BasicNavScreen.CyclingDashboardNav.path, "cycling") {
+    navigation(startDestination = BasicNavScreen.CyclingDashboardNav.allButLastSegment(),
+        route = BasicNavScreen.CyclingDashboardNav.lastSegment()) {
+
         composable(route = BasicNavScreen.CyclingDashboardNav.path) {
 
             LaunchedEffect(key1 = null) {
-                viewModel.getWorkoutsInPastWeek()
-                viewModel.getFullWorkoutsSummary()
+                cyclingViewModel.getWorkoutsInPastWeek()
+                cyclingViewModel.getFullWorkoutsSummary()
             }
-            val weekWorkoutsResult = viewModel.pastWeekWorkoutsLiveData.observeAsState().value
-            val workoutSummaryResult = viewModel.fullWorkoutSummaryLiveData.observeAsState().value
+            val weekWorkoutsResult = cyclingViewModel.pastWeekWorkoutsLiveData.observeAsState().value
+            val workoutSummaryResult = cyclingViewModel.fullWorkoutSummaryLiveData.observeAsState().value
 
             val weekWorkouts = when(weekWorkoutsResult) {
                 is SimpleResult.Failure -> {
@@ -129,9 +125,9 @@ fun CyclingNavHost(
         }
         composable(route = BasicNavScreen.CyclingHistoryNav.path) {
             LaunchedEffect(key1 = null) {
-                viewModel.getWorkouts()
+                cyclingViewModel.getWorkouts()
             }
-            val workouts = viewModel.pastWorkoutsLiveData.observeAsState().value
+            val workouts = cyclingViewModel.pastWorkoutsLiveData.observeAsState().value
             when(workouts) {
                 is SimpleResult.Failure -> {}
                 is SimpleResult.Processing -> {}
@@ -151,30 +147,29 @@ fun CyclingNavHost(
         }
         composable(route = BasicNavScreen.CyclingWorkoutNav.path) {
             LaunchedEffect(key1 = null) {
-                viewModel.getIsCycling()
-                viewModel.getTimeElapsed()
+                cyclingViewModel.getIsCycling()
+                cyclingViewModel.getTimeElapsed()
             }
-            val isCycling = viewModel.isCyclingLiveData.observeAsState().value
-            val currentWorkout = viewModel.currentWorkoutLiveData.observeAsState().value
-            val locationData = viewModel.locationDataLiveData.observeAsState().value
-            val timeElapsed = viewModel.timeElapsedLiveData.observeAsState().value
+            val isCycling = cyclingViewModel.isCyclingLiveData.observeAsState().value
+            val currentWorkout = cyclingViewModel.currentWorkoutLiveData.observeAsState().value
+            val locationData = cyclingViewModel.locationDataLiveData.observeAsState().value
+            val timeElapsed = cyclingViewModel.timeElapsedLiveData.observeAsState().value
             CyclingWorkoutScreen(
                 elapsedTimeMillis = timeElapsed?:0,
                 caloriesBurned = currentWorkout?.kCalBurned?:0,
                 isCycling = isCycling?: false,
                 locationData = locationData?: emptyList(),
                 onStartCycling = {
-                    viewModel.startCycling()
+                    cyclingViewModel.startCycling()
                 },
                 onStopCycling = {
-                    viewModel.stopCycling()
+                    cyclingViewModel.stopCycling()
                 },
                 onNavigateBack = {
                     navController.popBackStack()
                 })
         }
     }
-
 }
 
 @Composable

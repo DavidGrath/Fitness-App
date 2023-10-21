@@ -30,10 +30,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navigation
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.database.entities.RunningWorkout
@@ -52,7 +54,7 @@ import java.util.TimeZone
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-@Composable
+/*@Composable
 fun RunningScreen(
     viewModel: RunningViewModel
 ) {
@@ -67,19 +69,15 @@ fun RunningScreen(
                 .padding(padding)
         )
     }
-}
+}*/
 
-@Composable
-fun RunningNavHost(
+fun NavGraphBuilder.runningNavGraph(
     navController: NavHostController,
     viewModel: RunningViewModel,
-    modifier: Modifier
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = BasicNavScreen.RunningDashboardNav.path,
-        modifier
-    ) {
+    navigation(startDestination = BasicNavScreen.RunningDashboardNav.allButLastSegment(),
+        route = BasicNavScreen.RunningDashboardNav.lastSegment()) {
+
         composable(route = BasicNavScreen.RunningDashboardNav.path) {
 
             LaunchedEffect(key1 = null) {
@@ -173,7 +171,20 @@ fun RunningNavHost(
                     navController.popBackStack()
                 })
         }
+
     }
+}
+
+@Composable
+fun RunningNavHost(
+    navController: NavHostController,
+    modifier: Modifier
+) {
+    NavHost(
+        navController = navController,
+        startDestination = BasicNavScreen.RunningDashboardNav.path,
+        modifier
+    ) {}
 
 }
 

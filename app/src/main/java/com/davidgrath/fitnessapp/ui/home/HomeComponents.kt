@@ -37,20 +37,40 @@ import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.navigateSingleTopTo
 import com.davidgrath.fitnessapp.ui.cycling.CyclingActivity
+import com.davidgrath.fitnessapp.ui.cycling.CyclingViewModel
+import com.davidgrath.fitnessapp.ui.cycling.cyclingNavGraph
 import com.davidgrath.fitnessapp.ui.gym.GymActivity
+import com.davidgrath.fitnessapp.ui.gym.GymViewModel
+import com.davidgrath.fitnessapp.ui.gym.gymNavGraph
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModel
 import com.davidgrath.fitnessapp.ui.profile.ProfileScreen
 import com.davidgrath.fitnessapp.ui.running.RunningActivity
+import com.davidgrath.fitnessapp.ui.running.RunningViewModel
+import com.davidgrath.fitnessapp.ui.running.runningNavGraph
 import com.davidgrath.fitnessapp.ui.settings.PrivacyPolicyScreen
 import com.davidgrath.fitnessapp.ui.settings.SettingsScreen
 import com.davidgrath.fitnessapp.ui.settings.TermsAndConditionsScreen
 import com.davidgrath.fitnessapp.ui.swimming.SwimmingActivity
+import com.davidgrath.fitnessapp.ui.swimming.SwimmingViewModel
+import com.davidgrath.fitnessapp.ui.swimming.swimmingNavGraph
 import com.davidgrath.fitnessapp.ui.walking.WalkingActivity
+import com.davidgrath.fitnessapp.ui.walking.WalkingViewModel
+import com.davidgrath.fitnessapp.ui.walking.walkingNavGraph
 import com.davidgrath.fitnessapp.ui.yoga.YogaActivity
+import com.davidgrath.fitnessapp.ui.yoga.YogaViewModel
+import com.davidgrath.fitnessapp.ui.yoga.yogaNavGraph
 
 
 @Composable
-fun HomeScreen(viewModel: OnboardingViewModel) {
+fun HomeScreen(
+    onboardingViewModel: OnboardingViewModel,
+    runningViewModel: RunningViewModel,
+    walkingViewModel: WalkingViewModel,
+    swimmingViewModel: SwimmingViewModel,
+    cyclingViewModel: CyclingViewModel,
+    gymViewModel: GymViewModel,
+    yogaViewModel: YogaViewModel,
+) {
 
     val navController = rememberNavController()
     Scaffold(
@@ -60,7 +80,8 @@ fun HomeScreen(viewModel: OnboardingViewModel) {
     ) { padding ->
         HomeNavHost(
             navController,
-            viewModel,
+            onboardingViewModel, runningViewModel, walkingViewModel,
+            swimmingViewModel, cyclingViewModel, gymViewModel, yogaViewModel,
             Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -144,7 +165,9 @@ fun SimpleTile(
 fun NavBar(
     navController: NavHostController,
 ) {
-    BottomNavigation {
+    BottomNavigation(
+        backgroundColor = Color.White
+    ) {
         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
         Log.d("ROUTE", currentRoute.toString())
         val parts = currentRoute?.split("/")
@@ -188,7 +211,13 @@ fun NavBar(
 @Composable
 fun HomeNavHost(
     navController: NavHostController,
-    viewModel: OnboardingViewModel,
+    onboardingViewModel: OnboardingViewModel,
+    runningViewModel: RunningViewModel,
+    walkingViewModel: WalkingViewModel,
+    swimmingViewModel: SwimmingViewModel,
+    cyclingViewModel: CyclingViewModel,
+    gymViewModel: GymViewModel,
+    yogaViewModel: YogaViewModel,
     modifier: Modifier
 ) {
     NavHost(
@@ -197,83 +226,20 @@ fun HomeNavHost(
         modifier
     ) {
         composable(route = BasicNavScreen.ChooseActivityNav.path) {
-            val context = LocalContext.current
             ChooseActivityScreen {
-                when(it) {
-                    BasicNavScreen.CyclingDashboardNav -> {
-                        context.startActivity(Intent(context, CyclingActivity::class.java))
-                    }
-                    BasicNavScreen.GymDashboardNav -> {
-                        context.startActivity(Intent(context, GymActivity::class.java))
-                    }
-                    BasicNavScreen.RunningDashboardNav -> {
-                        context.startActivity(Intent(context, RunningActivity::class.java))
-                    }
-                    BasicNavScreen.SwimmingDashboardNav -> {
-                        context.startActivity(Intent(context, SwimmingActivity::class.java))
-                    }
-                    BasicNavScreen.WalkingDashboardNav -> {
-                        context.startActivity(Intent(context, WalkingActivity::class.java))
-                    }
-                    BasicNavScreen.YogaDashboardNav -> {
-                        context.startActivity(Intent(context, YogaActivity::class.java))
-                    }
-                    else -> {
-                        navController.navigate(it.path)
-                    }
-                }
+                navController.navigate(it.path)
             }
         }
-        /*composable(route = BasicNavScreen.SwimmingDashboardNav.path) {
-            SwimmingDashboard({
-                              navController.popBackStack()
-            }, {
-                navController.navigate(BasicNavScreen.SwimmingHistoryNav.path)
-            })
-        }
-        composable(route = BasicNavScreen.SwimmingHistoryNav.path) {
-            SwimmingHistory {
-                navController.popBackStack()
-            }
-        }
-        composable(route = BasicNavScreen.CyclingDashboardNav.path) {
-            Box(
-                modifier = Modifier
-                    .background(Color.Green)
-                    .fillMaxSize()
-            )
-        }
-        composable(route = BasicNavScreen.GymDashboardNav.path) {
-            Box(
-                modifier = Modifier
-                    .background(Color.Yellow)
-                    .fillMaxSize()
-            )
-        }
-        composable(route = BasicNavScreen.RunningDashboardNav.path) {
-            Box(
-                modifier = Modifier
-                    .background(Color.Blue)
-                    .fillMaxSize()
-            )
-        }
-        composable(route = BasicNavScreen.WalkingDashboardNav.path) {
-            Box(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .fillMaxSize()
-            )
-        }
-        composable(route = BasicNavScreen.YogaDashboardNav.path) {
-            Box(
-                modifier = Modifier
-                    .background(Color.Cyan)
-                    .fillMaxSize()
-            )
-        }*/
+
+        runningNavGraph(navController, runningViewModel)
+        walkingNavGraph(navController, walkingViewModel)
+        cyclingNavGraph(navController, cyclingViewModel)
+        swimmingNavGraph(navController, swimmingViewModel)
+        gymNavGraph(navController, gymViewModel)
+        yogaNavGraph(navController, yogaViewModel)
         composable(route = BasicNavScreen.ProfileNav.path) {
             ProfileScreen(
-                viewModel,
+                onboardingViewModel,
                 {
                     navController.popBackStack()
                 }

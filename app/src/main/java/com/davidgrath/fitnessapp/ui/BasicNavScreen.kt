@@ -1,6 +1,20 @@
 package com.davidgrath.fitnessapp.ui
 
 sealed class BasicNavScreen(val path: String) {
+    fun allButLastSegment() : String {
+        if(path.lastIndexOf("/") != -1) {
+            return path.substring(0, path.lastIndexOf("/"))
+        } else {
+            return path
+        }
+    }
+    fun lastSegment(): String {
+        if(path.lastIndexOf("/") != -1) {
+            return path.substring(path.lastIndexOf("/") + 1)
+        } else {
+            return path
+        }
+    }
     object ChooseActivityNav : BasicNavScreen("home")
     object SwimmingDashboardNav : BasicNavScreen("home/swimming")
     object SwimmingHistoryNav : BasicNavScreen("home/swimming/history")
