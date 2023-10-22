@@ -21,6 +21,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -171,8 +173,30 @@ fun NavBar(
     ) {
         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
         Log.d("ROUTE", currentRoute.toString())
+        //TODO Trying to implement per-section backstack. Continue later
+        /*val (recentHomeRoute, setRecentHomeRoute) = rememberSaveable {
+            mutableStateOf(BasicNavScreen.ChooseActivityNav.path)
+        }
+        val (recentProfileRoute, setRecentProfileRoute) = rememberSaveable {
+            mutableStateOf(BasicNavScreen.ProfileNav.path)
+        }
+        val (recentSettingsRoute, setRecentSettingsRoute) = rememberSaveable {
+            mutableStateOf(BasicNavScreen.SettingsNav.path)
+        }*/
         val parts = currentRoute?.split("/")
         val root = parts?.get(0)?:""
+        /*when(root) {
+            BasicNavScreen.ChooseActivityNav.path -> {
+                setRecentHomeRoute(currentRoute!!)
+            }
+            BasicNavScreen.ProfileNav.path -> {
+                setRecentProfileRoute(currentRoute!!)
+            }
+            BasicNavScreen.SettingsNav.path -> {
+                setRecentSettingsRoute(currentRoute!!)
+            }
+        }*/
+
         BottomNavigationItem(
             selected = root.equals(BasicNavScreen.ChooseActivityNav.path, true),
             onClick = { navController.navigate(BasicNavScreen.ChooseActivityNav.path) },

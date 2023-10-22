@@ -20,6 +20,9 @@ import com.davidgrath.fitnessapp.data.entities.SimpleIntlString
 import com.davidgrath.fitnessapp.data.entities.YogaAsanaTutorial
 import com.davidgrath.fitnessapp.data.entities.YogaSessionTemplate
 import com.davidgrath.fitnessapp.framework.database.AppDatabase
+import com.davidgrath.fitnessapp.util.ResourceProviderAssetPaths
+import com.davidgrath.fitnessapp.util.ResourceProviderUrls
+import com.davidgrath.fitnessapp.util.SimpleAbstractResourceProvider
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.InputStreamReader
@@ -42,6 +45,8 @@ class FitnessApp: Application() {
     lateinit var defaultYogaSessionTemplates: List<YogaSessionTemplate>
     lateinit var asanaIdentifierTitles: Map<String, SimpleIntlString>
     lateinit var yogaAsanaTutorials: Map<String, YogaAsanaTutorial>
+
+    lateinit var resourceProvider: SimpleAbstractResourceProvider
 
 
     override fun onCreate() {
@@ -94,9 +99,13 @@ class FitnessApp: Application() {
         val asanaTutorialStream = assets.open("yogaAsanaTutorials.json")
         val asanaTutorialTypeToken = object: TypeToken<Map<String, YogaAsanaTutorial>>(){}.type
         yogaAsanaTutorials = gson.fromJson(InputStreamReader(asanaTutorialStream), asanaTutorialTypeToken)
-        val locale = Locale.getDefault()
-        Log.d("BROCCOLI", locale.toString())
-        Log.d("BROCCOLI", System.getProperty("java.version")?:"null")
+
+        val shouldUseWebUrls = false
+        resourceProvider = if(shouldUseWebUrls) {
+            ResourceProviderUrls()
+        } else {
+            ResourceProviderAssetPaths()
+        }
     }
 
     /*override fun createConfigurationContext(overrideConfiguration: Configuration): Context {
@@ -112,3 +121,4 @@ class FitnessApp: Application() {
         return super.createConfigurationContext(overrideConfiguration)
     }*/
 }
+

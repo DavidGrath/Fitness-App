@@ -38,9 +38,11 @@ class HomeActivity : ComponentActivity() {
     lateinit var yogaViewModel: YogaViewModel
 
     private var binder: FitnessService.FitnessBinder? = null
+    var isBoundToService = false
 
     private val servConn = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            isBoundToService = true
             binder = service as FitnessService.FitnessBinder?
             runningViewModel.fitnessBinder = binder
             walkingViewModel.fitnessBinder = binder
@@ -51,17 +53,23 @@ class HomeActivity : ComponentActivity() {
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-
+            isBoundToService = false
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val serviceIntent = Intent(this, FitnessService::class.java)
+        startService(serviceIntent)
+        bindService(serviceIntent, servConn, BIND_AUTO_CREATE)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
         val userDataRepository = UserDataRepositoryImpl(this)
         onboardingViewModel = ViewModelProvider(this, OnboardingViewModelFactory(userDataRepository)).get(OnboardingViewModel::class.java)
-        val serviceIntent = Intent(this, FitnessService::class.java)
-        startService(serviceIntent)
-        bindService(serviceIntent, servConn, BIND_AUTO_CREATE)
+
+
 
         val runningRepository = (application as FitnessApp).runningRepository
         val walkingRepository = (application as FitnessApp).walkingRepository
@@ -96,6 +104,9 @@ class HomeActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        unbindService(servConn)
+        if(isBoundToService) {
+            unbindService(servConn)
+            isBoundToService = false
+        }
     }
 }

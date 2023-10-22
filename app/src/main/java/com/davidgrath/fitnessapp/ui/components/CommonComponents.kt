@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.components
 
+import android.graphics.drawable.ColorDrawable
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.animation.AnimatedContent
@@ -49,6 +50,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -65,8 +67,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
@@ -89,6 +95,7 @@ import com.mapbox.maps.toCameraOptions
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.TimeZone
+import android.graphics.Color as AndroidColor
 
 @Composable
 fun WorkoutSummaryComponent(
@@ -171,18 +178,33 @@ fun WeekHistoryComponent(
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun WelcomeBanner(
+    photoResource: Any,
     bannerButtonText: String,
     onBannerButtonClicked: () -> Unit
 ) {
     Box(
         Modifier
             .fillMaxWidth()
-            .background(Color.Blue)
-            .padding(16.dp)
+            .height(200.dp)
     ) {
-        Column(Modifier.align(Alignment.CenterEnd)) {
+        GlideImage(
+            model = photoResource,
+            contentDescription = "",
+            loading = placeholder(ColorDrawable(AndroidColor.YELLOW)),
+            failure = placeholder(ColorDrawable(AndroidColor.RED)),
+            colorFilter = ColorFilter.tint(Color.Gray, BlendMode.Multiply),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .zIndex(-1f),
+        ) {
+            it.centerCrop()
+        }
+        Column(Modifier.align(Alignment.CenterEnd)
+            .padding(16.dp)) {
             Text("Welcome back", style = MaterialTheme.typography.h5, color = Color.White)
             Text("last activity", style = MaterialTheme.typography.caption, color = Color.White)
             Row(horizontalArrangement = Arrangement.Center) {

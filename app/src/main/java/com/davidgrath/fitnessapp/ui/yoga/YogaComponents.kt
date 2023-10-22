@@ -62,6 +62,7 @@ import com.davidgrath.fitnessapp.data.entities.YogaAsanaState
 import com.davidgrath.fitnessapp.data.entities.YogaAsanaTutorial
 import com.davidgrath.fitnessapp.data.entities.YogaSessionTemplate
 import com.davidgrath.fitnessapp.framework.FitnessApp
+import com.davidgrath.fitnessapp.framework.SimpleAssetString
 import com.davidgrath.fitnessapp.framework.database.entities.YogaWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
@@ -72,6 +73,7 @@ import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
 import com.davidgrath.fitnessapp.util.Constants
 import com.davidgrath.fitnessapp.util.SimpleResult
+import com.davidgrath.fitnessapp.util.workoutNameToAssetMap
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
@@ -226,7 +228,9 @@ fun YogaDashboardScreen(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)) {
-            WelcomeBanner(bannerButtonText = "Start Yoga", onNavigateSessionsScreen)
+            val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
+            WelcomeBanner(fitnessApp.resourceProvider.provideWorkoutBanner("yoga"),
+                bannerButtonText = "Start Yoga", onNavigateSessionsScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))

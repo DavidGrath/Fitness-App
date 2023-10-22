@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +39,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
+import com.davidgrath.fitnessapp.framework.FitnessApp
+import com.davidgrath.fitnessapp.framework.SimpleAssetString
 import com.davidgrath.fitnessapp.framework.database.entities.WalkingWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
@@ -49,6 +52,7 @@ import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
 import com.davidgrath.fitnessapp.util.SimpleResult
+import com.davidgrath.fitnessapp.util.workoutNameToAssetMap
 import java.util.Calendar
 import java.util.TimeZone
 import kotlin.time.DurationUnit
@@ -188,7 +192,9 @@ fun WalkingDashboard(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)) {
-            WelcomeBanner(bannerButtonText = "Start Walking", onNavigateWorkoutScreen)
+            val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
+            WelcomeBanner(fitnessApp.resourceProvider.provideWorkoutBanner("walking"),
+                bannerButtonText = "Start Walking", onNavigateWorkoutScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))

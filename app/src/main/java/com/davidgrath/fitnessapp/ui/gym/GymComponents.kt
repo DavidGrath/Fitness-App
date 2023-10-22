@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.gym
 
+import android.graphics.drawable.ColorDrawable
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -58,11 +60,16 @@ import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.Placeholder
+import com.bumptech.glide.integration.compose.placeholder
+import com.bumptech.glide.load.Transformation
+import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.GymRoutineTemplate
 import com.davidgrath.fitnessapp.data.entities.GymSetTutorial
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.FitnessApp
+import com.davidgrath.fitnessapp.framework.SimpleAssetString
 import com.davidgrath.fitnessapp.framework.database.entities.GymWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
@@ -77,6 +84,7 @@ import com.davidgrath.fitnessapp.util.setIdentifierToIconMap
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
+import android.graphics.Color as AndroidColor
 
 /*@Composable
 fun GymScreen(
@@ -229,7 +237,9 @@ fun GymDashboardScreen(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)) {
-            WelcomeBanner(bannerButtonText = "Start Gym", onNavigateRoutinesScreen)
+            val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
+            WelcomeBanner(fitnessApp.resourceProvider.provideWorkoutBanner("gym"),
+                bannerButtonText = "Start Gym", onNavigateRoutinesScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))
@@ -305,7 +315,10 @@ fun GymRoutineListScreen(
             contentPadding = PaddingValues(vertical = 24.dp)
         ) {
             itemsIndexed(routines, { index, item -> index }) { index, item ->
+
+                val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
                 SimpleGymRoutineItem(
+                    fitnessApp.resourceProvider.provideGymRoutineImage(item.routineName.lowercase()),
                     index = index,
                     routineTemplate = item,
                     onRoutineSelected = onRoutineSelected,
@@ -401,11 +414,24 @@ fun GymRoutineSetsScreen(
                 Column {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.Red)
-                            .height(168.dp),
+                            .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
+                        val fitnessApp = context.applicationContext as FitnessApp
+                        val key = routineTemplate.routineName.lowercase()
+                        GlideImage(
+                            model = fitnessApp.resourceProvider.provideGymRoutineImage(key),
+                            contentDescription = "",
+                            loading = placeholder(ColorDrawable(AndroidColor.YELLOW)),
+                            failure = placeholder(ColorDrawable(AndroidColor.RED)),
+                            colorFilter = ColorFilter.tint(Color.Gray, BlendMode.Multiply),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .zIndex(-1f),
+                        ) {
+                            it.centerCrop()
+                        }
                         Text(
                             routineTemplate.routineName,
                             style = MaterialTheme.typography.h4.copy(color = Color.White)
@@ -646,26 +672,36 @@ fun GymSetScreen(
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun SimpleGymRoutineItem(
-//    photoRawResId: Int,
+    photoResource: Any,
     index: Int,
     routineTemplate: GymRoutineTemplate,
     onRoutineSelected: (index: Int) -> Unit,
     modifier: Modifier
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.Red)
-            .height(168.dp)
-            .clickable {
-                onRoutineSelected(index)
-            }
-            .then(modifier),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(routineTemplate.routineName,
+    Box(Modifier.fillMaxWidth()
+        .height(168.dp)
+        .clickable {
+            onRoutineSelected(index)
+        }
+        .then(modifier)) {
+        GlideImage(
+            model = photoResource,
+            contentDescription = "",
+            loading = placeholder(ColorDrawable(AndroidColor.YELLOW)),
+            failure = placeholder(ColorDrawable(AndroidColor.RED)),
+            colorFilter = ColorFilter.tint(Color.Gray, BlendMode.Multiply),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(168.dp),
+        ) {
+            it.centerCrop()
+        }
+        Text(
+            routineTemplate.routineName,
+            Modifier.align(Alignment.Center).zIndex(1f),
             style = MaterialTheme.typography.h4.copy(color = Color.White)
         )
     }

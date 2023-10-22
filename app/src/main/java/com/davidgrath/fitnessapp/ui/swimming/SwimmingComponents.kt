@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +33,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
+import com.davidgrath.fitnessapp.framework.FitnessApp
+import com.davidgrath.fitnessapp.framework.SimpleAssetString
 import com.davidgrath.fitnessapp.framework.database.entities.SwimmingWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.FitnessAppTheme
@@ -42,6 +45,7 @@ import com.davidgrath.fitnessapp.ui.components.WeekHistoryComponent
 import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
 import com.davidgrath.fitnessapp.util.SimpleResult
+import com.davidgrath.fitnessapp.util.workoutNameToAssetMap
 import java.util.Calendar
 import java.util.TimeZone
 import kotlin.time.DurationUnit
@@ -193,7 +197,9 @@ fun SwimmingDashboard(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)) {
-            WelcomeBanner(bannerButtonText = "Start Swimming", onNavigateWorkoutScreen)
+            val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
+            WelcomeBanner(fitnessApp.resourceProvider.provideWorkoutBanner("swimming"),
+                bannerButtonText = "Start Swimming", onNavigateWorkoutScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))

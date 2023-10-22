@@ -57,19 +57,19 @@ val setIdentifierToIconMap = mapOf(
     "DUMBBELL_CURL" to R.drawable.arms1,
     "HAMMER_CURL" to R.drawable.arms2,
     "BARBELL_CURL" to R.drawable.arms3,
-//    "BARBELL_CURL" to R.drawable.arms4,
+    "STANDING_OVERHEAD_CABLE_TRICEPS_EXTENSION" to R.drawable.arms4,
     "CABLE_ROPE_TRICEPS_PUSHDOWN" to R.drawable.arms5,
     "TRICEPS_BENCH_DIPS" to R.drawable.arms6,
     "DEADLIFT" to R.drawable.back1,
     "LAT_PULLDOWN" to R.drawable.back2,
-//    "LAT_PULLDOWN" to R.drawable.back3,
+    "SEATED_CABLE_ROW" to R.drawable.back3,
     "SINGLE_ARM_ROW" to R.drawable.back4,
     "BENT_OVER_DUMBBELL_ROW" to R.drawable.back5,
     "CHEST_DIPS" to R.drawable.chest1,
     "BARBELL_BENCH_PRESS" to R.drawable.chest2,
     "DUMBBELL_FLY" to R.drawable.chest3,
     "SEATED_PEC_DECK" to R.drawable.chest4,
-//    "SEATED_PEC_DECK" to R.drawable.chest5,
+    "CABLE_CROSS_OVER" to R.drawable.chest5,
     "BARBELL_SQUAT" to R.drawable.leg1,
     "DUMBELL_LUNGE" to R.drawable.leg2,
     "LEG_PRESS" to R.drawable.leg3,
@@ -78,6 +78,40 @@ val setIdentifierToIconMap = mapOf(
     "LATERAL_RAISES" to R.drawable.shoulder3,
     "SHOULDER_PRESS" to R.drawable.shoulder2,
     "FRONT_RAISES" to R.drawable.shoulder4,
+)
+
+val routineNameToAssetMap = mapOf(
+    "arms" to "gym_arms_dollar_gill_unsplash.jpg",
+    "legs" to "gym_legs_alora_griffiths_unsplash.jpg",
+    "chest" to "gym_chest_alora_griffiths_unsplash.jpg",
+    "back" to "gym_back_john_arano_unsplash.jpg",
+    "shoulders" to "gym_shoulders_arthur_edelmans_unsplash.jpg"
+)
+
+val routineNameToUrlMap = mapOf(
+    "arms" to "https://source.unsplash.com/QoW2Sdlh9Nk",
+    "legs" to "https://source.unsplash.com/TuzrzArccvc",
+    "chest" to "https://source.unsplash.com/V3GnMeRhnjk",
+    "back" to "https://source.unsplash.com/h4i9G-de7Po",
+    "shoulders" to "https://source.unsplash.com/qfjuh4OLdxw"
+)
+
+val workoutNameToAssetMap = mapOf(
+    "cycling" to "banner_cycling_viktor_bystrov_unsplash.jpg",
+    "gym" to "banner_gym_danielle_cerullo_unsplash.jpg",
+    "running" to "banner_running_jenny_hill_unsplash.jpg",
+    "swimming" to "banner_swimming_b_mat_an_gelo_unsplash.jpg",
+    "walking" to "banner_walking_tyler_nix_unsplash.jpg",
+    "yoga" to "banner_yoga_jared_rice_unsplash.jpg"
+)
+
+val workoutNameToUrlMap = mapOf(
+    "cycling" to "https://source.unsplash.com/Gi0OMNguFaw",
+    "gym" to "https://source.unsplash.com/CQfNt66ttZM",
+    "running" to "https://source.unsplash.com/mQVWb7kUoOE",
+    "swimming" to "https://source.unsplash.com/-BUPaAMSOdE",
+    "walking" to "https://source.unsplash.com/VZEj0iepzKA",
+    "yoga" to "https://source.unsplash.com/NTyBbu66_SI"
 )
 
 fun dateAsStart(date: Date) : Date {
