@@ -197,7 +197,7 @@ fun PrivacyPolicyScreen(
 ) {
     Column(Modifier.fillMaxSize()) {
         val scrollState = rememberScrollState()
-        SimpleAppBar("Privacy Policy", expanded = false, onBackClicked = onNavigateBack)
+        SimpleAppBar(stringResource(R.string.privacy_policy_header), expanded = false, onBackClicked = onNavigateBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -233,7 +233,7 @@ fun TermsAndConditionsScreen(
 ) {
     Column(Modifier.fillMaxSize()) {
         val scrollState = rememberScrollState()
-        SimpleAppBar("Terms & Conditions", expanded = false, onBackClicked = onNavigateBack)
+        SimpleAppBar(stringResource(R.string.terms_and_conditions_header), expanded = false, onBackClicked = onNavigateBack)
         Column(
             Modifier
                 .fillMaxSize()
@@ -280,7 +280,7 @@ fun SettingsUnitsScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
-        SimpleAppBar(title = "Units", expanded = false, centeredWhileCollapsed = true, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.units_header), expanded = false, centeredWhileCollapsed = true, onBackClicked = onNavigateBack)
 
         val (currentDialogUnitType, setCurrentUnitDialogType) = remember {
             mutableStateOf("")
@@ -300,7 +300,7 @@ fun SettingsUnitsScreen(
                         setCurrentUnitDialogType("distance")
                         setIsDialogShowing(true)
                     }) {
-                Text("Distance", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.units_label_distance), style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
                 Spacer(Modifier.height(4.dp))
                 val t = getDisplayTextForUnit("distance", preferences)
                 Text(t, style = MaterialTheme.typography.body2)
@@ -313,7 +313,7 @@ fun SettingsUnitsScreen(
                         setCurrentUnitDialogType("temperature")
                         setIsDialogShowing(true)
                     }) {
-                Text("Temperature", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.units_label_temperature), style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
                 Spacer(Modifier.height(4.dp))
                 val t = getDisplayTextForUnit("temperature", preferences)
                 Text(t, style = MaterialTheme.typography.body2)
@@ -326,7 +326,7 @@ fun SettingsUnitsScreen(
                         setCurrentUnitDialogType("weight")
                         setIsDialogShowing(true)
                     }) {
-                Text("Weight", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.units_label_weight), style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
                 Spacer(Modifier.height(4.dp))
                 val t = getDisplayTextForUnit("weight", preferences)
                 Text(t, style = MaterialTheme.typography.body2)

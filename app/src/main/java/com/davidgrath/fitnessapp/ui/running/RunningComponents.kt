@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -50,6 +51,7 @@ import com.davidgrath.fitnessapp.ui.components.SimpleGradientButton
 import com.davidgrath.fitnessapp.ui.components.WeekHistoryComponent
 import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
+import com.davidgrath.fitnessapp.ui.components.animateAlignmentAsState
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
 import com.davidgrath.fitnessapp.util.SimpleResult
 import com.davidgrath.fitnessapp.util.workoutNameToAssetMap
@@ -204,7 +206,7 @@ fun RunningDashboard(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Running", expanded = true, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.running_header), expanded = true, onBackClicked = onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -212,7 +214,7 @@ fun RunningDashboard(
                 .padding(horizontal = 8.dp)) {
             val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
             WelcomeBanner(fitnessApp.resourceProvider.provideWorkoutBanner("running"),
-                bannerButtonText = "Start Running", onNavigateWorkoutScreen)
+                bannerButtonText = stringResource(R.string.running_banner_button_text), onNavigateWorkoutScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))
@@ -224,7 +226,7 @@ fun RunningDashboard(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Show More",
+                stringResource(R.string.running_workout_summary_show_more),
                 Modifier
                     .clickable(onClick = onNavigateDetailedHistory)
                     .align(Alignment.CenterHorizontally),
@@ -246,7 +248,7 @@ fun RunningHistory(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Running", expanded = false, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.running_header), expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())
@@ -296,7 +298,7 @@ fun RunningWorkoutScreen(
 
                     )
                     Text(
-                        "Running",
+                        stringResource(R.string.running_header),
                         Modifier
                             .padding(vertical = 24.dp)
                             .align(Alignment.CenterHorizontally),
@@ -331,7 +333,7 @@ fun RunningWorkoutScreen(
                         style = MaterialTheme.typography.h3
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Time")
+                    Text(stringResource(R.string.running_workout_label_time))
                     Spacer(modifier = Modifier.height(32.dp))
                     Row(Modifier.fillMaxWidth(), Arrangement.Center) {
                         Column(
@@ -352,7 +354,7 @@ fun RunningWorkoutScreen(
                                 )
                             }
                             Text(
-                                "Distance",
+                                stringResource(R.string.running_workout_label_distance),
                                 style = MaterialTheme.typography.body1,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -374,7 +376,7 @@ fun RunningWorkoutScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Calories Burned",
+                                stringResource(R.string.running_workout_label_calories_burned),
                                 style = MaterialTheme.typography.body1,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -390,7 +392,7 @@ fun RunningWorkoutScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Avg Pace (min/km)",
+                                stringResource(R.string.running_workout_label_average_pace),
                                 style = MaterialTheme.typography.body1,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -406,10 +408,16 @@ fun RunningWorkoutScreen(
                 Modifier.fillMaxSize()
             )
             val resolvedText = if (isRunning) {
-                "Stop Running"
+                stringResource(R.string.running_workout_button_stop_running)
             } else {
-                "Start Running"
+                stringResource(R.string.running_workout_button_start_running)
             }
+            val alignment = if(isRunning) {
+                Alignment.BottomCenter
+            } else {
+                Alignment.Center
+            }
+            val alignmentAnimatedValue = animateAlignmentAsState(alignment)
             SimpleGradientButton({
                 if (isRunning) {
                     onStopRunning()
@@ -418,7 +426,7 @@ fun RunningWorkoutScreen(
                 }
             }, Modifier
                 .padding(vertical = 24.dp)
-                .align(Alignment.Center)
+                .align(alignmentAnimatedValue.value)
                 .zIndex(1f),
                 {
                     Text(

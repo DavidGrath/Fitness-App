@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -222,7 +223,7 @@ fun YogaDashboardScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Yoga", expanded = true, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.yoga_header), expanded = true, onBackClicked = onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -230,7 +231,7 @@ fun YogaDashboardScreen(
                 .padding(horizontal = 8.dp)) {
             val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
             WelcomeBanner(fitnessApp.resourceProvider.provideWorkoutBanner("yoga"),
-                bannerButtonText = "Start Yoga", onNavigateSessionsScreen)
+                bannerButtonText = stringResource(R.string.yoga_banner_button_text), onNavigateSessionsScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))
@@ -242,7 +243,7 @@ fun YogaDashboardScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Show More",
+                stringResource(R.string.yoga_workout_summary_show_more),
                 Modifier
                     .clickable(onClick = onNavigateDetailedHistory)
                     .align(Alignment.CenterHorizontally),
@@ -272,7 +273,7 @@ fun YogaHistoryScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Yoga", expanded = false, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.yoga_header), expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())
@@ -301,7 +302,7 @@ fun YogaSessionListScreen(
     val sessions = application.defaultYogaSessionTemplates
 
     Column(Modifier.fillMaxSize()) {
-        SimpleAppBar(title = "Yoga", expanded = true, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.yoga_header), expanded = true, onBackClicked = onNavigateBack)
         LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp),
             contentPadding = PaddingValues(vertical = 24.dp)
         ) {
@@ -350,12 +351,12 @@ fun YogaSessionAsanasScreen(
                 val title = asanaTitleMap[currentAsanaIdentifier]?._default ?: "Unknown"
                 if (currentTutorial.youtubeVideoId != null) {
                     Text(
-                        "Video",
+                        stringResource(R.string.yoga_tutorial_heading_video),
                         style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(Modifier.height(8.dp))
                     if(!(tempVideoDetails?.thumbnailUrl.isNullOrEmpty())) {
-                        GlideImage(model = tempVideoDetails?.thumbnailUrl, contentDescription = "YT thumbnail",
+                        GlideImage(model = tempVideoDetails?.thumbnailUrl, contentDescription = "yt thumbnail",
                             Modifier.fillMaxWidth(),
                         ) {
                             it.override(tempVideoDetails!!.thumbnailWidth!!, tempVideoDetails!!.thumbnailHeight!!)
@@ -392,7 +393,7 @@ fun YogaSessionAsanasScreen(
                             sheetState.hide()
                         }
                     }, modifier = Modifier) {
-                    Text("Close", style = MaterialTheme.typography.button.copy(Color.White))
+                    Text(stringResource(R.string.yoga_tutorial_button_close), style = MaterialTheme.typography.button.copy(Color.White))
                 }
             }
         }
@@ -464,7 +465,7 @@ fun YogaSessionAsanasScreen(
                     true
                 ) {
                     Text(
-                        "Start Workout",
+                        stringResource(R.string.yoga_workout_button_start),
                         style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
                     )
                 }
@@ -603,7 +604,7 @@ fun YogaAsanaScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "Resume",
+                                stringResource(R.string.yoga_asana_button_resume),
                                 style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
                             )
                         } else {
@@ -614,19 +615,19 @@ fun YogaAsanaScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "Pause",
+                                stringResource(R.string.yoga_asana_button_pause),
                                 style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
                             )
                         }
                     } else {
                         if(canGoNext) {
                             Text(
-                                "Next",
+                                stringResource(R.string.yoga_asana_button_next),
                                 style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
                             )
                         } else {
                             Text(
-                                "Finish",
+                                stringResource(R.string.yoga_asana_button_finish),
                                 style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
                             )
                         }
@@ -650,7 +651,7 @@ fun YogaAsanaScreen(
                     Modifier
                         .rotate(180F),
                 )
-                Text("Previous")
+                Text(stringResource(R.string.yoga_asana_button_previous))
             }
             Spacer(modifier = Modifier.weight(1f))
             val skipResult = viewModel.skipLiveData.observeAsState().value
@@ -674,7 +675,7 @@ fun YogaAsanaScreen(
                     painter = painterResource(id = R.drawable.skip_next_previous),
                     contentDescription = "skip",
                 )
-                Text("Skip")
+                Text(stringResource(R.string.yoga_asana_button_skip))
             }
         }
     }

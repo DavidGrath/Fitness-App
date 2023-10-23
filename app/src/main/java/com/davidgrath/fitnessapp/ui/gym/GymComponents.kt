@@ -46,6 +46,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -231,7 +232,7 @@ fun GymDashboardScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Gym", expanded = true, onBackClicked =  onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.gym_header), expanded = true, onBackClicked =  onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -239,7 +240,7 @@ fun GymDashboardScreen(
                 .padding(horizontal = 8.dp)) {
             val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
             WelcomeBanner(fitnessApp.resourceProvider.provideWorkoutBanner("gym"),
-                bannerButtonText = "Start Gym", onNavigateRoutinesScreen)
+                bannerButtonText = stringResource(R.string.gym_banner_button_text), onNavigateRoutinesScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))
@@ -251,7 +252,7 @@ fun GymDashboardScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Show More",
+                stringResource(R.string.gym_workout_summary_show_more),
                 Modifier
                     .clickable(onClick = onNavigateDetailedHistory)
                     .align(Alignment.CenterHorizontally),
@@ -281,7 +282,7 @@ fun GymHistoryScreen(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Gym", expanded = false, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.gym_header), expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())
@@ -310,7 +311,7 @@ fun GymRoutineListScreen(
     val routines = application.defaultGymRoutineTemplates
 
     Column(Modifier.fillMaxSize()) {
-        SimpleAppBar(title = "Gym", expanded = true, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.gym_header), expanded = true, onBackClicked = onNavigateBack)
         LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp),
             contentPadding = PaddingValues(vertical = 24.dp)
         ) {
@@ -362,12 +363,12 @@ fun GymRoutineSetsScreen(
                 val title = setTitleMap[currentSetIdentifier]?._default ?: "Unknown"
                 if (currentTutorial.youtubeVideoId != null) {
                     Text(
-                        "Video",
+                        stringResource(R.string.gym_tutotial_heading_video),
                         style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(Modifier.height(8.dp))
                     if(!(tempVideoDetails?.thumbnailUrl.isNullOrEmpty())) {
-                        GlideImage(model = tempVideoDetails?.thumbnailUrl, contentDescription = "YT thumbnail",
+                        GlideImage(model = tempVideoDetails?.thumbnailUrl, contentDescription = "yt thumbnail",
                         Modifier.fillMaxWidth(),
                         ) {
                             it.override(tempVideoDetails!!.thumbnailWidth!!, tempVideoDetails!!.thumbnailHeight!!)
@@ -403,7 +404,7 @@ fun GymRoutineSetsScreen(
                             sheetState.hide()
                         }
                     }, modifier = Modifier) {
-                    Text("Close", style = MaterialTheme.typography.button.copy(Color.White))
+                    Text(stringResource(R.string.gym_tutorial_button_close), style = MaterialTheme.typography.button.copy(Color.White))
                 }
             }
         }
@@ -481,7 +482,7 @@ fun GymRoutineSetsScreen(
                     true
                 ) {
                     Text(
-                        "Start Workout",
+                        stringResource(R.string.gym_routine_sets_button_start_workout),
                         style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
                     )
                 }
@@ -622,7 +623,7 @@ fun GymSetScreen(
                 Row {
                     if(canGoNext) {
                         Text(
-                            "Next",
+                            stringResource(R.string.gym_set_button_next),
                             style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -633,7 +634,7 @@ fun GymSetScreen(
                         )
                     } else {
                         Text(
-                            "Finish",
+                            stringResource(R.string.gym_set_button_finish),
                             style = MaterialTheme.typography.h5.copy(color = Color.White, 18.sp)
                         )
                     }
@@ -656,7 +657,7 @@ fun GymSetScreen(
                     Modifier
                         .rotate(180F),
                 )
-                Text("Previous")
+                Text(stringResource(R.string.gym_set_button_previous))
             }
             Spacer(modifier = Modifier.weight(1f))
             Row(Modifier.clickable {
@@ -666,7 +667,7 @@ fun GymSetScreen(
                     painter = painterResource(id = R.drawable.skip_next_previous),
                     contentDescription = "skip",
                 )
-                Text("Skip")
+                Text(stringResource(R.string.gym_set_button_skip))
             }
         }
     }
@@ -681,7 +682,8 @@ fun SimpleGymRoutineItem(
     onRoutineSelected: (index: Int) -> Unit,
     modifier: Modifier
 ) {
-    Box(Modifier.fillMaxWidth()
+    Box(Modifier
+        .fillMaxWidth()
         .height(168.dp)
         .clickable {
             onRoutineSelected(index)
@@ -701,7 +703,9 @@ fun SimpleGymRoutineItem(
         }
         Text(
             routineTemplate.routineName,
-            Modifier.align(Alignment.Center).zIndex(1f),
+            Modifier
+                .align(Alignment.Center)
+                .zIndex(1f),
             style = MaterialTheme.typography.h4.copy(color = Color.White)
         )
     }

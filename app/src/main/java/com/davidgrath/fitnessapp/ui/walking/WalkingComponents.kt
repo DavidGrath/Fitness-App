@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -50,6 +51,7 @@ import com.davidgrath.fitnessapp.ui.components.SimpleGradientButton
 import com.davidgrath.fitnessapp.ui.components.WeekHistoryComponent
 import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
+import com.davidgrath.fitnessapp.ui.components.animateAlignmentAsState
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
 import com.davidgrath.fitnessapp.util.SimpleResult
 import com.davidgrath.fitnessapp.util.workoutNameToAssetMap
@@ -186,7 +188,7 @@ fun WalkingDashboard(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Walking", expanded = true, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.walking_header), expanded = true, onBackClicked = onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -194,7 +196,7 @@ fun WalkingDashboard(
                 .padding(horizontal = 8.dp)) {
             val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
             WelcomeBanner(fitnessApp.resourceProvider.provideWorkoutBanner("walking"),
-                bannerButtonText = "Start Walking", onNavigateWorkoutScreen)
+                bannerButtonText = stringResource(R.string.walking_banner_button_text), onNavigateWorkoutScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))
@@ -206,7 +208,7 @@ fun WalkingDashboard(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Show More",
+                stringResource(R.string.walking_workout_summary_show_more),
                 Modifier
                     .clickable(onClick = onNavigateDetailedHistory)
                     .align(Alignment.CenterHorizontally),
@@ -228,7 +230,7 @@ fun WalkingHistory(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Walking", expanded = false, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.walking_header), expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())
@@ -278,7 +280,7 @@ fun WalkingWorkoutScreen(
 
                     )
                     Text(
-                        "Walking",
+                        stringResource(R.string.walking_header),
                         Modifier
                             .padding(vertical = 24.dp)
                             .align(Alignment.CenterHorizontally),
@@ -313,7 +315,7 @@ fun WalkingWorkoutScreen(
                         style = MaterialTheme.typography.h3
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Time")
+                    Text(stringResource(R.string.walking_workout_label_time))
                     Spacer(modifier = Modifier.height(32.dp))
                     Row(Modifier.fillMaxWidth(), Arrangement.Center) {
                         Column(
@@ -334,7 +336,7 @@ fun WalkingWorkoutScreen(
                                 )
                             }
                             Text(
-                                "Distance",
+                                stringResource(R.string.walking_workout_label_distance),
                                 style = MaterialTheme.typography.body1,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -356,7 +358,7 @@ fun WalkingWorkoutScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Calories Burned",
+                                stringResource(R.string.walking_workout_label_calories_burned),
                                 style = MaterialTheme.typography.body1,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -372,7 +374,7 @@ fun WalkingWorkoutScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Avg Pace (min/km)",
+                                stringResource(R.string.walking_workout_label_average_pace),
                                 style = MaterialTheme.typography.body1,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -388,10 +390,16 @@ fun WalkingWorkoutScreen(
                 Modifier.fillMaxSize()
             )
             val resolvedText = if (isWalking) {
-                "Stop Walking"
+                stringResource(R.string.walking_workout_button_stop_walking)
             } else {
-                "Start Walking"
+                stringResource(R.string.walking_workout_button_start_walking)
             }
+            val alignment = if(isWalking) {
+                Alignment.BottomCenter
+            } else {
+                Alignment.Center
+            }
+            val alignmentAnimatedValue = animateAlignmentAsState(alignment)
             SimpleGradientButton({
                 if (isWalking) {
                     onStopWalking()
@@ -400,7 +408,7 @@ fun WalkingWorkoutScreen(
                 }
             }, Modifier
                 .padding(vertical = 24.dp)
-                .align(Alignment.Center)
+                .align(alignmentAnimatedValue.value)
                 .zIndex(1f),
                 {
                     Text(

@@ -4,6 +4,7 @@ import android.graphics.drawable.ColorDrawable
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -38,11 +39,14 @@ import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.TextFieldDefaults.indicatorLine
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -56,6 +60,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -102,7 +107,7 @@ fun WorkoutSummaryComponent(
     summary: WorkoutSummary
 ) {
     Column(Modifier.fillMaxWidth()) {
-        Text("Total", style = MaterialTheme.typography.body1)
+        Text(stringResource(R.string.workout_summary_total), style = MaterialTheme.typography.body1)
         Spacer(modifier = Modifier.height(8.dp))
         Row(
             Modifier.fillMaxWidth(),
@@ -111,12 +116,12 @@ fun WorkoutSummaryComponent(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(summary.totalCaloriesBurned.toString(), style = MaterialTheme.typography.h4, color = MaterialTheme.colors.primary)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Kcal", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.workout_summary_label_calories_burned), style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(summary.workoutCount.toString(), style = MaterialTheme.typography.h4, color = MaterialTheme.colors.primary)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Workouts", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.workout_summary_label_workout_count), style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment = Alignment.Bottom) {
@@ -128,7 +133,7 @@ fun WorkoutSummaryComponent(
                         style = MaterialTheme.typography.h5, color = MaterialTheme.colors.primary)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Time", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.workout_summary_label_total_time), style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
             }
         }
     }
@@ -140,7 +145,7 @@ fun WeekHistoryComponent(
     workoutDates: List<Calendar>
 ) {
     Column(Modifier.fillMaxWidth()) {
-        Text("History", style = MaterialTheme.typography.body1)
+        Text(stringResource(R.string.workout_history_header), style = MaterialTheme.typography.body1)
         Spacer(modifier = Modifier.height(8.dp))
         val calendars = (0..6).map {  offset ->
             (startingDate.clone() as Calendar).also {
@@ -205,8 +210,8 @@ fun WelcomeBanner(
         }
         Column(Modifier.align(Alignment.CenterEnd)
             .padding(16.dp)) {
-            Text("Welcome back", style = MaterialTheme.typography.h5, color = Color.White)
-            Text("last activity", style = MaterialTheme.typography.caption, color = Color.White)
+            Text(stringResource(R.string.banner_welcome_back), style = MaterialTheme.typography.h5, color = Color.White)
+            Text(stringResource(R.string.banner_last_activity), style = MaterialTheme.typography.caption, color = Color.White)
             Row(horizontalArrangement = Arrangement.Center) {
                 Image(painter = painterResource(id = R.drawable.baseline_timer_24), contentDescription = "time estimate", colorFilter = ColorFilter.tint(Color.White))
                 Spacer(Modifier.width(4.dp))
@@ -900,6 +905,17 @@ fun UnderlineTextField(
             contentPadding = PaddingValues(bottom = 4.dp),
         )
     }
+}
+
+
+//https://stackoverflow.com/a/70031663/7876958
+//https://stackoverflow.com/a/73230181/7876958
+@Composable
+fun animateAlignmentAsState(targetAlignment: Alignment): State<BiasAlignment> {
+    targetAlignment as BiasAlignment
+    val horizontal = animateFloatAsState(targetAlignment.horizontalBias)
+    val vertical = animateFloatAsState(targetAlignment.verticalBias)
+    return derivedStateOf { BiasAlignment(horizontal.value, vertical.value) }
 }
 
 /*@Preview(widthDp = 600)

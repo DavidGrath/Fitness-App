@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -253,12 +254,12 @@ fun NameAndEmailScreen(
             .padding(16.dp)
             .fillMaxSize()) {
         Text(
-            text = "Enter your details",
+            text = stringResource(R.string.onboarding_header_name_and_email),
             Modifier.align(Alignment.CenterHorizontally),
             style = MaterialTheme.typography.h4
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "First Name", style = MaterialTheme.typography.h5)
+        Text(text = stringResource(R.string.onboarding_label_first_name), style = MaterialTheme.typography.h5)
         Spacer(modifier = Modifier.height(8.dp))
         val firstNameInteractionSource = remember {
             MutableInteractionSource()
@@ -289,7 +290,7 @@ fun NameAndEmailScreen(
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Last Name", style = MaterialTheme.typography.h5)
+        Text(text = stringResource(R.string.onboarding_label_last_name), style = MaterialTheme.typography.h5)
         Spacer(modifier = Modifier.height(8.dp))
         val lastNameInteractionSource = remember {
             MutableInteractionSource()
@@ -318,7 +319,7 @@ fun NameAndEmailScreen(
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Email", style = MaterialTheme.typography.h5)
+        Text(text = stringResource(R.string.onboarding_label_email), style = MaterialTheme.typography.h5)
         Spacer(modifier = Modifier.height(8.dp))
         val emailInteractionSource = remember {
             MutableInteractionSource()
@@ -356,7 +357,7 @@ fun GenderScreen(
 //    val primaryColor = Color.Red
     val otherColor = Color.Black
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Choose Gender", style = MaterialTheme.typography.h4)
+        Text(stringResource(R.string.onboarding_header_gender), style = MaterialTheme.typography.h4)
         Row(Modifier.fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
             val maleIconColor = if (gender.equals("male", true)) {
                 primaryColor
@@ -411,14 +412,14 @@ fun HeightScreen(
 
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,) {
         Text(
-            text = "Choose Height",
+            text = stringResource(R.string.onboarding_header_height),
             style = MaterialTheme.typography.h4
         )
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(horizontal = 48.dp), verticalArrangement = Arrangement.Center) {
-            Text(text = "Height", style = MaterialTheme.typography.h5, modifier = Modifier.align(Alignment.Start))
+            Text(text = stringResource(R.string.onboarding_label_height), style = MaterialTheme.typography.h5, modifier = Modifier.align(Alignment.Start))
             val currentUnitText = if (unit == Constants.UNIT_HEIGHT_INCHES) {
                 "Imperial (ft)"
             } else if (unit == Constants.UNIT_HEIGHT_CENTIMETERS) {
@@ -543,14 +544,14 @@ fun BirthDateScreen(
 
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = "Choose Age",
+            text = stringResource(R.string.onboarding_header_age),
             style = MaterialTheme.typography.h4
         )
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(horizontal = 48.dp), verticalArrangement = Arrangement.Center) {
-            Text(text = "Birthdate", style = MaterialTheme.typography.h5)
+            Text(text = stringResource(R.string.onboarding_label_birthdate), style = MaterialTheme.typography.h5)
             Spacer(modifier = Modifier.height(8.dp))
             val displayMonths = arrayOf(
                 "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -646,14 +647,14 @@ fun WeightScreen(
 
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = "Choose Weight",
+            text = stringResource(R.string.onboarding_header_weight),
             style = MaterialTheme.typography.h4
         )
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(horizontal = 48.dp), verticalArrangement = Arrangement.Center) {
-            Text(text = "Weight", style = MaterialTheme.typography.h5)
+            Text(text = stringResource(R.string.onboarding_label_weight), style = MaterialTheme.typography.h5)
             val currentUnitText = if (unit == Constants.UNIT_WEIGHT_POUNDS) {
                 "Imperial (lb)"
             } else if (unit == Constants.UNIT_WEIGHT_KG) {

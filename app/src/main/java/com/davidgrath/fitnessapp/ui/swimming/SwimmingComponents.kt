@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +33,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.FitnessApp
 import com.davidgrath.fitnessapp.framework.SimpleAssetString
@@ -191,7 +193,7 @@ fun SwimmingDashboard(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Swimming", expanded = true, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.swimming_header), expanded = true, onBackClicked = onNavigateBack)
         Spacer(Modifier.height(4.dp))
         Column(
             Modifier
@@ -199,7 +201,7 @@ fun SwimmingDashboard(
                 .padding(horizontal = 8.dp)) {
             val fitnessApp = (LocalContext.current.applicationContext as FitnessApp)
             WelcomeBanner(fitnessApp.resourceProvider.provideWorkoutBanner("swimming"),
-                bannerButtonText = "Start Swimming", onNavigateWorkoutScreen)
+                bannerButtonText = stringResource(R.string.swimming_banner_button_text), onNavigateWorkoutScreen)
             Spacer(Modifier.height(8.dp))
             WorkoutSummaryComponent(summary = workoutSummary)
             Spacer(Modifier.height(8.dp))
@@ -210,8 +212,7 @@ fun SwimmingDashboard(
                 }
             )
             Spacer(Modifier.height(8.dp))
-            Text(
-                "Show More",
+            Text(stringResource(R.string.swimming_workout_summary_show_more),
                 Modifier
                     .clickable(onClick = onNavigateDetailedHistory)
                     .align(Alignment.CenterHorizontally),
@@ -233,7 +234,7 @@ fun SwimmingHistory(
         Modifier
             .fillMaxSize(),
     ) {
-        SimpleAppBar(title = "Swimming", expanded = false, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.swimming_header), expanded = false, onBackClicked = onNavigateBack)
         val highlightedDates = workouts.map { w -> Calendar.getInstance().also { it.timeInMillis = w.date } }
         val (currentMonth, setCurrentMonth) = remember {
             mutableStateOf(Calendar.getInstance())
@@ -263,7 +264,7 @@ fun SwimmingWorkoutScreen(
 ) {
     Column(Modifier.fillMaxSize()) { // Don't know why I'm pointing this out now, but
         // fillMaxSize is basically match_parent+match_parent
-        SimpleAppBar(title = "Swimming", expanded = true, onBackClicked = onNavigateBack)
+        SimpleAppBar(title = stringResource(R.string.swimming_header), expanded = true, onBackClicked = onNavigateBack)
         Column(
             Modifier
                 .fillMaxWidth()
@@ -286,7 +287,7 @@ fun SwimmingWorkoutScreen(
                 style = MaterialTheme.typography.h3
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Time")
+            Text(stringResource(R.string.swimming_workout_label_time))
             Spacer(modifier = Modifier.height(32.dp))
             Row(Modifier.fillMaxWidth(), Arrangement.Center) {
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -294,7 +295,7 @@ fun SwimmingWorkoutScreen(
                         Text("0", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
                         Text("km", style = MaterialTheme.typography.body1.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold))
                     }
-                    Text("Distance", style = MaterialTheme.typography.body1,
+                    Text(stringResource(R.string.swimming_workout_label_distance), style = MaterialTheme.typography.body1,
                         fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -305,15 +306,15 @@ fun SwimmingWorkoutScreen(
                         0L
                     }
                     Text(resolvedCalories.toString(), style = MaterialTheme.typography.body1, fontWeight = FontWeight.Bold)
-                    Text("Calories Burned", style = MaterialTheme.typography.body1,
+                    Text(stringResource(R.string.swimming_workout_label_calories_burned), style = MaterialTheme.typography.body1,
                         fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 }
             }
         }
         val resolvedText = if(isSwimming) {
-            "Stop Swimming"
+            stringResource(R.string.swimming_workout_button_stop_swimming)
         } else {
-            "Start Swimming"
+            stringResource(R.string.swimming_workout_button_start_swimming)
         }
         SimpleGradientButton({
             if(isSwimming) {

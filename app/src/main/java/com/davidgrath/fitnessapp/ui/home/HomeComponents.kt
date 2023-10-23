@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -99,30 +100,30 @@ fun ChooseActivityScreen(onActivityChosen: (BasicNavScreen) -> Unit) {
             .fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(40.dp))
-        Text(text = "Choose Activity", style = MaterialTheme.typography.h4)
+        Text(text = stringResource(R.string.home_header), style = MaterialTheme.typography.h4)
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
             val context = LocalContext.current
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                SimpleTile(iconResourceId = R.drawable.swim, "Swimming") {
+                SimpleTile(iconResourceId = R.drawable.swim, stringResource(R.string.home_label_swimming)) {
                     onActivityChosen(BasicNavScreen.SwimmingDashboardNav)
                 }
-                SimpleTile(iconResourceId = R.drawable.run_fast, "Running") {
+                SimpleTile(iconResourceId = R.drawable.run_fast, stringResource(R.string.home_label_running)) {
                     onActivityChosen(BasicNavScreen.RunningDashboardNav)
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                SimpleTile(iconResourceId = R.drawable.shoe_sneaker, "Walking") {
+                SimpleTile(iconResourceId = R.drawable.shoe_sneaker, stringResource(R.string.home_label_walking)) {
                     onActivityChosen(BasicNavScreen.WalkingDashboardNav)
                 }
-                SimpleTile(iconResourceId = R.drawable.bike, "Cycling") {
+                SimpleTile(iconResourceId = R.drawable.bike, stringResource(R.string.home_label_cycling)) {
                     onActivityChosen(BasicNavScreen.CyclingDashboardNav)
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                SimpleTile(iconResourceId = R.drawable.weight_lifter, "Gym") {
+                SimpleTile(iconResourceId = R.drawable.weight_lifter, stringResource(R.string.home_label_gym)) {
                     onActivityChosen(BasicNavScreen.GymDashboardNav)
                 }
-                SimpleTile(iconResourceId = R.drawable.yoga, "Yoga") {
+                SimpleTile(iconResourceId = R.drawable.yoga, stringResource(R.string.home_label_yoga)) {
                     onActivityChosen(BasicNavScreen.YogaDashboardNav)
                 }
             }

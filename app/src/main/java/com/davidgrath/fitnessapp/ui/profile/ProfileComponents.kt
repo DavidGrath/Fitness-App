@@ -1,8 +1,6 @@
 package com.davidgrath.fitnessapp.ui.profile
 
-import android.content.Context
 import android.widget.NumberPicker
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -57,7 +56,6 @@ import java.util.Calendar
 import java.util.GregorianCalendar
 import kotlin.math.floor
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ProfileScreen(
     viewModel: OnboardingViewModel,
@@ -70,11 +68,10 @@ fun ProfileScreen(
         .fillMaxSize()) {
 
         val scrollState = rememberScrollState()
-        val context = LocalContext.current
         val lifecycleOwner = LocalLifecycleOwner.current
         val coroutineScope = rememberCoroutineScope()
 
-        SimpleAppBar("User Profile", false, onBackClicked = onNavigateBack)
+        SimpleAppBar(stringResource(R.string.profile_header), false, onBackClicked = onNavigateBack)
 
         Column(
             Modifier
@@ -83,7 +80,7 @@ fun ProfileScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(Modifier.height(16.dp))
-            Text("General Settings", style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+            Text(stringResource(R.string.profile_label_general_settings), style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
             Spacer(Modifier.height(16.dp))
 
             Image(painter = painterResource(R.drawable.account_circle), contentDescription = "avatar",
@@ -93,7 +90,7 @@ fun ProfileScreen(
             )
 
             Spacer(Modifier.height(16.dp))
-            Text("First Name", style = MaterialTheme.typography.body1)
+            Text(stringResource(R.string.profile_label_first_name), style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
             UnderlineTextField(value = screenState.firstName, onValueChange = viewModel::setFirstName,
                 modifier = Modifier.fillMaxWidth(), textStyle = MaterialTheme.typography.body1.copy(MaterialTheme.colors.primary)) {
@@ -105,7 +102,7 @@ fun ProfileScreen(
             }
 
             Spacer(Modifier.height(16.dp))
-            Text("Last Name", style = MaterialTheme.typography.body1)
+            Text(stringResource(R.string.profile_label_last_name), style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
             UnderlineTextField(value = screenState.lastName, onValueChange = viewModel::setLastName,
                 modifier = Modifier.fillMaxWidth(), textStyle = MaterialTheme.typography.body1.copy(MaterialTheme.colors.primary)) {
@@ -117,7 +114,7 @@ fun ProfileScreen(
             }
 
             Spacer(Modifier.height(16.dp))
-            Text("Email", style = MaterialTheme.typography.body1)
+            Text(stringResource(R.string.profile_label_email), style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
             UnderlineTextField(value = screenState.email, onValueChange = viewModel::setEmail,
                 modifier = Modifier.fillMaxWidth(), true, MaterialTheme.typography.body1.copy(MaterialTheme.colors.primary)) {
@@ -150,7 +147,7 @@ fun ProfileScreen(
                 )
             }
             Spacer(Modifier.height(16.dp))
-            Text("Birthdate", style = MaterialTheme.typography.body1)
+            Text(stringResource(R.string.profile_label_birthdate), style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
             Text(sdf.format(calendar.time), style = MaterialTheme.typography.body1.copy(MaterialTheme.colors.primary),
                 modifier = Modifier
@@ -191,7 +188,7 @@ fun ProfileScreen(
                 "${feetAndInches.first}'${feetAndInches.second}\""
             }
             Spacer(Modifier.height(16.dp))
-            Text("Height", style = MaterialTheme.typography.body1)
+            Text(stringResource(R.string.profile_label_height), style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
             Text(heightString, style = MaterialTheme.typography.body1.copy(MaterialTheme.colors.primary),
                 modifier = Modifier
@@ -228,7 +225,7 @@ fun ProfileScreen(
                 "${screenState.weight} pounds"
             }
             Spacer(Modifier.height(16.dp))
-            Text("Weight", style = MaterialTheme.typography.body1)
+            Text(stringResource(R.string.profile_label_weight), style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
             Text(weightString, style = MaterialTheme.typography.body1.copy(MaterialTheme.colors.primary),
                 modifier = Modifier
@@ -326,10 +323,11 @@ fun WeightDialog(
     }
     AlertDialog(onDismissRequest = {},
         title = {
-            Text(text = "Weight", style = MaterialTheme.typography.h5)
+            Text(text = stringResource(R.string.dialog_weight_title), style = MaterialTheme.typography.h5)
         },
         confirmButton = {
-            Text("Save",
+            Text(
+                stringResource(R.string.dialog_weight_button_save),
                 Modifier
                     .padding(8.dp)
                     .clickable {
@@ -339,7 +337,7 @@ fun WeightDialog(
             )
         },
         dismissButton = {
-            Text("Cancel",
+            Text(stringResource(R.string.dialog_weight_button_cancel),
                 Modifier
                     .padding(8.dp)
                     .clickable {
@@ -488,10 +486,10 @@ fun HeightDialog(
     }
     AlertDialog(onDismissRequest = {},
         title = {
-            Text(text = "Height", style = MaterialTheme.typography.h5)
+            Text(text = stringResource(R.string.dialog_height_title), style = MaterialTheme.typography.h5)
         },
         confirmButton = {
-            Text("Save",
+            Text(stringResource(R.string.dialog_height_button_save),
                 Modifier
                     .padding(8.dp)
                     .clickable {
@@ -501,7 +499,7 @@ fun HeightDialog(
             )
         },
         dismissButton = {
-            Text("Cancel",
+            Text(stringResource(R.string.dialog_button_height_cancel),
                 Modifier
                     .padding(8.dp)
                     .clickable {
@@ -644,10 +642,10 @@ fun BirthdateDialog(
     }
     AlertDialog(onDismissRequest = {},
         title = {
-            Text(text = "Birthdate", style = MaterialTheme.typography.h5)
+            Text(text = stringResource(R.string.dialog_birthdate_header), style = MaterialTheme.typography.h5)
         },
         confirmButton = {
-            Text("Set",
+            Text(stringResource(R.string.dialog_birthdate_button_save),
                 Modifier
                     .padding(8.dp)
                     .clickable {
@@ -663,7 +661,7 @@ fun BirthdateDialog(
             )
         },
         dismissButton = {
-            Text("Cancel",
+            Text(stringResource(R.string.dialog_birthdate_button_cancel),
                 Modifier
                     .padding(8.dp)
                     .clickable {
