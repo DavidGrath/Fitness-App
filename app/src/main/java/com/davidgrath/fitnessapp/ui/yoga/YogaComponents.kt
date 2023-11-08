@@ -33,6 +33,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -111,6 +112,9 @@ fun NavGraphBuilder.yogaNavGraph(navController: NavHostController, yogaViewModel
                 },
                 {
                     navController.navigate(BasicNavScreen.YogaSessionListNav.path)
+                },
+                {
+
                 }
             )
         }
@@ -186,38 +190,28 @@ fun YogaDashboardScreen(
     viewModel: YogaViewModel,
     onNavigateBack: () -> Unit,
     onNavigateDetailedHistory: () -> Unit,
-    onNavigateSessionsScreen: () -> Unit
+    onNavigateSessionsScreen: () -> Unit,
+    onNavigateOngoingWorkout: () -> Unit
 ) {
+    val (isInitial, setIsInitial) = rememberSaveable {
+        mutableStateOf(true)
+    }
+
     LaunchedEffect(key1 = null) {
         viewModel.getWorkoutsInPastWeek()
         viewModel.getFullWorkoutsSummary()
+        setIsInitial(false)
     }
-    val weekWorkoutsResult = viewModel.pastWeekWorkoutsLiveData.observeAsState().value
-    val workoutSummaryResult = viewModel.fullWorkoutSummaryLiveData.observeAsState().value
+    val yogaScreensState =
+        viewModel.yogaScreensStateLiveData.observeAsState().value?: YogaViewModel.YogaScreensState()
 
-    val weekWorkouts = when(weekWorkoutsResult) {
-        is SimpleResult.Failure -> {
-            emptyList<YogaWorkout>()
-        }
-        is SimpleResult.Processing -> {
-            emptyList<YogaWorkout>()
-        }
-        is SimpleResult.Success -> {
-            weekWorkoutsResult.data
-        }
-        null -> {
-            emptyList<YogaWorkout>()
+    LaunchedEffect(yogaScreensState) {
+        if(yogaScreensState.isDoingYoga && isInitial) {
+            onNavigateOngoingWorkout()
         }
     }
-
-    val workoutSummary = when(workoutSummaryResult) {
-        is SimpleResult.Failure, is SimpleResult.Processing, null -> {
-            WorkoutSummary(0, 0, 0)
-        }
-        is SimpleResult.Success -> {
-            workoutSummaryResult.data
-        }
-    }
+    val weekWorkouts = yogaScreensState.pastWeekWorkouts
+    val workoutSummary = yogaScreensState.workoutSummary
 
     Column(
         Modifier
@@ -262,13 +256,9 @@ fun YogaHistoryScreen(
     LaunchedEffect(key1 = null) {
         viewModel.getWorkouts()
     }
-    val workoutsResult = viewModel.pastWorkoutsLiveData.observeAsState().value
-    val workouts = when(workoutsResult) {
-        is SimpleResult.Failure -> emptyList()
-        is SimpleResult.Processing -> emptyList()
-        is SimpleResult.Success -> workoutsResult.data
-        null -> emptyList()
-    }
+    val yogaScreensState =
+        viewModel.yogaScreensStateLiveData.observeAsState().value?:YogaViewModel.YogaScreensState()
+    val workouts = yogaScreensState.pastWorkouts
     Column(
         Modifier
             .fillMaxSize(),
@@ -503,8 +493,9 @@ fun YogaAsanaScreen(
         viewModel.startAsana(currentYogaAsana.identifier, currentYogaAsana.durationMillis)
         viewModel.getYogaAsanaState()
     }
-
-    val isDoingYoga = viewModel.isDoingYogaLiveData.observeAsState().value
+    val yogaScreensState =
+        viewModel.yogaScreensStateLiveData.observeAsState().value?:YogaViewModel.YogaScreensState()
+    val isDoingYoga = yogaScreensState.isDoingYoga
     val yogaAsanaState = viewModel.yogaAsanaStateLiveData.observeAsState().value?: YogaAsanaState(0, false)
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current

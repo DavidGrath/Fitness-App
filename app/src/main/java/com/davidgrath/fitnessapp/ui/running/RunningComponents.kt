@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -85,41 +86,8 @@ fun NavGraphBuilder.runningNavGraph(
         route = BasicNavScreen.RunningDashboardNav.lastSegment()) {
 
         composable(route = BasicNavScreen.RunningDashboardNav.path) {
-
-            LaunchedEffect(key1 = null) {
-                viewModel.getWorkoutsInPastWeek()
-                viewModel.getFullWorkoutsSummary()
-            }
-            val weekWorkoutsResult = viewModel.pastWeekWorkoutsLiveData.observeAsState().value
-            val workoutSummaryResult = viewModel.fullWorkoutSummaryLiveData.observeAsState().value
-
-            val weekWorkouts = when(weekWorkoutsResult) {
-                is SimpleResult.Failure -> {
-                    emptyList<RunningWorkout>()
-                }
-                is SimpleResult.Processing -> {
-                    emptyList<RunningWorkout>()
-                }
-                is SimpleResult.Success -> {
-                    weekWorkoutsResult.data
-                }
-                null -> {
-                    emptyList<RunningWorkout>()
-                }
-            }
-
-            val workoutSummary = when(workoutSummaryResult) {
-                is SimpleResult.Failure, is SimpleResult.Processing, null -> {
-                    WorkoutSummary(0, 0, 0)
-                }
-                is SimpleResult.Success -> {
-                    workoutSummaryResult.data
-                }
-            }
-
             RunningDashboard(
-                weekWorkouts,
-                workoutSummary,
+                viewModel,
                 {
                     navController.popBackStack()
                 },
@@ -128,45 +96,25 @@ fun NavGraphBuilder.runningNavGraph(
                 },
                 {
                     navController.navigate(BasicNavScreen.RunningWorkoutNav.path)
+                },
+                {
+                    navController.navigate(BasicNavScreen.RunningWorkoutNav.path)
                 }
+
             )
         }
         composable(route = BasicNavScreen.RunningHistoryNav.path) {
-            LaunchedEffect(key1 = null) {
-                viewModel.getWorkouts()
-            }
-            val workouts = viewModel.pastWorkoutsLiveData.observeAsState().value
-            when(workouts) {
-                is SimpleResult.Failure -> {}
-                is SimpleResult.Processing -> {}
-                is SimpleResult.Success -> {
-                    RunningHistory(
-//                        currentMonth, { cal ->
-//                            setCurrentMonth(cal)
-//                            viewModel.getWorkoutsInMonth(cal.time)
-//                        },
-                        {
-                            navController.popBackStack()
-                        }, workouts.data)
+            RunningHistory(
+                viewModel,
+                {
+                    navController.popBackStack()
                 }
-                null -> {}
-            }
-
+            )
         }
         composable(route = BasicNavScreen.RunningWorkoutNav.path) {
-            LaunchedEffect(key1 = null) {
-                viewModel.getIsRunning()
-                viewModel.getTimeElapsed()
-            }
-            val isRunning = viewModel.isRunningLiveData.observeAsState().value
-            val currentWorkout = viewModel.currentWorkoutLiveData.observeAsState().value
-            val locationData = viewModel.locationDataLiveData.observeAsState().value
-            val timeElapsed = viewModel.timeElapsedLiveData.observeAsState().value
+
             RunningWorkoutScreen(
-                elapsedTimeMillis = timeElapsed?:0,
-                caloriesBurned = currentWorkout?.kCalBurned?:0,
-                isRunning = isRunning?: false,
-                locationData = locationData?: emptyList(),
+                viewModel,
                 onStartRunning = {
                     viewModel.startRunning()
                 },
@@ -196,12 +144,32 @@ fun RunningNavHost(
 
 @Composable
 fun RunningDashboard(
-    weekWorkouts: List<RunningWorkout>,
-    workoutSummary: WorkoutSummary,
+    viewModel: RunningViewModel,
     onNavigateBack: () -> Unit,
     onNavigateDetailedHistory: () -> Unit,
-    onNavigateWorkoutScreen: () -> Unit
+    onNavigateWorkoutScreen: () -> Unit,
+    onNavigateOngoingWorkout: () -> Unit
 ) {
+    val (isInitial, setIsInitial) = rememberSaveable {
+        mutableStateOf(true)
+    }
+    LaunchedEffect(key1 = null) {
+        viewModel.getWorkoutsInPastWeek()
+        viewModel.getFullWorkoutsSummary()
+        setIsInitial(false)
+    }
+
+    val runningScreensState = viewModel.runningScreensStateLiveData.observeAsState().value?: RunningViewModel.RunningScreensState()
+
+    LaunchedEffect(runningScreensState) {
+        if(runningScreensState.isRunning && isInitial) {
+            onNavigateOngoingWorkout()
+        }
+    }
+
+    val weekWorkouts = runningScreensState.pastWeekWorkouts
+    val workoutSummary = runningScreensState.workoutSummary
+
     Column(
         Modifier
             .fillMaxSize(),
@@ -239,11 +207,16 @@ fun RunningDashboard(
 
 @Composable
 fun RunningHistory(
-//    currentMonth: Calendar,
-//    setCurrentMonth: (Calendar) -> Unit,
+    viewModel: RunningViewModel,
     onNavigateBack: () -> Unit,
-    workouts: List<RunningWorkout>
 ) {
+
+    LaunchedEffect(key1 = null) {
+        viewModel.getWorkouts()
+    }
+    val runningScreensState = viewModel.runningScreensStateLiveData.observeAsState().value?: RunningViewModel.RunningScreensState()
+    val workouts = runningScreensState.workouts
+
     Column(
         Modifier
             .fillMaxSize(),
@@ -269,14 +242,21 @@ fun RunningHistory(
 
 @Composable
 fun RunningWorkoutScreen(
-    elapsedTimeMillis: Long,
-    caloriesBurned: Int,
-    isRunning: Boolean,
-    locationData: List<LocationDataUI>,
+    viewModel: RunningViewModel,
     onStartRunning: () -> Unit,
     onStopRunning: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+
+    LaunchedEffect(key1 = null) {
+        viewModel.getIsRunning()
+        viewModel.getTimeElapsed()
+    }
+    val runningScreensState = viewModel.runningScreensStateLiveData.observeAsState().value?: RunningViewModel.RunningScreensState()
+    val isRunning = runningScreensState.isRunning
+    val locationData = runningScreensState.locationData
+    val elapsedTimeMillis = runningScreensState.elapsedTimeMillis
+    val caloriesBurned = runningScreensState.currentWorkout.kCalBurned
 
     Column(Modifier.fillMaxSize()) {
         Surface(elevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
@@ -364,7 +344,6 @@ fun RunningWorkoutScreen(
                             Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            //TODO Use class for state so as to reduce total lines for "resolved" parameters
                             val resolvedCalories = if (isRunning) {
                                 caloriesBurned
                             } else {

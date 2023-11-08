@@ -29,6 +29,7 @@ import com.davidgrath.fitnessapp.ui.yoga.YogaViewModelFactory
 
 class HomeActivity : ComponentActivity() {
 
+    lateinit var homeViewModel: HomeViewModel
     lateinit var onboardingViewModel: OnboardingViewModel
     lateinit var runningViewModel: RunningViewModel
     lateinit var walkingViewModel: WalkingViewModel
@@ -44,12 +45,22 @@ class HomeActivity : ComponentActivity() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             isBoundToService = true
             binder = service as FitnessService.FitnessBinder?
-            runningViewModel.fitnessBinder = binder
-            walkingViewModel.fitnessBinder = binder
-            swimmingViewModel.fitnessBinder = binder
-            cyclingViewModel.fitnessBinder = binder
-            gymViewModel.fitnessBinder = binder
-            yogaViewModel.fitnessBinder = binder
+            homeViewModel.fitnessService = binder
+            runningViewModel.fitnessService = binder
+            walkingViewModel.fitnessService = binder
+            swimmingViewModel.fitnessService = binder
+            cyclingViewModel.fitnessService = binder
+            gymViewModel.fitnessService = binder
+            yogaViewModel.fitnessService = binder
+            setContent { //TODO This just looks wrong, but it seems onServiceConnected only gets
+                // called after onCreate returns, so work with it for now
+                FitnessAppTheme {
+                    HomeScreen(homeViewModel,
+                        onboardingViewModel, runningViewModel, walkingViewModel, swimmingViewModel,
+                        cyclingViewModel, gymViewModel, yogaViewModel
+                    )
+                }
+            }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -57,19 +68,11 @@ class HomeActivity : ComponentActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        val serviceIntent = Intent(this, FitnessService::class.java)
-        startService(serviceIntent)
-        bindService(serviceIntent, servConn, BIND_AUTO_CREATE)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
-
+        super.onCreate(savedInstanceState)
+        homeViewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory()).get(HomeViewModel::class.java)
         val userDataRepository = UserDataRepositoryImpl(this)
         onboardingViewModel = ViewModelProvider(this, OnboardingViewModelFactory(userDataRepository)).get(OnboardingViewModel::class.java)
-
-
 
         val runningRepository = (application as FitnessApp).runningRepository
         val walkingRepository = (application as FitnessApp).walkingRepository
@@ -91,15 +94,9 @@ class HomeActivity : ComponentActivity() {
         yogaViewModel = ViewModelProvider(this, YogaViewModelFactory(yogaRepository)).get(
             YogaViewModel::class.java)
 
-        super.onCreate(savedInstanceState)
-        setContent {
-            FitnessAppTheme {
-                HomeScreen(
-                    onboardingViewModel, runningViewModel, walkingViewModel, swimmingViewModel,
-                    cyclingViewModel, gymViewModel, yogaViewModel
-                )
-            }
-        }
+        val serviceIntent = Intent(this, FitnessService::class.java)
+        startService(serviceIntent)
+        bindService(serviceIntent, servConn, BIND_AUTO_CREATE)
     }
 
     override fun onStop() {

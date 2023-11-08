@@ -5,13 +5,14 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.davidgrath.fitnessapp.data.AbstractFitnessService
 import com.davidgrath.fitnessapp.data.YogaRepository
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.data.entities.YogaAsanaState
-import com.davidgrath.fitnessapp.framework.FitnessService
-import com.davidgrath.fitnessapp.framework.database.entities.YogaWorkout
 import com.davidgrath.fitnessapp.ui.entities.TempVideoDetails
+import com.davidgrath.fitnessapp.ui.entities.YogaWorkoutUI
 import com.davidgrath.fitnessapp.util.SimpleResult
+import com.davidgrath.fitnessapp.util.yogaWorkoutToYogaWorkoutUI
 import com.google.gson.Gson
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -33,19 +34,9 @@ class YogaViewModel(
     private val _addWorkoutLiveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
     val addWorkoutLiveData : LiveData<SimpleResult<Unit>> = _addWorkoutLiveData
 
-    private val _pastWeekWorkoutsLiveData = MutableLiveData<SimpleResult<List<YogaWorkout>>>()
-    val pastWeekWorkoutsLiveData: LiveData<SimpleResult<List<YogaWorkout>>> = _pastWeekWorkoutsLiveData
-
-    private val _pastWorkoutsLiveData = MutableLiveData<SimpleResult<List<YogaWorkout>>>(
-        SimpleResult.Processing())
-    val pastWorkoutsLiveData : LiveData<SimpleResult<List<YogaWorkout>>> = _pastWorkoutsLiveData
-
-    private val _fullWorkoutSummaryLiveData = MutableLiveData<SimpleResult<WorkoutSummary>>(
-        SimpleResult.Processing())
-    val fullWorkoutSummaryLiveData : LiveData<SimpleResult<WorkoutSummary>> = _fullWorkoutSummaryLiveData
-
-    private val _isDoingYogaLiveData = MutableLiveData<Boolean>(false)
-    val isDoingYogaLiveData : LiveData<Boolean> = _isDoingYogaLiveData
+    private var _yogaScreensState = YogaScreensState()
+    private val _yogaScreensStateLiveData = MutableLiveData<YogaScreensState>(_yogaScreensState)
+    val yogaScreensStateLiveData : LiveData<YogaScreensState> = _yogaScreensStateLiveData
 
     private val gson = Gson()
     private val _tempVideoDetailsLiveData = MutableLiveData<TempVideoDetails>()
@@ -63,11 +54,10 @@ class YogaViewModel(
     private val _skipLiveData = MutableLiveData<SimpleResult<Unit>>()
     val skipLiveData : LiveData<SimpleResult<Unit>> = _skipLiveData
 
-    //TODO this is basically illegal by architecture standards but I'm not abstracting just yet
-    var fitnessBinder: FitnessService.FitnessBinder? = null
+    var fitnessService: AbstractFitnessService? = null
 
     fun addWorkout(name: String? = "") {
-        fitnessBinder!!.startYogaWorkout(name?:"")
+        fitnessService!!.startWorkout("YOGA")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { id ->
@@ -79,7 +69,6 @@ class YogaViewModel(
     }
 
     fun getWorkoutsInPastWeek() {
-        _pastWeekWorkoutsLiveData.postValue(SimpleResult.Processing())
         val calendar = Calendar.getInstance()
         val lastDay = calendar.time
         calendar.add(Calendar.DAY_OF_YEAR, -8)
@@ -94,11 +83,14 @@ class YogaViewModel(
                 it.filter { it.id != currentWorkoutId }
             }
             .subscribe(
-                {
-                    _pastWeekWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                { list ->
+                    val mapped = list.map {
+                        yogaWorkoutToYogaWorkoutUI(it)
+                    }
+                    _yogaScreensState = _yogaScreensState.copy(pastWeekWorkouts = mapped)
+                    _yogaScreensStateLiveData.postValue(_yogaScreensState)
                 },
                 {
-                    _pastWeekWorkoutsLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
@@ -112,11 +104,14 @@ class YogaViewModel(
                 it.filter { it.id != currentWorkoutId }
             }
             .subscribe(
-                {
-                    _pastWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                { list ->
+                    val mapped = list.map {
+                        yogaWorkoutToYogaWorkoutUI(it)
+                    }
+                    _yogaScreensState = _yogaScreensState.copy(pastWorkouts = mapped)
+                    _yogaScreensStateLiveData.postValue(_yogaScreensState)
                 },
                 {
-                    _pastWorkoutsLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
@@ -129,36 +124,37 @@ class YogaViewModel(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 {
-                    _fullWorkoutSummaryLiveData.postValue(SimpleResult.Success(it))
+                    _yogaScreensState = _yogaScreensState.copy(workoutSummary = it)
+                    _yogaScreensStateLiveData.postValue(_yogaScreensState)
                 },
                 {
-                    _fullWorkoutSummaryLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
 
     fun getIsDoingYoga() {
         //TODO Add LiveDateReactiveStreams
-        fitnessBinder!!.getCurrentWorkoutObservable()
+        fitnessService!!.getCurrentWorkoutObservable()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .map {
                 it == "YOGA"
             }
             .subscribe({
-                _isDoingYogaLiveData.postValue(it)
+                _yogaScreensState = _yogaScreensState.copy(isDoingYoga = it)
+                _yogaScreensStateLiveData.postValue(_yogaScreensState)
             }, {
 
             })
     }
 
     fun startAsana(asanaIdentifier: String, durationMillis: Int) {
-        fitnessBinder!!.startYogaAsana(asanaIdentifier, durationMillis)
+        fitnessService!!.startYogaAsana(asanaIdentifier, durationMillis)
     }
 
     fun skipAsana() {
         _skipLiveData.postValue(SimpleResult.Processing())
-        fitnessBinder!!.skipYogaAsana()
+        fitnessService!!.skipYogaAsana()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { _ ->
@@ -169,15 +165,15 @@ class YogaViewModel(
     }
 
     fun pauseAsana() {
-        fitnessBinder!!.pauseCurrentYogaAsana()
+        fitnessService!!.pauseCurrentYogaAsana()
     }
 
     fun resumeAsana() {
-        fitnessBinder!!.resumeCurrentYogaAsana()
+        fitnessService!!.resumeCurrentYogaAsana()
     }
 
     fun getYogaAsanaState() {
-        fitnessBinder!!.getYogaAsanaState()
+        fitnessService!!.getYogaAsanaState()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
@@ -186,7 +182,7 @@ class YogaViewModel(
     }
 
     fun endAsana() {
-        fitnessBinder!!.endYogaAsana()
+        fitnessService!!.endYogaAsana()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ id ->
@@ -198,9 +194,9 @@ class YogaViewModel(
 
 
     fun endCurrentWorkout() {
-        fitnessBinder!!.endYogaAsana()
+        fitnessService!!.endYogaAsana()
             .flatMap {
-                fitnessBinder!!.cancelCurrentWorkout()
+                fitnessService!!.cancelCurrentWorkout()
             }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -234,6 +230,15 @@ class YogaViewModel(
             }
         }.start()
     }
+
+    data class YogaScreensState(
+        val pastWeekWorkouts: List<YogaWorkoutUI> = emptyList(),
+        val pastWorkouts: List<YogaWorkoutUI> = emptyList(),
+        val workoutSummary: WorkoutSummary = WorkoutSummary(0, 0, 0),
+        val isDoingYoga: Boolean = false,
+        val currentRoutineIndex: Int = 0,
+        val currentSetIndex: Int = 0,
+    )
 }
 
 

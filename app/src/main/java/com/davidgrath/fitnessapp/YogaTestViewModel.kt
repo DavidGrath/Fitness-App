@@ -3,7 +3,7 @@ package com.davidgrath.fitnessapp
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.davidgrath.fitnessapp.data.YogaRepository
+import com.davidgrath.fitnessapp.data.AbstractFitnessService
 import com.davidgrath.fitnessapp.data.entities.YogaAsanaState
 import com.davidgrath.fitnessapp.framework.FitnessService
 import com.davidgrath.fitnessapp.util.SimpleResult
@@ -17,12 +17,11 @@ class YogaTestViewModel(
     var currentWorkoutId: Long = -1
         private set
 
-    //TODO this is basically illegal by architecture standards but I'm not abstracting just yet
-    var fitnessBinder: FitnessService.FitnessBinder? = null
+    var fitnessService: AbstractFitnessService? = null
 
     fun addWorkout(name: String? = ""): LiveData<SimpleResult<Unit>> {
         val liveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
-        fitnessBinder!!.startYogaWorkout(name?:"")
+        fitnessService!!.startWorkout("YOGA")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { id ->
@@ -36,12 +35,12 @@ class YogaTestViewModel(
     }
 
     fun startAsana(asanaIdentifier: String, durationMillis: Int) {
-        fitnessBinder!!.startYogaAsana(asanaIdentifier, durationMillis)
+        fitnessService!!.startYogaAsana(asanaIdentifier, durationMillis)
     }
 
     fun skipAsana(): LiveData<SimpleResult<Unit>> {
         val liveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
-        fitnessBinder!!.skipYogaAsana()
+        fitnessService!!.skipYogaAsana()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { _ ->
@@ -54,16 +53,16 @@ class YogaTestViewModel(
     }
 
     fun pauseAsana() {
-        fitnessBinder!!.pauseCurrentYogaAsana()
+        fitnessService!!.pauseCurrentYogaAsana()
     }
 
     fun resumeAsana() {
-        fitnessBinder!!.resumeCurrentYogaAsana()
+        fitnessService!!.resumeCurrentYogaAsana()
     }
 
     fun getYogaAsanaState() : LiveData<YogaAsanaState> {
         val liveData = MutableLiveData<YogaAsanaState>()
-        fitnessBinder!!.getYogaAsanaState()
+        fitnessService!!.getYogaAsanaState()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
@@ -74,7 +73,7 @@ class YogaTestViewModel(
 
     fun endAsana(): LiveData<SimpleResult<Unit>> {
         val liveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
-        fitnessBinder!!.endYogaAsana()
+        fitnessService!!.endYogaAsana()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ id ->
@@ -88,9 +87,9 @@ class YogaTestViewModel(
 
     fun endCurrentWorkout(): LiveData<SimpleResult<Unit>> {
         val liveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
-        fitnessBinder!!.endYogaAsana()
+        fitnessService!!.endYogaAsana()
             .flatMap {
-                fitnessBinder!!.cancelCurrentWorkout()
+                fitnessService!!.cancelCurrentWorkout()
             }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())

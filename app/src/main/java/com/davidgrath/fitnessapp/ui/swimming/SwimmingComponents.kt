@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.swimming
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,13 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,13 +32,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.davidgrath.fitnessapp.R
-import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.FitnessApp
-import com.davidgrath.fitnessapp.framework.SimpleAssetString
-import com.davidgrath.fitnessapp.framework.database.entities.SwimmingWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.FitnessAppTheme
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
@@ -46,8 +43,6 @@ import com.davidgrath.fitnessapp.ui.components.SimpleGradientButton
 import com.davidgrath.fitnessapp.ui.components.WeekHistoryComponent
 import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
-import com.davidgrath.fitnessapp.util.SimpleResult
-import com.davidgrath.fitnessapp.util.workoutNameToAssetMap
 import java.util.Calendar
 import java.util.TimeZone
 import kotlin.time.DurationUnit
@@ -76,41 +71,8 @@ fun NavGraphBuilder.swimmingNavGraph(navController: NavHostController, swimmingV
         route = BasicNavScreen.SwimmingDashboardNav.lastSegment()) {
 
         composable(route = BasicNavScreen.SwimmingDashboardNav.path) {
-
-            LaunchedEffect(key1 = null) {
-                swimmingViewModel.getWorkoutsInPastWeek()
-                swimmingViewModel.getFullWorkoutsSummary()
-            }
-            val weekWorkoutsResult = swimmingViewModel.pastWeekWorkoutsLiveData.observeAsState().value
-            val workoutSummaryResult = swimmingViewModel.fullWorkoutSummaryLiveData.observeAsState().value
-
-            val weekWorkouts = when(weekWorkoutsResult) {
-                is SimpleResult.Failure -> {
-                    emptyList<SwimmingWorkout>()
-                }
-                is SimpleResult.Processing -> {
-                    emptyList<SwimmingWorkout>()
-                }
-                is SimpleResult.Success -> {
-                    weekWorkoutsResult.data
-                }
-                null -> {
-                    emptyList<SwimmingWorkout>()
-                }
-            }
-
-            val workoutSummary = when(workoutSummaryResult) {
-                is SimpleResult.Failure, is SimpleResult.Processing, null -> {
-                    WorkoutSummary(0, 0, 0)
-                }
-                is SimpleResult.Success -> {
-                    workoutSummaryResult.data
-                }
-            }
-
             SwimmingDashboard(
-                weekWorkouts,
-                workoutSummary,
+                swimmingViewModel,
                 {
                     navController.popBackStack()
                 },
@@ -119,42 +81,24 @@ fun NavGraphBuilder.swimmingNavGraph(navController: NavHostController, swimmingV
                 },
                 {
                     navController.navigate(BasicNavScreen.SwimmingWorkoutNav.path)
+                },
+                {
+                    navController.navigate(BasicNavScreen.SwimmingWorkoutNav.path)
                 }
             )
         }
         composable(route = BasicNavScreen.SwimmingHistoryNav.path) {
-            LaunchedEffect(key1 = null) {
-                swimmingViewModel.getWorkouts()
-            }
-            val workouts = swimmingViewModel.pastWorkoutsLiveData.observeAsState().value
-            when(workouts) {
-                is SimpleResult.Failure -> {}
-                is SimpleResult.Processing -> {}
-                is SimpleResult.Success -> {
-                    SwimmingHistory(
-//                        currentMonth, { cal ->
-//                            setCurrentMonth(cal)
-//                            viewModel.getWorkoutsInMonth(cal.time)
-//                        },
-                        {
-                            navController.popBackStack()
-                        }, workouts.data)
+            SwimmingHistory(
+                swimmingViewModel,
+                {
+                    navController.popBackStack()
                 }
-                null -> {}
-            }
+            )
 
         }
         composable(route = BasicNavScreen.SwimmingWorkoutNav.path) {
-            LaunchedEffect(key1 = null) {
-                swimmingViewModel.getIsSwimming()
-            }
-            val isSwimming = swimmingViewModel.isSwimmingLiveData.observeAsState().value
-            val currentWorkout = swimmingViewModel.currentWorkoutLiveData.observeAsState().value
-            val timeElapsed = swimmingViewModel.timeElapsedLiveData.observeAsState().value
             SwimmingWorkoutScreen(
-                elapsedTimeMillis = timeElapsed?:0,
-                caloriesBurned = currentWorkout?.kCalBurned?:0,
-                isSwimming = isSwimming?: false,
+                swimmingViewModel,
                 onStartSwimming = {
                     swimmingViewModel.startSwimming()
                 },
@@ -183,12 +127,31 @@ fun SwimmingNavHost(
 
 @Composable
 fun SwimmingDashboard(
-    weekWorkouts: List<SwimmingWorkout>,
-    workoutSummary: WorkoutSummary,
+    swimmingViewModel: SwimmingViewModel,
     onNavigateBack: () -> Unit,
     onNavigateDetailedHistory: () -> Unit,
-    onNavigateWorkoutScreen: () -> Unit
+    onNavigateWorkoutScreen: () -> Unit,
+    onNavigateOngoingWorkout: () -> Unit
 ) {
+    val (isInitial, setIsInitial) = rememberSaveable {
+        mutableStateOf(true)
+    }
+    LaunchedEffect(key1 = null) {
+        swimmingViewModel.getWorkoutsInPastWeek()
+        swimmingViewModel.getFullWorkoutsSummary()
+        setIsInitial(false)
+    }
+
+    val swimmingScreensState = swimmingViewModel.swimmingScreensStateLiveData.observeAsState().value?:SwimmingViewModel.SwimmingScreensState()
+
+    LaunchedEffect(swimmingScreensState) {
+        if(swimmingScreensState.isSwimming && isInitial) {
+            onNavigateOngoingWorkout()
+        }
+    }
+    val weekWorkouts = swimmingScreensState.pastWeekWorkouts
+    val workoutSummary = swimmingScreensState.workoutSummary
+
     Column(
         Modifier
             .fillMaxSize(),
@@ -225,11 +188,18 @@ fun SwimmingDashboard(
 
 @Composable
 fun SwimmingHistory(
+    swimmingViewModel: SwimmingViewModel,
 //    currentMonth: Calendar,
 //    setCurrentMonth: (Calendar) -> Unit,
     onNavigateBack: () -> Unit,
-    workouts: List<SwimmingWorkout>
 ) {
+
+    LaunchedEffect(key1 = null) {
+        swimmingViewModel.getWorkouts()
+    }
+    val swimmingScreensState = swimmingViewModel.swimmingScreensStateLiveData.observeAsState()?.value?:SwimmingViewModel.SwimmingScreensState()
+    val workouts = swimmingScreensState.workouts
+
     Column(
         Modifier
             .fillMaxSize(),
@@ -255,13 +225,21 @@ fun SwimmingHistory(
 
 @Composable
 fun SwimmingWorkoutScreen(
-    elapsedTimeMillis: Long,
-    caloriesBurned: Int,
-    isSwimming: Boolean,
+    swimmingViewModel: SwimmingViewModel,
     onStartSwimming: () -> Unit,
     onStopSwimming: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+
+    LaunchedEffect(key1 = null) {
+        swimmingViewModel.getIsSwimming()
+        swimmingViewModel.getTimeElapsed()
+    }
+    val swimmingScreensState = swimmingViewModel.swimmingScreensStateLiveData.observeAsState().value?:SwimmingViewModel.SwimmingScreensState()
+    val isSwimming = swimmingScreensState.isSwimming
+    val currentWorkout = swimmingScreensState.currentWorkout
+    val elapsedTimeMillis = swimmingScreensState.elapsedTimeMillis
+
     Column(Modifier.fillMaxSize()) { // Don't know why I'm pointing this out now, but
         // fillMaxSize is basically match_parent+match_parent
         SimpleAppBar(title = stringResource(R.string.swimming_header), expanded = true, onBackClicked = onNavigateBack)
@@ -281,7 +259,6 @@ fun SwimmingWorkoutScreen(
                 } else {
                     String.format("%02d", minutes) + ":" + String.format("%02d", seconds)
                 }
-
             }
             Text(timeString,
                 style = MaterialTheme.typography.h3
@@ -299,9 +276,8 @@ fun SwimmingWorkoutScreen(
                         fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    //TODO Use class for state so as to reduce total lines for "resolved" parameters
                     val resolvedCalories = if(isSwimming) {
-                        caloriesBurned
+                        currentWorkout.kCalBurned
                     } else {
                         0L
                     }

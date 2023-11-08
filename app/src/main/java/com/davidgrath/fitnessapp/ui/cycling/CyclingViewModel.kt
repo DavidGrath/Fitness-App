@@ -1,12 +1,13 @@
 package com.davidgrath.fitnessapp.ui.cycling
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.davidgrath.fitnessapp.data.AbstractFitnessService
 import com.davidgrath.fitnessapp.data.CyclingRepository
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
-import com.davidgrath.fitnessapp.framework.FitnessService
 import com.davidgrath.fitnessapp.framework.database.entities.CyclingWorkout
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
 import com.davidgrath.fitnessapp.util.SimpleResult
@@ -23,38 +24,33 @@ class CyclingViewModel(
     var currentWorkoutId: Long = -1
         private set
 
-    //TODO this is basically illegal by architecture standards but I'm not abstracting just yet
-    var fitnessBinder: FitnessService.FitnessBinder? = null
+    var fitnessService: AbstractFitnessService? = null
+        set(value) {
+            field = value
+            value!!.getCurrentWorkoutObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map {
+                    it == "CYCLING"
+                }
+                .subscribe({
+                    _cyclingScreenState = _cyclingScreenState.copy(isCycling = it)
+                    _cyclingScreenStateLiveData.postValue(_cyclingScreenState)
+                }, {
 
-    private val _pastWeekWorkoutsLiveData = MutableLiveData<SimpleResult<List<CyclingWorkout>>>()
-    val pastWeekWorkoutsLiveData: LiveData<SimpleResult<List<CyclingWorkout>>> = _pastWeekWorkoutsLiveData
+                })
+        }
 
-    private val _pastMonthWorkoutsLiveData = MutableLiveData<SimpleResult<List<CyclingWorkout>>>()
-    val pastMonthWorkoutsLiveData: LiveData<SimpleResult<List<CyclingWorkout>>> = _pastMonthWorkoutsLiveData
-
-    private val _pastWorkoutsLiveData = MutableLiveData<SimpleResult<List<CyclingWorkout>>>(
-        SimpleResult.Processing())
-    val pastWorkoutsLiveData : LiveData<SimpleResult<List<CyclingWorkout>>> = _pastWorkoutsLiveData
-
-    private val _fullWorkoutSummaryLiveData = MutableLiveData<SimpleResult<WorkoutSummary>>(
-        SimpleResult.Processing())
-    val fullWorkoutSummaryLiveData : LiveData<SimpleResult<WorkoutSummary>> = _fullWorkoutSummaryLiveData
-
-    private val _isCyclingLiveData = MutableLiveData<Boolean>(false)
-    val isCyclingLiveData : LiveData<Boolean> = _isCyclingLiveData
+    private var _cyclingScreenState = CyclingScreenState()
+    private val _cyclingScreenStateLiveData = MutableLiveData(_cyclingScreenState)
+    val cyclingScreenStateLiveData: LiveData<CyclingScreenState> = _cyclingScreenStateLiveData
 
     private val _currentWorkoutLiveData = MutableLiveData<CyclingWorkout>()
     private var currentWorkoutDisposable : Disposable? = null
     val currentWorkoutLiveData : LiveData<CyclingWorkout> = _currentWorkoutLiveData
 
-    private val _locationDataLiveData = MutableLiveData<List<LocationDataUI>>()
-    val locationDataLiveData : LiveData<List<LocationDataUI>> = _locationDataLiveData
-
-    private val _timeElapsedLiveData = MutableLiveData<Long>()
-    val timeElapsedLiveData : LiveData<Long> = _timeElapsedLiveData
 
     fun getWorkoutsInPastWeek() {
-        _pastWeekWorkoutsLiveData.postValue(SimpleResult.Processing())
         val calendar = Calendar.getInstance()
         val lastDay = calendar.time
         calendar.add(Calendar.DAY_OF_YEAR, -8)
@@ -70,10 +66,10 @@ class CyclingViewModel(
             }
             .subscribe(
                 {
-                    _pastWeekWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                    _cyclingScreenState = _cyclingScreenState.copy(pastWeekWorkouts = it)
+                    _cyclingScreenStateLiveData.postValue(_cyclingScreenState)
                 },
                 {
-                    _pastWeekWorkoutsLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
@@ -89,16 +85,14 @@ class CyclingViewModel(
         cyclingRepository.getWorkoutsByDateRange(firstDay, lastDay)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
-                {
-                    _pastMonthWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                { list ->
+                    val l = list.filter { it.id != currentWorkoutId }
+                    _cyclingScreenState = _cyclingScreenState.copy(pastMonthWorkouts = l)
+                    _cyclingScreenStateLiveData.postValue(_cyclingScreenState)
                 },
                 {
-                    _pastMonthWorkoutsLiveData.postValue(SimpleResult.Failure(it))
+
                 }
             )
     }
@@ -107,50 +101,47 @@ class CyclingViewModel(
         cyclingRepository.getWorkoutsByDateRange()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
-                {
-                    _pastWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                { list ->
+                    val l = list.filter { it.id != currentWorkoutId }
+
+                    _cyclingScreenState = _cyclingScreenState.copy(workouts = l)
+                    _cyclingScreenStateLiveData.postValue(_cyclingScreenState)
                 },
                 {
-                    _pastWorkoutsLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
 
     fun getFullWorkoutsSummary() {
-        //TODO I don't know if I should add a currentWorkoutId to the repositories so as to make sure
-        // the fetched Observables/LiveDatas aren't prematurely updated before the workout is done
         cyclingRepository.getWorkoutsSummaryByDateRange()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 {
-                    _fullWorkoutSummaryLiveData.postValue(SimpleResult.Success(it))
+                    _cyclingScreenState = _cyclingScreenState.copy(workoutSummary = it)
+                    _cyclingScreenStateLiveData.postValue(_cyclingScreenState)
                 },
                 {
-                    _fullWorkoutSummaryLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
 
-    fun getIsCycling() {
+    /*fun getIsCycling() {
         //TODO Add LiveDateReactiveStreams
-        fitnessBinder!!.getCurrentWorkoutObservable()
+        fitnessService!!.getCurrentWorkoutObservable()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .map {
                 it == "CYCLING"
             }
             .subscribe({
-                _isCyclingLiveData.postValue(it)
+                _cyclingScreenState = _cyclingScreenState.copy(isCycling = it)
+                _cyclingScreenStateLiveData.postValue(_cyclingScreenState)
             }, {
 
             })
-    }
+    }*/
 
     private fun getLocationData() {
         //TODO Add LiveDateReactiveStreams
@@ -161,18 +152,20 @@ class CyclingViewModel(
                 val mapped = list.map {
                     LocationDataUI(it.latitude, it.longitude)
                 }
-                _locationDataLiveData.postValue(mapped)
+                _cyclingScreenState = _cyclingScreenState.copy(locationData = mapped)
+                _cyclingScreenStateLiveData.postValue(_cyclingScreenState)
             }, {
 
             })
     }
 
     fun getTimeElapsed() {
-        fitnessBinder!!.getCurrentTimeElapsedObservable()
+        fitnessService!!.getCurrentTimeElapsedObservable()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ time ->
-                _timeElapsedLiveData.postValue(time)
+                _cyclingScreenState = _cyclingScreenState.copy(elapsedTimeMillis = time)
+                _cyclingScreenStateLiveData.postValue(_cyclingScreenState)
             }, {
 
             })
@@ -180,7 +173,7 @@ class CyclingViewModel(
 
     fun startCycling() {
         currentWorkoutDisposable?.dispose()
-        currentWorkoutDisposable = fitnessBinder!!.startCyclingWorkout()
+        currentWorkoutDisposable = fitnessService!!.startWorkout("CYCLING")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .flatMapObservable { id ->
@@ -191,11 +184,12 @@ class CyclingViewModel(
                 _currentWorkoutLiveData.postValue(it)
                 getLocationData() // Called here because it depends on currentWorkoutId
             }, {
+                Log.e("CYCLING", it.message, it)
             })
     }
 
     fun stopCycling() {
-        fitnessBinder!!.cancelCurrentWorkout()
+        fitnessService!!.cancelCurrentWorkout()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
@@ -204,6 +198,16 @@ class CyclingViewModel(
 
             })
     }
+
+    data class CyclingScreenState(
+        val isCycling: Boolean = false,
+        val pastWeekWorkouts: List<CyclingWorkout> = emptyList(),
+        val pastMonthWorkouts: List<CyclingWorkout> = emptyList(),
+        val workouts: List<CyclingWorkout> = emptyList(),
+        val workoutSummary: WorkoutSummary = WorkoutSummary(0, 0, 0),
+        val locationData: List<LocationDataUI> = emptyList(),
+        val elapsedTimeMillis: Long = 0L
+    )
 }
 
 

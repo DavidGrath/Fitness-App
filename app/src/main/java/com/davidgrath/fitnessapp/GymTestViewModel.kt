@@ -3,6 +3,7 @@ package com.davidgrath.fitnessapp
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.davidgrath.fitnessapp.data.AbstractFitnessService
 import com.davidgrath.fitnessapp.framework.FitnessService
 import com.davidgrath.fitnessapp.util.SimpleResult
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
@@ -15,12 +16,11 @@ class GymTestViewModel(
     var currentWorkoutId: Long = -1
     private set
 
-    //TODO this is basically illegal by architecture standards but I'm not abstracting just yet
-    var fitnessBinder: FitnessService.FitnessBinder? = null
+    var fitnessService: AbstractFitnessService? = null
 
     fun addWorkout(name: String? = ""): LiveData<SimpleResult<Unit>> {
         val liveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
-        fitnessBinder!!.startGymWorkout()
+        fitnessService!!.startWorkout("GYM")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { id ->
@@ -34,16 +34,16 @@ class GymTestViewModel(
     }
 
     fun startSet(setIdentifier: String) {
-        fitnessBinder!!.startGymSet(setIdentifier)
+        fitnessService!!.startGymSet(setIdentifier)
     }
 
     fun skipSet() {
-        fitnessBinder!!.skipGymSet()
+        fitnessService!!.skipGymSet()
     }
 
     fun endSet(repCount: Int): LiveData<SimpleResult<Unit>> {
         val liveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
-        fitnessBinder!!.endGymSet(repCount)
+        fitnessService!!.endGymSet(repCount)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ id ->
@@ -57,9 +57,9 @@ class GymTestViewModel(
 
     fun endCurrentWorkout(lastSetRepCount: Int): LiveData<SimpleResult<Unit>> {
         val liveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
-        fitnessBinder!!.endGymSet(lastSetRepCount)
+        fitnessService!!.endGymSet(lastSetRepCount)
             .flatMap {
-                fitnessBinder!!.cancelCurrentWorkout()
+                fitnessService!!.cancelCurrentWorkout()
             }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())

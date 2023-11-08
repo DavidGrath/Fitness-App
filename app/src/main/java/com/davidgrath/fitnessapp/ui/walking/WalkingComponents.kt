@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -34,15 +34,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
 import com.davidgrath.fitnessapp.R
-import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.FitnessApp
-import com.davidgrath.fitnessapp.framework.SimpleAssetString
-import com.davidgrath.fitnessapp.framework.database.entities.WalkingWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
 import com.davidgrath.fitnessapp.ui.components.MapViewComponent
@@ -52,9 +47,6 @@ import com.davidgrath.fitnessapp.ui.components.WeekHistoryComponent
 import com.davidgrath.fitnessapp.ui.components.WelcomeBanner
 import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
 import com.davidgrath.fitnessapp.ui.components.animateAlignmentAsState
-import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
-import com.davidgrath.fitnessapp.util.SimpleResult
-import com.davidgrath.fitnessapp.util.workoutNameToAssetMap
 import java.util.Calendar
 import java.util.TimeZone
 import kotlin.time.DurationUnit
@@ -80,41 +72,8 @@ fun NavGraphBuilder.walkingNavGraph(navController: NavHostController, walkingVie
     navigation(BasicNavScreen.WalkingDashboardNav.allButLastSegment(), BasicNavScreen.WalkingDashboardNav.lastSegment()) {
 
         composable(route = BasicNavScreen.WalkingDashboardNav.path) {
-
-            LaunchedEffect(key1 = null) {
-                walkingViewModel.getWorkoutsInPastWeek()
-                walkingViewModel.getFullWorkoutsSummary()
-            }
-            val weekWorkoutsResult = walkingViewModel.pastWeekWorkoutsLiveData.observeAsState().value
-            val workoutSummaryResult = walkingViewModel.fullWorkoutSummaryLiveData.observeAsState().value
-
-            val weekWorkouts = when(weekWorkoutsResult) {
-                is SimpleResult.Failure -> {
-                    emptyList<WalkingWorkout>()
-                }
-                is SimpleResult.Processing -> {
-                    emptyList<WalkingWorkout>()
-                }
-                is SimpleResult.Success -> {
-                    weekWorkoutsResult.data
-                }
-                null -> {
-                    emptyList<WalkingWorkout>()
-                }
-            }
-
-            val workoutSummary = when(workoutSummaryResult) {
-                is SimpleResult.Failure, is SimpleResult.Processing, null -> {
-                    WorkoutSummary(0, 0, 0)
-                }
-                is SimpleResult.Success -> {
-                    workoutSummaryResult.data
-                }
-            }
-
             WalkingDashboard(
-                weekWorkouts,
-                workoutSummary,
+                walkingViewModel,
                 {
                     navController.popBackStack()
                 },
@@ -123,45 +82,23 @@ fun NavGraphBuilder.walkingNavGraph(navController: NavHostController, walkingVie
                 },
                 {
                     navController.navigate(BasicNavScreen.WalkingWorkoutNav.path)
+                },
+                {
+                    navController.navigate(BasicNavScreen.WalkingWorkoutNav.path)
                 }
             )
         }
         composable(route = BasicNavScreen.WalkingHistoryNav.path) {
-            LaunchedEffect(key1 = null) {
-                walkingViewModel.getWorkouts()
-            }
-            val workouts = walkingViewModel.pastWorkoutsLiveData.observeAsState().value
-            when(workouts) {
-                is SimpleResult.Failure -> {}
-                is SimpleResult.Processing -> {}
-                is SimpleResult.Success -> {
-                    WalkingHistory(
-//                        currentMonth, { cal ->
-//                            setCurrentMonth(cal)
-//                            viewModel.getWorkoutsInMonth(cal.time)
-//                        },
-                        {
-                            navController.popBackStack()
-                        }, workouts.data)
+            WalkingHistory(
+                walkingViewModel,
+                {
+                    navController.popBackStack()
                 }
-                null -> {}
-            }
-
+            )
         }
         composable(route = BasicNavScreen.WalkingWorkoutNav.path) {
-            LaunchedEffect(key1 = null) {
-                walkingViewModel.getIsWalking()
-                walkingViewModel.getTimeElapsed()
-            }
-            val isWalking = walkingViewModel.isWalkingLiveData.observeAsState().value
-            val currentWorkout = walkingViewModel.currentWorkoutLiveData.observeAsState().value
-            val locationData = walkingViewModel.locationDataLiveData.observeAsState().value
-            val timeElapsed = walkingViewModel.timeElapsedLiveData.observeAsState().value
             WalkingWorkoutScreen(
-                elapsedTimeMillis = timeElapsed?:0,
-                caloriesBurned = currentWorkout?.kCalBurned?:0,
-                isWalking = isWalking?: false,
-                locationData = locationData?: emptyList(),
+                walkingViewModel,
                 onStartWalking = {
                     walkingViewModel.startWalking()
                 },
@@ -178,12 +115,34 @@ fun NavGraphBuilder.walkingNavGraph(navController: NavHostController, walkingVie
 
 @Composable
 fun WalkingDashboard(
-    weekWorkouts: List<WalkingWorkout>,
-    workoutSummary: WorkoutSummary,
+    walkingViewModel: WalkingViewModel,
     onNavigateBack: () -> Unit,
     onNavigateDetailedHistory: () -> Unit,
-    onNavigateWorkoutScreen: () -> Unit
+    onNavigateWorkoutScreen: () -> Unit,
+    onNavigateOngoingWorkout: () -> Unit
 ) {
+
+    val (isInitial, setIsInitial) = rememberSaveable {
+        mutableStateOf(true)
+    }
+
+    LaunchedEffect(key1 = null) {
+        walkingViewModel.getWorkoutsInPastWeek()
+        walkingViewModel.getFullWorkoutsSummary()
+        setIsInitial(false)
+    }
+
+    val walkingScreensState = walkingViewModel.walkingScreensStateLiveData.observeAsState()
+        .value?: WalkingViewModel.WalkingScreensState()
+
+    LaunchedEffect(walkingScreensState) {
+        if(walkingScreensState.isWalking && isInitial) {
+            onNavigateOngoingWorkout()
+        }
+    }
+    val weekWorkouts = walkingScreensState.pastWeekWorkouts
+    val workoutSummary = walkingScreensState.workoutSummary
+
     Column(
         Modifier
             .fillMaxSize(),
@@ -221,11 +180,20 @@ fun WalkingDashboard(
 
 @Composable
 fun WalkingHistory(
-//    currentMonth: Calendar,
-//    setCurrentMonth: (Calendar) -> Unit,
+    walkingViewModel: WalkingViewModel,
     onNavigateBack: () -> Unit,
-    workouts: List<WalkingWorkout>
 ) {
+
+    LaunchedEffect(key1 = null) {
+        walkingViewModel.getWorkouts()
+    }
+
+
+    val walkingScreensState = walkingViewModel.walkingScreensStateLiveData.observeAsState()
+        .value?:WalkingViewModel.WalkingScreensState()
+    val workouts = walkingScreensState.workouts
+
+
     Column(
         Modifier
             .fillMaxSize(),
@@ -251,14 +219,23 @@ fun WalkingHistory(
 
 @Composable
 fun WalkingWorkoutScreen(
-    elapsedTimeMillis: Long,
-    caloriesBurned: Int,
-    isWalking: Boolean,
-    locationData: List<LocationDataUI>,
+    walkingViewModel: WalkingViewModel,
     onStartWalking: () -> Unit,
     onStopWalking: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+
+    LaunchedEffect(key1 = null) {
+        walkingViewModel.getIsWalking()
+        walkingViewModel.getTimeElapsed()
+    }
+    val walkingScreensState = walkingViewModel.walkingScreensStateLiveData.observeAsState()
+        .value?:WalkingViewModel.WalkingScreensState()
+
+    val isWalking = walkingScreensState.isWalking
+    val currentWorkout = walkingScreensState.currentWorkout
+    val locationData = walkingScreensState.locationData
+    val elapsedTimeMillis = walkingScreensState.elapsedTimeMillis
 
     Column(Modifier.fillMaxSize()) {
         Surface(elevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
@@ -346,11 +323,10 @@ fun WalkingWorkoutScreen(
                             Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            //TODO Use class for state so as to reduce total lines for "resolved" parameters
                             val resolvedCalories = if (isWalking) {
-                                caloriesBurned
+                                currentWorkout.kCalBurned
                             } else {
-                                0L
+                                0
                             }
                             Text(
                                 resolvedCalories.toString(),

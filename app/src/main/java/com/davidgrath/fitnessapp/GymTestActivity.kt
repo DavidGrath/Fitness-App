@@ -22,7 +22,7 @@ class GymTestActivity: AppCompatActivity(), GymRoutinesFragment.GymRoutinesListe
     private val servConn = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             binder = service as FitnessService.FitnessBinder?
-            viewModel.fitnessBinder = binder
+            viewModel.fitnessService = binder
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {

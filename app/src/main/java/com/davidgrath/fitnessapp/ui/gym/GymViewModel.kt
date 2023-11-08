@@ -5,9 +5,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.davidgrath.fitnessapp.data.AbstractFitnessService
 import com.davidgrath.fitnessapp.data.GymRepository
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
-import com.davidgrath.fitnessapp.framework.FitnessService
 import com.davidgrath.fitnessapp.framework.database.entities.GymWorkout
 import com.davidgrath.fitnessapp.ui.entities.TempVideoDetails
 import com.davidgrath.fitnessapp.util.SimpleResult
@@ -29,23 +29,6 @@ class GymViewModel(
     var currentWorkoutId: Long = -1
         private set
 
-    private val _pastWeekWorkoutsLiveData = MutableLiveData<SimpleResult<List<GymWorkout>>>()
-    val pastWeekWorkoutsLiveData: LiveData<SimpleResult<List<GymWorkout>>> = _pastWeekWorkoutsLiveData
-
-    private val _pastMonthWorkoutsLiveData = MutableLiveData<SimpleResult<List<GymWorkout>>>()
-    val pastMonthWorkoutsLiveData: LiveData<SimpleResult<List<GymWorkout>>> = _pastMonthWorkoutsLiveData
-
-    private val _pastWorkoutsLiveData = MutableLiveData<SimpleResult<List<GymWorkout>>>(
-        SimpleResult.Processing())
-    val pastWorkoutsLiveData : LiveData<SimpleResult<List<GymWorkout>>> = _pastWorkoutsLiveData
-
-    private val _fullWorkoutSummaryLiveData = MutableLiveData<SimpleResult<WorkoutSummary>>(
-        SimpleResult.Processing())
-    val fullWorkoutSummaryLiveData : LiveData<SimpleResult<WorkoutSummary>> = _fullWorkoutSummaryLiveData
-
-    private val _isDoingGymLiveData = MutableLiveData<Boolean>(false)
-    val isDoingGymLiveData : LiveData<Boolean> = _isDoingGymLiveData
-
     private val gson = Gson()
     private val _tempVideoDetailsLiveData = MutableLiveData<TempVideoDetails>()
     val tempVideoDetailsLiveData : LiveData<TempVideoDetails> = _tempVideoDetailsLiveData
@@ -59,11 +42,14 @@ class GymViewModel(
     private val _addWorkoutLiveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
     val addWorkoutLiveData : LiveData<SimpleResult<Unit>> = _addWorkoutLiveData
 
-    //TODO this is basically illegal by architecture standards but I'm not abstracting just yet
-    var fitnessBinder: FitnessService.FitnessBinder? = null
+    private var _gymScreenState = GymScreensState()
+    private val _gymScreenStateLiveData = MutableLiveData(_gymScreenState)
+    val gymScreenStateLiveData: LiveData<GymScreensState> = _gymScreenStateLiveData
+
+    var fitnessService: AbstractFitnessService? = null
 
     fun addWorkout(name: String? = "") {
-        fitnessBinder!!.startGymWorkout()
+        fitnessService!!.startWorkout("GYM")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { id ->
@@ -75,7 +61,6 @@ class GymViewModel(
     }
 
     fun getWorkoutsInPastWeek() {
-        _pastWeekWorkoutsLiveData.postValue(SimpleResult.Processing())
         val calendar = Calendar.getInstance()
         val lastDay = calendar.time
         calendar.add(Calendar.DAY_OF_YEAR, -8)
@@ -91,10 +76,10 @@ class GymViewModel(
             }
             .subscribe(
                 {
-                    _pastWeekWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                    _gymScreenState = _gymScreenState.copy(pastWeekWorkouts = it)
+                    _gymScreenStateLiveData.postValue(_gymScreenState)
                 },
                 {
-                    _pastWeekWorkoutsLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
@@ -109,10 +94,10 @@ class GymViewModel(
             }
             .subscribe(
                 {
-                    _pastWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                    _gymScreenState = _gymScreenState.copy(pastWorkouts = it)
+                    _gymScreenStateLiveData.postValue(_gymScreenState)
                 },
                 {
-                    _pastWorkoutsLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
@@ -125,39 +110,40 @@ class GymViewModel(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 {
-                    _fullWorkoutSummaryLiveData.postValue(SimpleResult.Success(it))
+                    _gymScreenState = _gymScreenState.copy(workoutSummary = it)
+                    _gymScreenStateLiveData.postValue(_gymScreenState)
                 },
                 {
-                    _fullWorkoutSummaryLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
 
     fun getIsDoingGym() {
         //TODO Add LiveDateReactiveStreams
-        fitnessBinder!!.getCurrentWorkoutObservable()
+        fitnessService!!.getCurrentWorkoutObservable()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .map {
                 it == "GYM"
             }
             .subscribe({
-                _isDoingGymLiveData.postValue(it)
+                _gymScreenState = _gymScreenState.copy(isDoingGym = it)
+                _gymScreenStateLiveData.postValue(_gymScreenState)
             }, {
 
             })
     }
 
     fun startSet(setIdentifier: String) {
-        fitnessBinder!!.startGymSet(setIdentifier)
+        fitnessService!!.startGymSet(setIdentifier)
     }
 
     fun skipSet() {
-        fitnessBinder!!.skipGymSet()
+        fitnessService!!.skipGymSet()
     }
 
     fun endSet(repCount: Int): LiveData<SimpleResult<Unit>> {
-        fitnessBinder!!.endGymSet(repCount)
+        fitnessService!!.endGymSet(repCount)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ id ->
@@ -170,9 +156,9 @@ class GymViewModel(
 
 
     fun endCurrentWorkout(lastSetRepCount: Int) {
-        fitnessBinder!!.endGymSet(lastSetRepCount)
+        fitnessService!!.endGymSet(lastSetRepCount)
             .flatMap {
-                fitnessBinder!!.cancelCurrentWorkout()
+                fitnessService!!.cancelCurrentWorkout()
             }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -207,8 +193,15 @@ class GymViewModel(
         }.start()
     }
 
-    class GymSetState(
-
+    //TODO Port routineId and setId to service/binder
+    data class GymScreensState(
+        val pastWeekWorkouts: List<GymWorkout> = emptyList(),
+        val pastMonthWorkouts: List<GymWorkout> = emptyList(),
+        val pastWorkouts: List<GymWorkout> = emptyList(),
+        val workoutSummary: WorkoutSummary = WorkoutSummary(0, 0, 0),
+        val isDoingGym: Boolean = false,
+        val currentRoutineIndex: Int = 0,
+        val currentSetIndex: Int = 0,
     )
 }
 

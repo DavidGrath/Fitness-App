@@ -4,12 +4,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.davidgrath.fitnessapp.data.AbstractFitnessService
 import com.davidgrath.fitnessapp.data.RunningRepository
 import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
-import com.davidgrath.fitnessapp.framework.FitnessService
-import com.davidgrath.fitnessapp.framework.database.entities.RunningWorkout
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
-import com.davidgrath.fitnessapp.util.SimpleResult
+import com.davidgrath.fitnessapp.ui.entities.RunningWorkoutUI
+import com.davidgrath.fitnessapp.util.runningWorkoutToRunningWorkoutUI
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -23,38 +23,13 @@ class RunningViewModel(
     var currentWorkoutId: Long = -1
         private set
 
-    //TODO this is basically illegal by architecture standards but I'm not abstracting just yet
-    var fitnessBinder: FitnessService.FitnessBinder? = null
+    var fitnessService: AbstractFitnessService? = null
 
-    private val _pastWeekWorkoutsLiveData = MutableLiveData<SimpleResult<List<RunningWorkout>>>()
-    val pastWeekWorkoutsLiveData: LiveData<SimpleResult<List<RunningWorkout>>> = _pastWeekWorkoutsLiveData
-
-    private val _pastMonthWorkoutsLiveData = MutableLiveData<SimpleResult<List<RunningWorkout>>>()
-    val pastMonthWorkoutsLiveData: LiveData<SimpleResult<List<RunningWorkout>>> = _pastMonthWorkoutsLiveData
-
-    private val _pastWorkoutsLiveData = MutableLiveData<SimpleResult<List<RunningWorkout>>>(
-        SimpleResult.Processing())
-    val pastWorkoutsLiveData : LiveData<SimpleResult<List<RunningWorkout>>> = _pastWorkoutsLiveData
-
-    private val _fullWorkoutSummaryLiveData = MutableLiveData<SimpleResult<WorkoutSummary>>(
-        SimpleResult.Processing())
-    val fullWorkoutSummaryLiveData : LiveData<SimpleResult<WorkoutSummary>> = _fullWorkoutSummaryLiveData
-
-    private val _isRunningLiveData = MutableLiveData<Boolean>(false)
-    val isRunningLiveData : LiveData<Boolean> = _isRunningLiveData
-
-    private val _currentWorkoutLiveData = MutableLiveData<RunningWorkout>()
-    private var currentWorkoutDisposable : Disposable? = null
-    val currentWorkoutLiveData : LiveData<RunningWorkout> = _currentWorkoutLiveData
-
-    private val _locationDataLiveData = MutableLiveData<List<LocationDataUI>>()
-    val locationDataLiveData : LiveData<List<LocationDataUI>> = _locationDataLiveData
-
-    private val _timeElapsedLiveData = MutableLiveData<Long>()
-    val timeElapsedLiveData : LiveData<Long> = _timeElapsedLiveData
+    private var _runningScreensState = RunningScreensState()
+    private val _runningScreensStateLiveData = MutableLiveData(_runningScreensState)
+    val runningScreensStateLiveData: LiveData<RunningScreensState> = _runningScreensStateLiveData
 
     fun getWorkoutsInPastWeek() {
-        _pastWeekWorkoutsLiveData.postValue(SimpleResult.Processing())
         val calendar = Calendar.getInstance()
         val lastDay = calendar.time
         calendar.add(Calendar.DAY_OF_YEAR, -8)
@@ -69,11 +44,14 @@ class RunningViewModel(
                 it.filter { it.id != currentWorkoutId }
             }
             .subscribe(
-                {
-                    _pastWeekWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                { list ->
+                    val mapped = list.map {
+                        runningWorkoutToRunningWorkoutUI(it)
+                    }
+                    _runningScreensState = _runningScreensState.copy(pastWeekWorkouts = mapped)
+                    _runningScreensStateLiveData.postValue(_runningScreensState)
                 },
                 {
-                    _pastWeekWorkoutsLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
@@ -94,11 +72,14 @@ class RunningViewModel(
                 it.filter { it.id != currentWorkoutId }
             }
             .subscribe(
-                {
-                    _pastMonthWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                { list ->
+                    val mapped = list.map {
+                        runningWorkoutToRunningWorkoutUI(it)
+                    }
+                    _runningScreensState = _runningScreensState.copy(pastMonthWorkouts = mapped)
+                    _runningScreensStateLiveData.postValue(_runningScreensState)
                 },
                 {
-                    _pastMonthWorkoutsLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
@@ -112,11 +93,14 @@ class RunningViewModel(
                 it.filter { it.id != currentWorkoutId }
             }
             .subscribe(
-                {
-                    _pastWorkoutsLiveData.postValue(SimpleResult.Success(it))
+                { list ->
+                    val mapped = list.map {
+                        runningWorkoutToRunningWorkoutUI(it)
+                    }
+                    _runningScreensState = _runningScreensState.copy(workouts = mapped)
+                    _runningScreensStateLiveData.postValue(_runningScreensState)
                 },
                 {
-                    _pastWorkoutsLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
@@ -129,24 +113,25 @@ class RunningViewModel(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 {
-                    _fullWorkoutSummaryLiveData.postValue(SimpleResult.Success(it))
+                    _runningScreensState = _runningScreensState.copy(workoutSummary = it)
+                    _runningScreensStateLiveData.postValue(_runningScreensState)
                 },
                 {
-                    _fullWorkoutSummaryLiveData.postValue(SimpleResult.Failure(it))
                 }
             )
     }
 
     fun getIsRunning() {
         //TODO Add LiveDateReactiveStreams
-        fitnessBinder!!.getCurrentWorkoutObservable()
+        fitnessService!!.getCurrentWorkoutObservable()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .map {
                 it == "RUNNING"
             }
             .subscribe({
-                _isRunningLiveData.postValue(it)
+                _runningScreensState = _runningScreensState.copy(isRunning = it)
+                _runningScreensStateLiveData.postValue(_runningScreensState)
             }, {
 
             })
@@ -161,26 +146,27 @@ class RunningViewModel(
                 val mapped = list.map {
                     LocationDataUI(it.latitude, it.longitude)
                 }
-                _locationDataLiveData.postValue(mapped)
+                _runningScreensState = _runningScreensState.copy(locationData = mapped)
+                _runningScreensStateLiveData.postValue(_runningScreensState)
             }, {
 
             })
     }
 
     fun getTimeElapsed() {
-        fitnessBinder!!.getCurrentTimeElapsedObservable()
+        fitnessService!!.getCurrentTimeElapsedObservable()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ time ->
-                _timeElapsedLiveData.postValue(time)
+                _runningScreensState = _runningScreensState.copy(elapsedTimeMillis = time)
+                _runningScreensStateLiveData.postValue(_runningScreensState)
             }, {
 
             })
     }
 
     fun startRunning() {
-        currentWorkoutDisposable?.dispose()
-        currentWorkoutDisposable = fitnessBinder!!.startRunningWorkout()
+        fitnessService!!.startWorkout("RUNNING")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .flatMapObservable { id ->
@@ -188,14 +174,16 @@ class RunningViewModel(
                 runningRepository.getWorkout(currentWorkoutId)
             }
             .subscribe( {
-                _currentWorkoutLiveData.postValue(it)
+                val rw = runningWorkoutToRunningWorkoutUI(it)
+                _runningScreensState = _runningScreensState.copy(currentWorkout = rw)
+                _runningScreensStateLiveData.postValue(_runningScreensState)
                 getLocationData() // Called here because it depends on currentWorkoutId
             }, {
             })
     }
 
     fun stopRunning() {
-        fitnessBinder!!.cancelCurrentWorkout()
+        fitnessService!!.cancelCurrentWorkout()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
@@ -204,6 +192,17 @@ class RunningViewModel(
 
             })
     }
+
+    data class RunningScreensState(
+        val isRunning: Boolean = false,
+        val pastWeekWorkouts: List<RunningWorkoutUI> = emptyList(),
+        val pastMonthWorkouts: List<RunningWorkoutUI> = emptyList(),
+        val workouts: List<RunningWorkoutUI> = emptyList(),
+        val currentWorkout: RunningWorkoutUI = RunningWorkoutUI(),
+        val workoutSummary: WorkoutSummary = WorkoutSummary(0, 0, 0),
+        val locationData: List<LocationDataUI> = emptyList(),
+        val elapsedTimeMillis: Long = 0L
+    )
 }
 
 class RunningViewModelFactory(

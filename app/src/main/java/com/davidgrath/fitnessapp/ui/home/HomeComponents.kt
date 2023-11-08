@@ -21,21 +21,29 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Observer
 import androidx.navigation.NavHostController
+import androidx.navigation.NavOptions
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navOptions
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.navigateSingleTopTo
@@ -63,10 +71,12 @@ import com.davidgrath.fitnessapp.ui.walking.walkingNavGraph
 import com.davidgrath.fitnessapp.ui.yoga.YogaActivity
 import com.davidgrath.fitnessapp.ui.yoga.YogaViewModel
 import com.davidgrath.fitnessapp.ui.yoga.yogaNavGraph
+import com.davidgrath.fitnessapp.util.SimpleResult
 
 
 @Composable
 fun HomeScreen(
+    homeViewModel: HomeViewModel,
     onboardingViewModel: OnboardingViewModel,
     runningViewModel: RunningViewModel,
     walkingViewModel: WalkingViewModel,
@@ -83,7 +93,7 @@ fun HomeScreen(
         }
     ) { padding ->
         HomeNavHost(
-            navController,
+            navController, homeViewModel,
             onboardingViewModel, runningViewModel, walkingViewModel,
             swimmingViewModel, cyclingViewModel, gymViewModel, yogaViewModel,
             Modifier
@@ -94,7 +104,24 @@ fun HomeScreen(
 }
 
 @Composable
-fun ChooseActivityScreen(onActivityChosen: (BasicNavScreen) -> Unit) {
+fun ChooseActivityScreen(
+    homeViewModel: HomeViewModel,
+    onNavigateOngoingWorkout: (String) -> Unit,
+    onActivityChosen: (BasicNavScreen) -> Unit) {
+
+    val chooseActivityScreenState = homeViewModel.chooseActivityStateLiveData.observeAsState().value?:HomeViewModel.ChooseActivityScreenState()
+
+    LaunchedEffect(chooseActivityScreenState) {
+        Log.d("HOME", chooseActivityScreenState.toString())
+        if(!chooseActivityScreenState.hasReadOngoingWorkout) {
+//            homeViewModel.getCurrentWorkout()
+            if(chooseActivityScreenState.ongoingWorkout.isNotBlank()) {
+                onNavigateOngoingWorkout(chooseActivityScreenState.ongoingWorkout)
+                homeViewModel.setHasReadOngoingWorkout()
+            }
+        }
+    }
+
     Column(
         Modifier
             .fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally
@@ -237,6 +264,7 @@ fun NavBar(
 @Composable
 fun HomeNavHost(
     navController: NavHostController,
+    homeViewModel: HomeViewModel,
     onboardingViewModel: OnboardingViewModel,
     runningViewModel: RunningViewModel,
     walkingViewModel: WalkingViewModel,
@@ -252,7 +280,16 @@ fun HomeNavHost(
         modifier
     ) {
         composable(route = BasicNavScreen.ChooseActivityNav.path) {
-            ChooseActivityScreen {
+            ChooseActivityScreen(homeViewModel, { workoutType ->
+                when(workoutType) {
+                    "CYCLING" -> navController.navigate(BasicNavScreen.CyclingWorkoutNav.path)
+                    "WALKING" -> navController.navigate(BasicNavScreen.WalkingWorkoutNav.path)
+                    "RUNNING" -> navController.navigate(BasicNavScreen.RunningWorkoutNav.path)
+                    "SWIMMING" -> navController.navigate(BasicNavScreen.SwimmingWorkoutNav.path)
+//                    "GYM" -> navController.navigate(BasicNavScreen.GymSetNav.getPathWithArgs())
+//                    "YOGA" -> navController.navigate(BasicNavScreen.YogaAsanaNav.getPathWithArgs())
+                }
+            }) {
                 navController.navigate(it.path)
             }
         }

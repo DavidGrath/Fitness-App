@@ -25,7 +25,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -54,24 +53,16 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.Placeholder
 import com.bumptech.glide.integration.compose.placeholder
-import com.bumptech.glide.load.Transformation
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.data.entities.GymRoutineTemplate
 import com.davidgrath.fitnessapp.data.entities.GymSetTutorial
-import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.framework.FitnessApp
-import com.davidgrath.fitnessapp.framework.SimpleAssetString
-import com.davidgrath.fitnessapp.framework.database.entities.GymWorkout
 import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.CalendarComponent
 import com.davidgrath.fitnessapp.ui.components.SimpleAppBar
@@ -119,6 +110,9 @@ fun NavGraphBuilder.gymNavGraph(navController: NavHostController, gymViewModel: 
                 },
                 {
                     navController.navigate(BasicNavScreen.GymRoutineListNav.path)
+                },
+                {
+
                 }
             )
         }
@@ -195,38 +189,28 @@ fun GymDashboardScreen(
     viewModel: GymViewModel,
     onNavigateBack: () -> Unit,
     onNavigateDetailedHistory: () -> Unit,
-    onNavigateRoutinesScreen: () -> Unit
+    onNavigateRoutinesScreen: () -> Unit,
+    onNavigateOngoingWorkout: () -> Unit
 ) {
+    val (isInitial, setIsInitial) = rememberSaveable {
+        mutableStateOf(true)
+    }
     LaunchedEffect(key1 = null) {
         viewModel.getWorkoutsInPastWeek()
         viewModel.getFullWorkoutsSummary()
+        setIsInitial(false)
     }
-    val weekWorkoutsResult = viewModel.pastWeekWorkoutsLiveData.observeAsState().value
-    val workoutSummaryResult = viewModel.fullWorkoutSummaryLiveData.observeAsState().value
 
-    val weekWorkouts = when(weekWorkoutsResult) {
-        is SimpleResult.Failure -> {
-            emptyList<GymWorkout>()
-        }
-        is SimpleResult.Processing -> {
-            emptyList<GymWorkout>()
-        }
-        is SimpleResult.Success -> {
-            weekWorkoutsResult.data
-        }
-        null -> {
-            emptyList<GymWorkout>()
+    val gymScreensState = viewModel.gymScreenStateLiveData.observeAsState().value?: GymViewModel.GymScreensState()
+    LaunchedEffect(gymScreensState) {
+        if(gymScreensState.isDoingGym && isInitial) {
+            onNavigateOngoingWorkout()
         }
     }
 
-    val workoutSummary = when(workoutSummaryResult) {
-        is SimpleResult.Failure, is SimpleResult.Processing, null -> {
-            WorkoutSummary(0, 0, 0)
-        }
-        is SimpleResult.Success -> {
-            workoutSummaryResult.data
-        }
-    }
+    val weekWorkouts = gymScreensState.pastWeekWorkouts
+    val workoutSummary = gymScreensState.workoutSummary
+
 
     Column(
         Modifier
@@ -271,13 +255,8 @@ fun GymHistoryScreen(
     LaunchedEffect(key1 = null) {
         viewModel.getWorkouts()
     }
-    val workoutsResult = viewModel.pastWorkoutsLiveData.observeAsState().value
-    val workouts = when(workoutsResult) {
-        is SimpleResult.Failure -> emptyList()
-        is SimpleResult.Processing -> emptyList()
-        is SimpleResult.Success -> workoutsResult.data
-        null -> emptyList()
-    }
+    val gymScreensState = viewModel.gymScreenStateLiveData.observeAsState().value?:GymViewModel.GymScreensState()
+    val workouts = gymScreensState.pastWorkouts
     Column(
         Modifier
             .fillMaxSize(),

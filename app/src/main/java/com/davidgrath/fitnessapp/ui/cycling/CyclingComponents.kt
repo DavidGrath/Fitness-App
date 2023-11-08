@@ -19,11 +19,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Observer
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -74,45 +77,12 @@ fun CyclingScreen(
 
 fun NavGraphBuilder.cyclingNavGraph(navController: NavHostController, cyclingViewModel: CyclingViewModel) {
 //    navigation(startDestination = BasicNavScreen.CyclingDashboardNav.path, "cycling") {
-    navigation(startDestination = BasicNavScreen.CyclingDashboardNav.allButLastSegment(),
+    navigation(startDestination = BasicNavScreen.CyclingDashboardNav.path,
         route = BasicNavScreen.CyclingDashboardNav.lastSegment()) {
 
         composable(route = BasicNavScreen.CyclingDashboardNav.path) {
-
-            LaunchedEffect(key1 = null) {
-                cyclingViewModel.getWorkoutsInPastWeek()
-                cyclingViewModel.getFullWorkoutsSummary()
-            }
-            val weekWorkoutsResult = cyclingViewModel.pastWeekWorkoutsLiveData.observeAsState().value
-            val workoutSummaryResult = cyclingViewModel.fullWorkoutSummaryLiveData.observeAsState().value
-
-            val weekWorkouts = when(weekWorkoutsResult) {
-                is SimpleResult.Failure -> {
-                    emptyList<CyclingWorkout>()
-                }
-                is SimpleResult.Processing -> {
-                    emptyList<CyclingWorkout>()
-                }
-                is SimpleResult.Success -> {
-                    weekWorkoutsResult.data
-                }
-                null -> {
-                    emptyList<CyclingWorkout>()
-                }
-            }
-
-            val workoutSummary = when(workoutSummaryResult) {
-                is SimpleResult.Failure, is SimpleResult.Processing, null -> {
-                    WorkoutSummary(0, 0, 0)
-                }
-                is SimpleResult.Success -> {
-                    workoutSummaryResult.data
-                }
-            }
-
             CyclingDashboard(
-                weekWorkouts,
-                workoutSummary,
+                cyclingViewModel,
                 {
                     navController.popBackStack()
                 },
@@ -121,51 +91,22 @@ fun NavGraphBuilder.cyclingNavGraph(navController: NavHostController, cyclingVie
                 },
                 {
                     navController.navigate(BasicNavScreen.CyclingWorkoutNav.path)
+                },
+                {
+                    navController.navigate(BasicNavScreen.CyclingWorkoutNav.path)
                 }
             )
         }
         composable(route = BasicNavScreen.CyclingHistoryNav.path) {
-            LaunchedEffect(key1 = null) {
-                cyclingViewModel.getWorkouts()
-            }
-            val workouts = cyclingViewModel.pastWorkoutsLiveData.observeAsState().value
-            when(workouts) {
-                is SimpleResult.Failure -> {}
-                is SimpleResult.Processing -> {}
-                is SimpleResult.Success -> {
-                    CyclingHistory(
-//                        currentMonth, { cal ->
-//                            setCurrentMonth(cal)
-//                            viewModel.getWorkoutsInMonth(cal.time)
-//                        },
-                        {
-                            navController.popBackStack()
-                        }, workouts.data)
-                }
-                null -> {}
-            }
-
+            CyclingHistory(
+                cyclingViewModel,
+                {
+                    navController.popBackStack()
+                })
         }
         composable(route = BasicNavScreen.CyclingWorkoutNav.path) {
-            LaunchedEffect(key1 = null) {
-                cyclingViewModel.getIsCycling()
-                cyclingViewModel.getTimeElapsed()
-            }
-            val isCycling = cyclingViewModel.isCyclingLiveData.observeAsState().value
-            val currentWorkout = cyclingViewModel.currentWorkoutLiveData.observeAsState().value
-            val locationData = cyclingViewModel.locationDataLiveData.observeAsState().value
-            val timeElapsed = cyclingViewModel.timeElapsedLiveData.observeAsState().value
             CyclingWorkoutScreen(
-                elapsedTimeMillis = timeElapsed?:0,
-                caloriesBurned = currentWorkout?.kCalBurned?:0,
-                isCycling = isCycling?: false,
-                locationData = locationData?: emptyList(),
-                onStartCycling = {
-                    cyclingViewModel.startCycling()
-                },
-                onStopCycling = {
-                    cyclingViewModel.stopCycling()
-                },
+                cyclingViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 })
@@ -175,12 +116,33 @@ fun NavGraphBuilder.cyclingNavGraph(navController: NavHostController, cyclingVie
 
 @Composable
 fun CyclingDashboard(
-    weekWorkouts: List<CyclingWorkout>,
-    workoutSummary: WorkoutSummary,
+    cyclingViewModel: CyclingViewModel,
     onNavigateBack: () -> Unit,
     onNavigateDetailedHistory: () -> Unit,
-    onNavigateWorkoutScreen: () -> Unit
+    onNavigateWorkoutScreen: () -> Unit,
+    onNavigateOngoingWorkout: () -> Unit
 ) {
+    val (isInitial, setIsInitial) = rememberSaveable {
+        mutableStateOf(true)
+    }
+    val cyclingScreenState =
+        cyclingViewModel.cyclingScreenStateLiveData.observeAsState().value?: CyclingViewModel.CyclingScreenState()
+
+    LaunchedEffect(null) {
+        cyclingViewModel.getWorkoutsInPastWeek()
+        cyclingViewModel.getFullWorkoutsSummary()
+        setIsInitial(false)
+    }
+
+    LaunchedEffect(cyclingScreenState) {
+        if(cyclingScreenState.isCycling && isInitial) {
+            onNavigateOngoingWorkout()
+        }
+    }
+    val weekWorkouts = cyclingScreenState.pastWeekWorkouts
+    val workoutSummary = cyclingScreenState.workoutSummary
+
+
     Column(
         Modifier
             .fillMaxSize(),
@@ -218,11 +180,16 @@ fun CyclingDashboard(
 
 @Composable
 fun CyclingHistory(
-//    currentMonth: Calendar,
-//    setCurrentMonth: (Calendar) -> Unit,
-    onNavigateBack: () -> Unit,
-    workouts: List<CyclingWorkout>
+    cyclingViewModel: CyclingViewModel,
+    onNavigateBack: () -> Unit
 ) {
+
+    val cyclingScreenState = cyclingViewModel.cyclingScreenStateLiveData.observeAsState().value?:CyclingViewModel.CyclingScreenState()
+    LaunchedEffect(key1 = null) {
+        cyclingViewModel.getWorkouts()
+    }
+    val workouts = cyclingScreenState.workouts
+
     Column(
         Modifier
             .fillMaxSize(),
@@ -248,14 +215,19 @@ fun CyclingHistory(
 
 @Composable
 fun CyclingWorkoutScreen(
-    elapsedTimeMillis: Long,
-    caloriesBurned: Int,
-    isCycling: Boolean,
-    locationData: List<LocationDataUI>,
-    onStartCycling: () -> Unit,
-    onStopCycling: () -> Unit,
+    cyclingViewModel: CyclingViewModel,
     onNavigateBack: () -> Unit
 ) {
+
+    LaunchedEffect(key1 = null) {
+//        cyclingViewModel.getIsCycling()
+        cyclingViewModel.getTimeElapsed()
+    }
+    val cyclingScreenState = cyclingViewModel.cyclingScreenStateLiveData.observeAsState().value?: CyclingViewModel.CyclingScreenState()
+    val isCycling = cyclingScreenState.isCycling
+    val caloriesBurned = cyclingViewModel.currentWorkoutLiveData.observeAsState().value?.kCalBurned?:0
+    val locationData = cyclingScreenState.locationData
+    val elapsedTimeMillis = cyclingScreenState.elapsedTimeMillis
 
     Column(Modifier.fillMaxSize()) {
         Surface(elevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
@@ -399,9 +371,9 @@ fun CyclingWorkoutScreen(
             val alignmentAnimatedValue = animateAlignmentAsState(alignment)
             SimpleGradientButton({
                 if (isCycling) {
-                    onStopCycling()
+                    cyclingViewModel.stopCycling()
                 } else {
-                    onStartCycling()
+                    cyclingViewModel.startCycling()
                 }
             }, Modifier
                 .padding(vertical = 24.dp)
