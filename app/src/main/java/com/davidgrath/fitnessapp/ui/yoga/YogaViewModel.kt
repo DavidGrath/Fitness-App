@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.yoga
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -54,15 +55,38 @@ class YogaViewModel(
     private val _skipLiveData = MutableLiveData<SimpleResult<Unit>>()
     val skipLiveData : LiveData<SimpleResult<Unit>> = _skipLiveData
 
-    var fitnessService: AbstractFitnessService? = null
+    var asanasProgress: Int = -1
+        private set(value) {
+            field = value
+            Log.d("YogaViewModel", "asanaProgress: $value")
+        }
 
-    fun addWorkout(name: String? = "") {
+    var fitnessService: AbstractFitnessService? = null
+        set(value) {
+            field = value
+            //TODO Add LiveDataReactiveStreams
+            value!!.getCurrentWorkoutObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map {
+                    it == "YOGA"
+                }
+                .subscribe({
+                    _yogaScreensState = _yogaScreensState.copy(isDoingYoga = it)
+                    _yogaScreensStateLiveData.postValue(_yogaScreensState)
+                }, {
+
+                })
+        }
+
+    fun addWorkout() {
         fitnessService!!.startWorkout("YOGA")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { id ->
                 currentWorkoutId = id
                 _addWorkoutLiveData.postValue(SimpleResult.Success(Unit))
+                asanasProgress = -1
             }, {
                 _addWorkoutLiveData.postValue(SimpleResult.Failure(it))
             })
@@ -132,27 +156,37 @@ class YogaViewModel(
             )
     }
 
-    fun getIsDoingYoga() {
-        //TODO Add LiveDateReactiveStreams
-        fitnessService!!.getCurrentWorkoutObservable()
+//    fun getIsDoingYoga() {
+//
+//    }
+
+    fun getSessionAndAsanaIndex() {
+        fitnessService!!.getYogaSessionAndAsanaIndex()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                it == "YOGA"
-            }
-            .subscribe({
-                _yogaScreensState = _yogaScreensState.copy(isDoingYoga = it)
-                _yogaScreensStateLiveData.postValue(_yogaScreensState)
-            }, {
-
-            })
+            .subscribe(
+                {
+                    _yogaScreensState = _yogaScreensState.copy(currentSessionIndex = it.first, currentAsanaIndex = it.second)
+                    _yogaScreensStateLiveData.postValue(_yogaScreensState)
+                },
+                {
+                }
+            )
     }
 
-    fun startAsana(asanaIdentifier: String, durationMillis: Int) {
+    fun setSessionAndAsanaIndex(sessionIndex: Int, asanaIndex: Int) {
+        Log.d("YogaViewModel", "sessionIndex: $sessionIndex, asanaIndex: $asanaIndex")
+        fitnessService!!.setYogaSessionAndAsanaIndex(sessionIndex, asanaIndex)
+    }
+
+    fun startAsana(asanaIndex: Int, asanaIdentifier: String, durationMillis: Int) {
+        Log.d("YogaViewModel", "startAsana called")
         fitnessService!!.startYogaAsana(asanaIdentifier, durationMillis)
+        asanasProgress = asanaIndex
     }
 
     fun skipAsana() {
+        Log.d("YogaViewModel", "skipAsanaCalled")
         _skipLiveData.postValue(SimpleResult.Processing())
         fitnessService!!.skipYogaAsana()
             .subscribeOn(Schedulers.io())
@@ -202,6 +236,7 @@ class YogaViewModel(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ id ->
                 _endCurrentWorkoutLiveData.postValue(SimpleResult.Success(Unit))
+                asanasProgress = -1
             }, {
                 _endCurrentWorkoutLiveData.postValue(SimpleResult.Failure(it))
             })
@@ -236,8 +271,8 @@ class YogaViewModel(
         val pastWorkouts: List<YogaWorkoutUI> = emptyList(),
         val workoutSummary: WorkoutSummary = WorkoutSummary(0, 0, 0),
         val isDoingYoga: Boolean = false,
-        val currentRoutineIndex: Int = 0,
-        val currentSetIndex: Int = 0,
+        val currentSessionIndex: Int = -1,
+        val currentAsanaIndex: Int = -1,
     )
 }
 

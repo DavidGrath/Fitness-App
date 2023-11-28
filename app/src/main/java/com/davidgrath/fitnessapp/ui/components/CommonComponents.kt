@@ -50,6 +50,7 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusDirection
@@ -595,6 +596,7 @@ fun SimpleGradientButton(
     Box(
         modifier
             .background(brush = Brush.linearGradient(colors), RoundedCornerShape(cornerRadius))
+            .clip(RoundedCornerShape(cornerRadius))
             .clickable(
                 onClick = onClicked,
                 interactionSource = interactionSource,

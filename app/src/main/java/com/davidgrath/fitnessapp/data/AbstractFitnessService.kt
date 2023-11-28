@@ -29,10 +29,14 @@ interface AbstractFitnessService {
     fun incrementYogaTimeLeft(additionalTimeMillis: Int)
 
     fun endYogaAsana() : Single<Long>
+    fun setYogaSessionAndAsanaIndex(sessionIndex: Int, asanaIndex: Int)
+    fun getYogaSessionAndAsanaIndex(): Observable<Pair<Int, Int>>
 
     fun startGymSet(setIdentifier: String)
 
     fun skipGymSet()
 
     fun endGymSet(repCount: Int) : Single<Long>
+    fun setGymRoutineAndSetIndex(routineIndex: Int, setIndex: Int)
+    fun getGymRoutineAndSetIndex(): Observable<Pair<Int, Int>>
 }

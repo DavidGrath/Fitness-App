@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.yoga
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Observer
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -76,6 +78,7 @@ import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
 import com.davidgrath.fitnessapp.util.Constants
 import com.davidgrath.fitnessapp.util.SimpleResult
 import com.davidgrath.fitnessapp.util.workoutNameToAssetMap
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
@@ -113,8 +116,8 @@ fun NavGraphBuilder.yogaNavGraph(navController: NavHostController, yogaViewModel
                 {
                     navController.navigate(BasicNavScreen.YogaSessionListNav.path)
                 },
-                {
-
+                { sessionIndex, asanaIndex ->
+                    navController.navigate(BasicNavScreen.YogaAsanaNav.getPathWithArgs(sessionIndex, asanaIndex))
                 }
             )
         }
@@ -191,7 +194,7 @@ fun YogaDashboardScreen(
     onNavigateBack: () -> Unit,
     onNavigateDetailedHistory: () -> Unit,
     onNavigateSessionsScreen: () -> Unit,
-    onNavigateOngoingWorkout: () -> Unit
+    onNavigateOngoingWorkout: (sessionIndex: Int, asanaIndex: Int) -> Unit
 ) {
     val (isInitial, setIsInitial) = rememberSaveable {
         mutableStateOf(true)
@@ -200,6 +203,7 @@ fun YogaDashboardScreen(
     LaunchedEffect(key1 = null) {
         viewModel.getWorkoutsInPastWeek()
         viewModel.getFullWorkoutsSummary()
+        viewModel.getSessionAndAsanaIndex()
         setIsInitial(false)
     }
     val yogaScreensState =
@@ -207,7 +211,17 @@ fun YogaDashboardScreen(
 
     LaunchedEffect(yogaScreensState) {
         if(yogaScreensState.isDoingYoga && isInitial) {
-            onNavigateOngoingWorkout()
+            val sessionIndex = if(yogaScreensState.currentSessionIndex >= 0) {
+                yogaScreensState.currentSessionIndex
+            } else {
+                0
+            }
+            val asanaIndex = if(yogaScreensState.currentAsanaIndex >= 0) {
+                yogaScreensState.currentAsanaIndex
+            } else {
+                0
+            }
+            onNavigateOngoingWorkout(sessionIndex, asanaIndex)
         }
     }
     val weekWorkouts = yogaScreensState.pastWeekWorkouts
@@ -440,11 +454,15 @@ fun YogaSessionAsanasScreen(
                     {
                         coroutineScope.launch {
                             viewModel.addWorkout()
-                            viewModel.addWorkoutLiveData.observe(lifecycleOwner) {
-                                if(it is SimpleResult.Success) {
-                                    onNavigateFirstAsana(selectedSessionIndex)
+                            viewModel.addWorkoutLiveData.observe(lifecycleOwner, object: Observer<SimpleResult<Unit>> {
+                                override fun onChanged(value: SimpleResult<Unit>) {
+                                    if(value is SimpleResult.Success) {
+                                        viewModel.setSessionAndAsanaIndex(selectedSessionIndex, 0)
+                                        onNavigateFirstAsana(selectedSessionIndex)
+                                        viewModel.addWorkoutLiveData.removeObserver(this)
+                                    }
                                 }
-                            }
+                            })
                         }
                     },
                     Modifier
@@ -476,7 +494,7 @@ fun YogaAsanaScreen(
     yogaAsanaIndex: Int,
     viewModel: YogaViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateNextAsana: (yogaSessionIndex: Int, yogaAsanaIndex: Int) -> Unit,
+    onNavigateToAsana: (yogaSessionIndex: Int, yogaAsanaIndex: Int) -> Unit,
     onNavigateSessionsScreen: () -> Unit
 ) {
 
@@ -488,15 +506,37 @@ fun YogaAsanaScreen(
     val currentYogaAsana = currentSession.asanas[yogaAsanaIndex]
     val sessionTitle = currentSession.sessionName
     val asanaTitle = asanaTitleMap[currentYogaAsana.identifier]?._default ?: "Unknown"
-
-    LaunchedEffect(key1 = null) {
-        viewModel.startAsana(currentYogaAsana.identifier, currentYogaAsana.durationMillis)
-        viewModel.getYogaAsanaState()
-    }
     val yogaScreensState =
         viewModel.yogaScreensStateLiveData.observeAsState().value?:YogaViewModel.YogaScreensState()
-    val isDoingYoga = yogaScreensState.isDoingYoga
+
+    LaunchedEffect(key1 = null) {
+        viewModel.getYogaAsanaState()
+        viewModel.getSessionAndAsanaIndex()
+        if(viewModel.asanasProgress < yogaAsanaIndex
+//            && yogaAsanaState.identifier != currentSession.asanas[yogaScreensState.currentAsanaIndex].identifier
+        ) {
+            viewModel.startAsana(
+                yogaAsanaIndex,
+                currentSession.asanas[yogaAsanaIndex].identifier,
+                currentSession.asanas[yogaAsanaIndex].durationMillis
+            )
+        }
+    }
+
+    LaunchedEffect(yogaScreensState) {
+        //I use -1 as the default value, so take note for any possible side-effects
+        if (yogaScreensState.currentSessionIndex == yogaSessionIndex &&
+            yogaScreensState.currentAsanaIndex >= 0 &&
+            yogaScreensState.currentAsanaIndex != yogaAsanaIndex) {
+            onNavigateToAsana(
+                yogaScreensState.currentSessionIndex,
+                yogaScreensState.currentAsanaIndex
+            )
+        }
+    }
+
     val yogaAsanaState = viewModel.yogaAsanaStateLiveData.observeAsState().value?: YogaAsanaState(0, false)
+
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -569,7 +609,7 @@ fun YogaAsanaScreen(
                             viewModel.endAsana()
                             viewModel.endAsanaLiveData.observe(lifecycleOwner) {
                                 if (it is SimpleResult.Success) {
-                                    onNavigateNextAsana(yogaSessionIndex, yogaAsanaIndex + 1)
+                                    viewModel.setSessionAndAsanaIndex(yogaSessionIndex, yogaAsanaIndex + 1)
                                 }
                             }
                         } else {
@@ -651,12 +691,17 @@ fun YogaAsanaScreen(
                 Modifier.clickable {
 //                    if(canGoNext) {
                         viewModel.skipAsana()
-                        viewModel.skipLiveData.observe(lifecycleOwner) {
-                            if (it is SimpleResult.Success && canGoNext) {
-                                onNavigateNextAsana(yogaSessionIndex, yogaAsanaIndex + 1)
+
+                        val observer = object: Observer<SimpleResult<Unit>> {
+                            override fun onChanged(value: SimpleResult<Unit>) {
+                                if (value is SimpleResult.Success && canGoNext) {
+                                    viewModel.setSessionAndAsanaIndex(yogaSessionIndex, yogaAsanaIndex + 1)
+                                    viewModel.skipLiveData.removeObserver(this)
+                                }
                             }
 //                        }
                     }
+                    viewModel.skipLiveData.observe(lifecycleOwner, observer)
                 }
             } else {
                 Modifier

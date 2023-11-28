@@ -61,7 +61,7 @@ class FitnessService: Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         binder = FitnessBinder(this)
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -118,8 +118,9 @@ class FitnessService: Service() {
         private var gymSetTimerUpdateFuture: ScheduledFuture<*>? = null
         private val gymSetTimerUpdateRunnable: Runnable
         private var currentGymSetIdentifier: String = ""
-        private var currentGymRoutineIndex: Int = 0
-        private var currentGymSetIndex: Int = 0
+        private var currentGymRoutineIndex: Int = -1
+        private var currentGymSetIndex: Int = -1
+        private var currentGymData = BehaviorSubject.create<Pair<Int, Int>>()
 
         private val yogaWorkoutDao = appDatabase.yogaWorkoutDao()
         private val yogaAsanaDao = appDatabase.yogaAsanaDao()
@@ -133,6 +134,9 @@ class FitnessService: Service() {
         private var yogaAsanaTimeLeftUpdateFuture: ScheduledFuture<*>? = null
         private val yogaAsanaTimeLeftUpdateRunnable: Runnable
         private var currentYogaAsanaIdentifier: String = ""
+        private var currentYogaSessionIndex: Int = -1
+        private var currentYogaAsanaIndex: Int = -1
+        private var currentYogaData = BehaviorSubject.create<Pair<Int, Int>>()
 
         private val preferences: SharedPreferences
 
@@ -257,6 +261,7 @@ class FitnessService: Service() {
                     yogaAsanaState = yogaAsanaState.copy(timeLeft = yogaAsanaTimeLeft)
                     yogaAsanaStateSubject.onNext(yogaAsanaState)
                 }
+//                Log.d("FitnessBinder", Thread.currentThread().name + ": $yogaAsanaTimeLeft")
             }
             runningNotificationUpdateRunnable = Runnable {
                 val notificationManager = service.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -405,6 +410,9 @@ class FitnessService: Service() {
                         timerDurationSubject.onNext(timerDuration)
                         timerUpdateFuture?.cancel(true)
                         executorService.remove(timerUpdateRunnable)
+                        currentGymRoutineIndex = -1
+                        currentGymSetIndex = -1
+                        currentGymData.onNext(currentGymRoutineIndex to currentGymSetIndex)
                         calculateGymKCalBurned(currentWorkoutId, duration)
                     }
                     "YOGA" -> {
@@ -424,6 +432,9 @@ class FitnessService: Service() {
                         executorService.remove(timerUpdateRunnable)
                         executorService.remove(yogaAsanaTimerUpdateRunnable)
                         executorService.remove(yogaAsanaTimeLeftUpdateRunnable)
+                        currentYogaSessionIndex = -1
+                        currentYogaAsanaIndex = -1
+                        currentYogaData.onNext(currentYogaSessionIndex to currentYogaAsanaIndex)
                         calculateYogaKCalBurned(currentWorkoutId, duration)
                     }
                     else -> {
@@ -996,6 +1007,17 @@ class FitnessService: Service() {
                 }
         }
 
+        override fun setGymRoutineAndSetIndex(routineIndex: Int, setIndex: Int) {
+            currentGymRoutineIndex = routineIndex
+            currentGymSetIndex = setIndex
+            currentGymData.onNext(currentGymRoutineIndex to currentGymSetIndex)
+        }
+
+
+        override fun getGymRoutineAndSetIndex(): Observable<Pair<Int, Int>> {
+            return currentGymData
+        }
+
         private fun calculateGymKCalBurned(workoutId: Long, duration: Long) : Single<Unit> {
             return gymSetDao.getAllSetsByWorkoutIdSingle(workoutId)
                 .flatMap { gymSets ->
@@ -1044,10 +1066,13 @@ class FitnessService: Service() {
         }
 
         override fun startYogaAsana(asanaIdentifier: String, durationMillis: Int) {
+            if(currentYogaAsanaIdentifier == asanaIdentifier) {
+                return
+            }
             yogaAsanaTimerDuration = 0L
             yogaAsanaTimerUpdateFuture = executorService.scheduleAtFixedRate(yogaAsanaTimerUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
             yogaAsanaTimeLeft = durationMillis.toLong()
-            yogaAsanaState = YogaAsanaState(yogaAsanaTimeLeft, false)
+            yogaAsanaState = YogaAsanaState(yogaAsanaTimeLeft, false, asanaIdentifier)
             yogaAsanaStateSubject.onNext(yogaAsanaState)
             yogaAsanaTimeLeftUpdateFuture = executorService.scheduleAtFixedRate(
                 yogaAsanaTimeLeftUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
@@ -1096,6 +1121,16 @@ class FitnessService: Service() {
             return yogaAsanaStateSubject
         }
 
+        override fun setYogaSessionAndAsanaIndex(sessionIndex: Int, asanaIndex: Int) {
+            currentYogaSessionIndex = sessionIndex
+            currentYogaAsanaIndex = asanaIndex
+            currentYogaData.onNext(currentYogaSessionIndex to currentYogaAsanaIndex)
+        }
+
+        override fun getYogaSessionAndAsanaIndex(): Observable<Pair<Int, Int>> {
+            return currentYogaData
+        }
+
         override fun incrementYogaTimeLeft(additionalTimeMillis: Int) {
             yogaAsanaTimeLeft += additionalTimeMillis
             yogaAsanaState = yogaAsanaState.copy(timeLeft = yogaAsanaTimeLeft)
@@ -1110,11 +1145,14 @@ class FitnessService: Service() {
             if(currentYogaAsanaIdentifier.isNotBlank()) {
                 yogaAsanaTimerUpdateFuture?.cancel(true)
                 yogaAsanaTimeLeftUpdateFuture?.cancel(true)
+                executorService.remove(yogaAsanaTimeLeftUpdateRunnable)
                 val timestamp = Date().time
                 return yogaAsanaDao.insertAsana(YogaAsana(null, currentWorkoutId, currentYogaAsanaIdentifier, timestamp, yogaAsanaTimerDuration))
                     .doOnSuccess {
                         yogaAsanaTimerDuration = 0L
                         currentYogaAsanaIdentifier = ""
+                        yogaAsanaState = yogaAsanaState.copy(identifier = currentYogaAsanaIdentifier)
+                        yogaAsanaStateSubject.onNext(yogaAsanaState)
                     }
             } else {
                 return Single.just(0)
@@ -1182,6 +1220,7 @@ class FitnessService: Service() {
         }
 
         companion object {
+            private const val LOG_TAG = "FitnessBinder"
             private const val NOTIFICATION_CHANNEL_ID = "workout_tracker"
             private const val NOTIFICATION_CHANNEL_NAME = "Workout tracker"
             private const val NOTIFICATION_CLICK_REQUEST_CODE = 100
@@ -1189,5 +1228,9 @@ class FitnessService: Service() {
             private const val FASTEST_INTERVAL = 1_000L;
             private const val NOTIFICATION_ID = 200
         }
+    }
+
+    companion object {
+        private const val LOG_TAG = "FitnessService"
     }
 }

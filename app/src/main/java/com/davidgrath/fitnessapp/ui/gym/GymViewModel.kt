@@ -47,6 +47,21 @@ class GymViewModel(
     val gymScreenStateLiveData: LiveData<GymScreensState> = _gymScreenStateLiveData
 
     var fitnessService: AbstractFitnessService? = null
+        set(value) {
+            field = value
+            value!!.getCurrentWorkoutObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map {
+                    it == "GYM"
+                }
+                .subscribe({
+                    _gymScreenState = _gymScreenState.copy(isDoingGym = it)
+                    _gymScreenStateLiveData.postValue(_gymScreenState)
+                }, {
+
+                })
+        }
 
     fun addWorkout(name: String? = "") {
         fitnessService!!.startWorkout("GYM")
@@ -118,29 +133,28 @@ class GymViewModel(
             )
     }
 
-    fun getIsDoingGym() {
-        //TODO Add LiveDateReactiveStreams
-        fitnessService!!.getCurrentWorkoutObservable()
+    fun getRoutineAndSetIndex() {
+        fitnessService!!.getGymRoutineAndSetIndex()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                it == "GYM"
-            }
-            .subscribe({
-                _gymScreenState = _gymScreenState.copy(isDoingGym = it)
-                _gymScreenStateLiveData.postValue(_gymScreenState)
-            }, {
-
-            })
+            .subscribe(
+                {
+                    _gymScreenState = _gymScreenState.copy(currentRoutineIndex = it.first, currentSetIndex = it.second)
+                    _gymScreenStateLiveData.postValue(_gymScreenState)
+                },
+                {
+                }
+            )
     }
 
     fun startSet(setIdentifier: String) {
         fitnessService!!.startGymSet(setIdentifier)
     }
 
-    fun skipSet() {
+    //TODO For now use endSet() with zero as argument
+    /*fun skipSet() {
         fitnessService!!.skipGymSet()
-    }
+    }*/
 
     fun endSet(repCount: Int): LiveData<SimpleResult<Unit>> {
         fitnessService!!.endGymSet(repCount)
@@ -167,6 +181,10 @@ class GymViewModel(
             }, {
                 _endCurrentWorkoutLiveData.postValue(SimpleResult.Failure(it))
             })
+    }
+
+    fun setRoutineAndSetIndex(routineIndex: Int, setIndex: Int) {
+        fitnessService!!.setGymRoutineAndSetIndex(routineIndex, setIndex)
     }
 
     fun tempFetchVideoDetails(videoId: String) {

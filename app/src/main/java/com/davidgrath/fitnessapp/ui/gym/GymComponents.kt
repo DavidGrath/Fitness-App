@@ -111,8 +111,8 @@ fun NavGraphBuilder.gymNavGraph(navController: NavHostController, gymViewModel: 
                 {
                     navController.navigate(BasicNavScreen.GymRoutineListNav.path)
                 },
-                {
-
+                { r, s ->
+                    navController.navigate(BasicNavScreen.GymSetNav.getPathWithArgs(r, s))
                 }
             )
         }
@@ -164,10 +164,12 @@ fun NavGraphBuilder.gymNavGraph(navController: NavHostController, gymViewModel: 
                 gymSetIndex = setIndex,
                 viewModel = gymViewModel,
                 onNavigateBack = {
-//                    navController.popBackStack()
+                    navController.popBackStack()
                     //TODO Cancel workout
+                    //If I implement cancelling the current workout by using the up arrow, then I'd have
+                    //to also add a custom BackHandler for a consistent experience
                 },
-                onNavigateNextSet = { gymRoutineIndex, gymSetIndex ->
+                onNavigateToSet = { gymRoutineIndex, gymSetIndex ->
                     val pathWithArgs = BasicNavScreen.GymSetNav.getPathWithArgs(gymRoutineIndex, gymSetIndex)
                     navController.popBackStack(navController.currentBackStackEntry!!.destination.route!!, true)
                     navController.navigate(pathWithArgs)
@@ -190,7 +192,7 @@ fun GymDashboardScreen(
     onNavigateBack: () -> Unit,
     onNavigateDetailedHistory: () -> Unit,
     onNavigateRoutinesScreen: () -> Unit,
-    onNavigateOngoingWorkout: () -> Unit
+    onNavigateOngoingWorkout: (routineIndex: Int, setIndex: Int) -> Unit
 ) {
     val (isInitial, setIsInitial) = rememberSaveable {
         mutableStateOf(true)
@@ -198,13 +200,24 @@ fun GymDashboardScreen(
     LaunchedEffect(key1 = null) {
         viewModel.getWorkoutsInPastWeek()
         viewModel.getFullWorkoutsSummary()
+        viewModel.getRoutineAndSetIndex()
         setIsInitial(false)
     }
 
     val gymScreensState = viewModel.gymScreenStateLiveData.observeAsState().value?: GymViewModel.GymScreensState()
     LaunchedEffect(gymScreensState) {
         if(gymScreensState.isDoingGym && isInitial) {
-            onNavigateOngoingWorkout()
+            val routineIndex = if(gymScreensState.currentRoutineIndex >= 0) {
+                gymScreensState.currentRoutineIndex
+            } else {
+                0
+            }
+            val setIndex = if(gymScreensState.currentSetIndex >= 0) {
+                gymScreensState.currentSetIndex
+            } else {
+                0
+            }
+            onNavigateOngoingWorkout(routineIndex, setIndex)
         }
     }
 
@@ -482,7 +495,7 @@ fun GymSetScreen(
     gymSetIndex: Int,
     viewModel: GymViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateNextSet: (gymRoutineIndex: Int, gymSetIndex: Int) -> Unit,
+    onNavigateToSet: (gymRoutineIndex: Int, gymSetIndex: Int) -> Unit,
     onNavigateRoutinesScreen: () -> Unit
 ) {
     val context = LocalContext.current
@@ -493,6 +506,7 @@ fun GymSetScreen(
     val currentGymSet = currentRoutine.sets[gymSetIndex]
     val routineTitle = currentRoutine.routineName
     val setTitle = setTitleMap[currentGymSet.identifier]?._default ?: "Unknown"
+    val gymScreensState = viewModel.gymScreenStateLiveData.observeAsState().value?: GymViewModel.GymScreensState()
 
     val (repCount, setRepCount) = rememberSaveable {
         mutableStateOf(0)
@@ -500,6 +514,16 @@ fun GymSetScreen(
 
     LaunchedEffect(key1 = null) {
         viewModel.startSet(currentGymSet.identifier)
+        viewModel.getRoutineAndSetIndex()
+    }
+
+    LaunchedEffect(gymScreensState) {
+        //I use -1 as the default value, so take note for any possible side-effects
+        if(gymScreensState.currentRoutineIndex == gymRoutineIndex &&
+            gymScreensState.currentSetIndex >= 0 &&
+            gymScreensState.currentSetIndex != gymSetIndex) {
+            onNavigateToSet(gymScreensState.currentRoutineIndex, gymScreensState.currentSetIndex)
+        }
     }
 
     Column(Modifier.fillMaxSize(),
@@ -534,6 +558,8 @@ fun GymSetScreen(
         Divider(color = Color.Gray.copy(0.5f))
         val canGoPrevious = gymSetIndex > 0
         val canGoNext = gymSetIndex < currentRoutine.sets.size - 1
+        val coroutineScope = rememberCoroutineScope()
+        val lifecycleOwner = LocalLifecycleOwner.current
         Column(
             Modifier
                 .fillMaxWidth()
@@ -567,7 +593,6 @@ fun GymSetScreen(
                     )
                 }
             }
-
             val endSetResult = viewModel.endSetLiveData.observeAsState().value
             val endWorkoutResult = viewModel.endCurrentWorkoutLiveData.observeAsState().value
             val nextButtonEnabled = if (canGoNext) {
@@ -575,15 +600,13 @@ fun GymSetScreen(
             } else {
                 endWorkoutResult !is SimpleResult.Processing
             }
-            val coroutineScope = rememberCoroutineScope()
-            val lifecycleOwner = LocalLifecycleOwner.current
             SimpleGradientButton(onClicked = {
                 coroutineScope.launch {
                     if (canGoNext) {
                         viewModel.endSet(repCount)
                         viewModel.endSetLiveData.observe(lifecycleOwner) {
                             if(it is SimpleResult.Success) {
-                                onNavigateNextSet(gymRoutineIndex, gymSetIndex + 1)
+                                viewModel.setRoutineAndSetIndex(gymRoutineIndex, gymSetIndex + 1)
                             }
                         }
                     } else {
@@ -640,7 +663,14 @@ fun GymSetScreen(
             }
             Spacer(modifier = Modifier.weight(1f))
             Row(Modifier.clickable {
-
+                if (canGoNext) {
+                    viewModel.endSet(0)
+                    viewModel.endSetLiveData.observe(lifecycleOwner) {
+                        if(it is SimpleResult.Success) {
+                            viewModel.setRoutineAndSetIndex(gymRoutineIndex, gymSetIndex + 1)
+                        }
+                    }
+                }
             }) {
                 Image(
                     painter = painterResource(id = R.drawable.skip_next_previous),
