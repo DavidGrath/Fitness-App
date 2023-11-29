@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.onboarding
 
+import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -33,20 +34,110 @@ class OnboardingViewModel(
         screenState = OnboardingScreenState(
             getOnboardingStages().size,
             initialIndex,
-            userDataRepository.getFirstName(),
-            userDataRepository.getLastName(),
-            userDataRepository.getEmail(),
-            userDataRepository.getGender(),
-            userDataRepository.getHeight(),
-            userDataRepository.getHeightUnit(),
-            userDataRepository.getBirthDateDay(),
-            userDataRepository.getBirthDateMonth(),
-            userDataRepository.getBirthDateYear(),
-            userDataRepository.getWeight(),
-            userDataRepository.getWeightUnit()
         )
         _screenStateLiveData = MutableLiveData<OnboardingScreenState>(screenState)
         screenStateLiveData = _screenStateLiveData
+
+
+        userDataRepository.getFirstName()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(firstName = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getLastName()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(lastName = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getEmail()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(email = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getGender()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(gender = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getHeight()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(height = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getHeightUnit()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(heightUnit = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getBirthDateDay()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(birthDateDay = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getBirthDateMonth()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(birthDateMonth = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getBirthDateYear()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(birthDateYear = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getWeight()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(weight = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
+        userDataRepository.getWeightUnit()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                screenState = screenState.copy(weightUnit = it)
+                _screenStateLiveData.postValue(screenState)
+            }, {
+                Log.e("OnboardingViewModel", it.message, it)
+            })
     }
 
     fun getOnboardingStages() : List<String> {
@@ -121,14 +212,24 @@ class OnboardingViewModel(
         _screenStateLiveData.postValue(screenState)
     }
 
-    fun setHeight(height: Int, unit: String) {
-        var h = height
+    fun setHeightAndUnit(height: Int, unit: String) {
+        screenState = screenState.copy(height = height, heightUnit = unit)
+        _screenStateLiveData.postValue(screenState)
+    }
+
+    fun setHeightUnit(unit: String) {
+        var h = screenState.height
         if(screenState.heightUnit == Constants.UNIT_HEIGHT_CENTIMETERS && unit == Constants.UNIT_HEIGHT_INCHES) {
-            h = centimetersToInches(height)
+            h = centimetersToInches(h)
         } else if(screenState.heightUnit == Constants.UNIT_HEIGHT_INCHES && unit == Constants.UNIT_HEIGHT_CENTIMETERS) {
-            h = inchesToCentimeters(height)
+            h = inchesToCentimeters(h)
         }
         screenState = screenState.copy(height = h, heightUnit = unit)
+        _screenStateLiveData.postValue(screenState)
+    }
+
+    fun setHeight(height: Int) {
+        screenState = screenState.copy(height = height)
         _screenStateLiveData.postValue(screenState)
     }
 
@@ -137,18 +238,26 @@ class OnboardingViewModel(
         _screenStateLiveData.postValue(screenState)
     }
 
-    fun setWeight(weight: Float, unit: String) {
-        var w = weight
+    fun setWeight(weight: Float) {
+        screenState = screenState.copy(weight = weight)
+        _screenStateLiveData.postValue(screenState)
+    }
+
+    fun setWeightUnit(unit: String) {
+        var w = screenState.weight
         if(screenState.weightUnit == Constants.UNIT_WEIGHT_KG && unit == Constants.UNIT_WEIGHT_POUNDS) {
-            w = kilogramsToPounds(weight)
+            w = kilogramsToPounds(w)
         } else if(screenState.weightUnit == Constants.UNIT_WEIGHT_POUNDS && unit == Constants.UNIT_WEIGHT_KG) {
-            w = poundsToKilograms(weight)
+            w = poundsToKilograms(w)
         }
         screenState = screenState.copy(weight = w, weightUnit = unit)
         _screenStateLiveData.postValue(screenState)
     }
 
-
+    fun setWeightAndUnit(weight: Float, unit: String) {
+        screenState = screenState.copy(weight = weight, weightUnit = unit)
+        _screenStateLiveData.postValue(screenState)
+    }
     fun submitNameAndEmail(): LiveData<SimpleResult<Unit>> {
         val _liveData = MutableLiveData<SimpleResult<Unit>>()
         _liveData.postValue(SimpleResult.Processing())

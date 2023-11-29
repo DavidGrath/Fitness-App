@@ -38,6 +38,8 @@ public class Constants {
         public static final String TEMPERATURE_UNIT = "temperatureUnit";
         public static final String CHOSEN_LANGUAGE_CODE = "chosenLanguageCode";
         public static final String CHOSEN_COUNTRY_CODE = "chosenCountryCode";
+        public static final String SHOULD_SYNC_TO_GOOGLE_FIT = "shouldSyncToGoogleFit";
+        public static final String SHOULD_REMIND_TO_WORKOUT = "shouldRemindToWorkout";
     }
 
     public static final String[] supportedLanguages = new String[]{

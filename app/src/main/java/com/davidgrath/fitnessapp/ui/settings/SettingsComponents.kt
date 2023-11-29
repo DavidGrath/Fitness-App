@@ -2,8 +2,6 @@ package com.davidgrath.fitnessapp.ui.settings
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.text.TextUtils
-import android.view.View
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,7 +24,7 @@ import androidx.compose.material.Switch
 import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -49,15 +46,12 @@ import com.davidgrath.fitnessapp.ui.BasicNavScreen
 import com.davidgrath.fitnessapp.ui.components.SimpleAppBar
 import com.davidgrath.fitnessapp.util.Constants
 import com.davidgrath.fitnessapp.util.Constants.PreferencesTitles
-import com.davidgrath.fitnessapp.util.centimetersToInches
-import com.davidgrath.fitnessapp.util.inchesToCentimeters
 import com.davidgrath.fitnessapp.util.kilogramsToPounds
 import com.davidgrath.fitnessapp.util.poundsToKilograms
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 
-fun NavGraphBuilder.settingsNavGraph(navController: NavHostController) {
+fun NavGraphBuilder.settingsNavGraph(navController: NavHostController, viewModel: SettingsViewModel) {
 //    navigation(BasicNavScreen.SettingsNav.allButLastSegment(),
 //        BasicNavScreen.SettingsNav.lastSegment()
     navigation("home",
@@ -65,6 +59,7 @@ fun NavGraphBuilder.settingsNavGraph(navController: NavHostController) {
     ) {
         composable(route = BasicNavScreen.SettingsNav.path) {
             SettingsScreen(
+                viewModel,
                 {
                     navController.navigate(BasicNavScreen.PrivacyPolicyNav.path)
                 },
@@ -90,7 +85,9 @@ fun NavGraphBuilder.settingsNavGraph(navController: NavHostController) {
             })
         }
         composable(route = BasicNavScreen.SettingsUnitsNav.path) {
-            SettingsUnitsScreen({
+            SettingsUnitsScreen(
+                viewModel,
+                {
                 navController.popBackStack()
             })
         }
@@ -98,6 +95,7 @@ fun NavGraphBuilder.settingsNavGraph(navController: NavHostController) {
 }
 @Composable
 fun SettingsScreen(
+    viewModel: SettingsViewModel,
     onNavigatePrivacyPolicy: () -> Unit,
     onNavigateTermsAndConditions: () -> Unit,
     onNavigateUnits: () -> Unit,
@@ -111,12 +109,8 @@ fun SettingsScreen(
     Column(modifier = Modifier.fillMaxSize()) {
 
         val scrollState = rememberScrollState()
-        val (syncToGoogleFitChecked, setSyncToGoogleFitChecked) = remember {
-            mutableStateOf(false)
-        }
-        val (remindWorkout, setRemindWorkout) = remember {
-            mutableStateOf(false)
-        }
+
+        val settingsScreenState = viewModel.settingsScreensStateLiveData.observeAsState().value?: SettingsViewModel.SettingsScreensState()
 
         SimpleAppBar(stringResource(R.string.settings_title), false, onBackClicked = onNavigateBack)
         Column(
@@ -134,9 +128,9 @@ fun SettingsScreen(
                 )
                 Spacer(Modifier.height(16.dp))
                 SimpleSettingsItem(R.drawable.sync, stringResource(R.string.settings_item_sync_google_fit), {},
-                    checkable = true, syncToGoogleFitChecked, setSyncToGoogleFitChecked)
+                    checkable = true, settingsScreenState.shouldSyncToGoogleFit, viewModel::setIsSyncedToGoogleFit)
                 SimpleSettingsItem(R.drawable.bell_outline, stringResource(R.string.settings_item_remind_to_workout), {},
-                    checkable = true, remindWorkout, setRemindWorkout)
+                    checkable = true, settingsScreenState.shouldRemindForWorkouts, viewModel::setShouldRemindForWorkouts)
                 SimpleSettingsItem(iconResId = R.drawable.ruler, text = stringResource(R.string.settings_item_units),
                     onClick = {
                         onNavigateUnits()
@@ -202,6 +196,10 @@ fun SettingsScreen(
                               .putInt(PreferencesTitles.BIRTH_DATE_DAY, 0)
                               .putInt(PreferencesTitles.BIRTH_DATE_MONTH, 0)
                               .putInt(PreferencesTitles.BIRTH_DATE_YEAR, 0)
+                              .putBoolean(PreferencesTitles.SHOULD_SYNC_TO_GOOGLE_FIT, false)
+                              .putBoolean(PreferencesTitles.SHOULD_SYNC_TO_GOOGLE_FIT, false)
+                              .putString(PreferencesTitles.DISTANCE_UNIT, null)
+                              .putString(PreferencesTitles.TEMPERATURE_UNIT, null)
                               .apply()
                 },
                 checkable = false)
@@ -275,6 +273,7 @@ fun TermsAndConditionsScreen(
 
 @Composable
 fun SettingsUnitsScreen(
+    viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit
 ) {
 
@@ -289,15 +288,7 @@ fun SettingsUnitsScreen(
     val preferences = remember {
         context.getSharedPreferences(Constants.MAIN_PREFERENCES_NAME, Context.MODE_PRIVATE)
     }
-    val (currentDistanceUnit, setCurrentDistanceUnit)  = remember {
-        mutableStateOf(preferences.getString(PreferencesTitles.DISTANCE_UNIT, Constants.UNIT_DISTANCE_KILOMETERS)!!)
-    }
-    val (currentTemperatureUnit, setCurrentTemperatureUnit)  = remember {
-        mutableStateOf(preferences.getString(PreferencesTitles.TEMPERATURE_UNIT, Constants.UNIT_TEMPERATURE_CELSIUS)!!)
-    }
-    val (currentWeightUnit, setCurrentWeightUnit)  = remember {
-        mutableStateOf(preferences.getString(PreferencesTitles.WEIGHT_UNIT, Constants.UNIT_WEIGHT_KG)!!)
-    }
+    val settingsScreensState = viewModel.settingsScreensStateLiveData.observeAsState().value?:SettingsViewModel.SettingsScreensState()
 
     Column(Modifier.fillMaxSize()) {
         SimpleAppBar(title = stringResource(R.string.units_header), expanded = false, centeredWhileCollapsed = true, onBackClicked = onNavigateBack)
@@ -357,19 +348,19 @@ fun SettingsUnitsScreen(
                 when(currentDialogUnitType) {
                     "distance" -> {
                         options = distanceUnitsDisplay
-                        currentOptionsIndex = distanceUnits.indexOf(currentDistanceUnit)
+                        currentOptionsIndex = distanceUnits.indexOf(settingsScreensState.distanceUnit)
                     }
                     "temperature" -> {
                         options = temperatureUnitsDisplay
-                        currentOptionsIndex = temperatureUnits.indexOf(currentTemperatureUnit)
+                        currentOptionsIndex = temperatureUnits.indexOf(settingsScreensState.temperatureUnit)
                     }
                     "weight" -> {
                         options = weightUnitsDisplay
-                        currentOptionsIndex = weightUnits.indexOf(currentWeightUnit)
+                        currentOptionsIndex = weightUnits.indexOf(settingsScreensState.weightUnit)
                     }
                     else -> {
                         options = distanceUnits
-                        currentOptionsIndex = distanceUnits.indexOf(currentDistanceUnit)
+                        currentOptionsIndex = distanceUnits.indexOf(settingsScreensState.distanceUnit)
                     }
                 }
 
@@ -379,12 +370,12 @@ fun SettingsUnitsScreen(
                         coroutineScope.launch {
                             when (currentDialogUnitType) {
                                 "distance" -> {
-                                    setCurrentDistanceUnit(distanceUnits[it])
+                                    viewModel.setDistanceUnit(distanceUnits[it])
                                     preferences.edit().putString(PreferencesTitles.DISTANCE_UNIT, distanceUnits[it])
                                         .apply()
                                 }
                                 "temperature" -> {
-                                    setCurrentTemperatureUnit(temperatureUnits[it])
+                                    viewModel.setTemperatureUnit(temperatureUnits[it])
                                     preferences.edit().putString(PreferencesTitles.TEMPERATURE_UNIT, temperatureUnits[it])
                                         .apply()
                                 }
@@ -392,12 +383,12 @@ fun SettingsUnitsScreen(
                                     val unit = weightUnits[it]
                                     val editor = preferences.edit()
                                     val w = preferences.getFloat(PreferencesTitles.WEIGHT, 0f)
-                                    if(currentWeightUnit == Constants.UNIT_WEIGHT_POUNDS && unit == Constants.UNIT_WEIGHT_KG) {
+                                    if(settingsScreensState.weightUnit == Constants.UNIT_WEIGHT_POUNDS && unit == Constants.UNIT_WEIGHT_KG) {
                                         editor.putFloat(PreferencesTitles.WEIGHT, poundsToKilograms(w))
-                                    } else if(currentWeightUnit == Constants.UNIT_WEIGHT_KG && unit == Constants.UNIT_WEIGHT_POUNDS) {
+                                    } else if(settingsScreensState.weightUnit == Constants.UNIT_WEIGHT_KG && unit == Constants.UNIT_WEIGHT_POUNDS) {
                                         editor.putFloat(PreferencesTitles.WEIGHT, kilogramsToPounds(w))
                                     }
-                                    setCurrentWeightUnit(weightUnits[it])
+                                    viewModel.setWeightUnit(weightUnits[it])
                                     editor
                                         .putString(PreferencesTitles.WEIGHT_UNIT, unit)
                                         .apply()

@@ -47,9 +47,13 @@ import com.davidgrath.fitnessapp.ui.components.UnderlineTextField
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingScreenState
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModel
 import com.davidgrath.fitnessapp.util.Constants
+import com.davidgrath.fitnessapp.util.centimetersToInches
 import com.davidgrath.fitnessapp.util.feetAndInchesToInches
 import com.davidgrath.fitnessapp.util.getTensPart
+import com.davidgrath.fitnessapp.util.inchesToCentimeters
 import com.davidgrath.fitnessapp.util.inchesToFeetAndInches
+import com.davidgrath.fitnessapp.util.kilogramsToPounds
+import com.davidgrath.fitnessapp.util.poundsToKilograms
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -207,7 +211,7 @@ fun ProfileScreen(
                     initialHeight = screenState.height,
                     initialHeightUnit = screenState.heightUnit,
                     onSaveHeight = { h, u ->
-                        viewModel.setHeight(h, u)
+                        viewModel.setHeightAndUnit(h, u)
                         coroutineScope.launch {
                             viewModel.submitHeight().observe(lifecycleOwner) {}
                         }
@@ -242,7 +246,7 @@ fun ProfileScreen(
             if(isWeightDialogShowing) {
                 WeightDialog(initialWeight = screenState.weight, initialWeightUnit = screenState.weightUnit,
                     onSaveWeight = { w, u ->
-                        viewModel.setWeight(w, u)
+                        viewModel.setWeightAndUnit(w, u)
                         coroutineScope.launch {
                             viewModel.submitWeight().observe(lifecycleOwner) {}
                         }
@@ -369,6 +373,15 @@ fun WeightDialog(
                     ExposedDropdownMenu(expanded = dialogDropDownExpanded, onDismissRequest = { }) {
                         units.forEach { (u, text) ->
                             DropdownMenuItem(onClick = {
+                                if(u != dialogWeightUnit) {
+                                    var w = dialogWeight
+                                    if(dialogWeightUnit == Constants.UNIT_WEIGHT_KG && u == Constants.UNIT_WEIGHT_POUNDS) {
+                                        w = kilogramsToPounds(dialogWeight)
+                                    } else if(dialogWeightUnit == Constants.UNIT_WEIGHT_POUNDS && u == Constants.UNIT_WEIGHT_KG) {
+                                        w = poundsToKilograms(dialogWeight)
+                                    }
+                                    setDialogWeight(w)
+                                }
                                 setDialogWeightUnit(u)
                                 setDialogDropDownExpanded(false)
                             }) {
@@ -533,6 +546,15 @@ fun HeightDialog(
                     ExposedDropdownMenu(expanded = dialogDropDownExpanded, onDismissRequest = { }) {
                         units.forEach { (u, text) ->
                             DropdownMenuItem(onClick = {
+                                if(u != dialogHeightUnit) {
+                                    var h = dialogHeight
+                                    if(dialogHeightUnit == Constants.UNIT_HEIGHT_CENTIMETERS && u == Constants.UNIT_HEIGHT_INCHES) {
+                                        h = centimetersToInches(dialogHeight)
+                                    } else if(dialogHeightUnit == Constants.UNIT_HEIGHT_INCHES && u == Constants.UNIT_HEIGHT_CENTIMETERS) {
+                                        h = inchesToCentimeters(dialogHeight)
+                                    }
+                                    setDialogHeight(h)
+                                }
                                 setDialogHeightUnit(u)
                                 setDialogDropDownExpanded(false)
                             }) {

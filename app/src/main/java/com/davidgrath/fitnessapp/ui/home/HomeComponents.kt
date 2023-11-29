@@ -60,6 +60,7 @@ import com.davidgrath.fitnessapp.ui.running.RunningViewModel
 import com.davidgrath.fitnessapp.ui.running.runningNavGraph
 import com.davidgrath.fitnessapp.ui.settings.PrivacyPolicyScreen
 import com.davidgrath.fitnessapp.ui.settings.SettingsScreen
+import com.davidgrath.fitnessapp.ui.settings.SettingsViewModel
 import com.davidgrath.fitnessapp.ui.settings.TermsAndConditionsScreen
 import com.davidgrath.fitnessapp.ui.settings.settingsNavGraph
 import com.davidgrath.fitnessapp.ui.swimming.SwimmingActivity
@@ -84,6 +85,7 @@ fun HomeScreen(
     cyclingViewModel: CyclingViewModel,
     gymViewModel: GymViewModel,
     yogaViewModel: YogaViewModel,
+    settingsViewModel: SettingsViewModel
 ) {
 
     val navController = rememberNavController()
@@ -95,7 +97,7 @@ fun HomeScreen(
         HomeNavHost(
             navController, homeViewModel,
             onboardingViewModel, runningViewModel, walkingViewModel,
-            swimmingViewModel, cyclingViewModel, gymViewModel, yogaViewModel,
+            swimmingViewModel, cyclingViewModel, gymViewModel, yogaViewModel, settingsViewModel,
             Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -272,6 +274,7 @@ fun HomeNavHost(
     cyclingViewModel: CyclingViewModel,
     gymViewModel: GymViewModel,
     yogaViewModel: YogaViewModel,
+    settingsViewModel: SettingsViewModel,
     modifier: Modifier
 ) {
     NavHost(
@@ -308,7 +311,7 @@ fun HomeNavHost(
                 }
             )
         }
-        settingsNavGraph(navController)
+        settingsNavGraph(navController, settingsViewModel)
     }
 
 }

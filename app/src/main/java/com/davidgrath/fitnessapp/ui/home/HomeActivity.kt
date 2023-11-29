@@ -20,6 +20,7 @@ import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModel
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModelFactory
 import com.davidgrath.fitnessapp.ui.running.RunningViewModel
 import com.davidgrath.fitnessapp.ui.running.RunningViewModelFactory
+import com.davidgrath.fitnessapp.ui.settings.SettingsViewModel
 import com.davidgrath.fitnessapp.ui.swimming.SwimmingViewModel
 import com.davidgrath.fitnessapp.ui.swimming.SwimmingViewModelFactory
 import com.davidgrath.fitnessapp.ui.walking.WalkingViewModel
@@ -37,6 +38,7 @@ class HomeActivity : ComponentActivity() {
     lateinit var cyclingViewModel: CyclingViewModel
     lateinit var gymViewModel: GymViewModel
     lateinit var yogaViewModel: YogaViewModel
+    lateinit var settingsViewModel: SettingsViewModel
 
     private var binder: FitnessService.FitnessBinder? = null
     var isBoundToService = false
@@ -57,7 +59,7 @@ class HomeActivity : ComponentActivity() {
                 FitnessAppTheme {
                     HomeScreen(homeViewModel,
                         onboardingViewModel, runningViewModel, walkingViewModel, swimmingViewModel,
-                        cyclingViewModel, gymViewModel, yogaViewModel
+                        cyclingViewModel, gymViewModel, yogaViewModel, settingsViewModel
                     )
                 }
             }
@@ -93,6 +95,8 @@ class HomeActivity : ComponentActivity() {
             GymViewModel::class.java)
         yogaViewModel = ViewModelProvider(this, YogaViewModelFactory(yogaRepository)).get(
             YogaViewModel::class.java)
+        settingsViewModel = ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory(application)).get(
+            SettingsViewModel::class.java)
 
         val serviceIntent = Intent(this, FitnessService::class.java)
         startService(serviceIntent)
