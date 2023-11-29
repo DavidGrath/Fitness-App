@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">FITNESS_APP</string>
+    <string name="app_name">FITNESS_ZONE</string>
     <string name="settings_language_name">ENGLISH</string>
 
     <!--Settings-->

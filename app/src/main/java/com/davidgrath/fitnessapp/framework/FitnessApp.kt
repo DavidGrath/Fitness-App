@@ -1,6 +1,8 @@
 package com.davidgrath.fitnessapp.framework
 
 import android.app.Application
+import android.content.Intent
+import android.content.SharedPreferences
 import android.util.Log
 import com.davidgrath.fitnessapp.data.CyclingRepository
 import com.davidgrath.fitnessapp.data.CyclingRepositoryImpl
@@ -20,6 +22,9 @@ import com.davidgrath.fitnessapp.data.entities.SimpleIntlString
 import com.davidgrath.fitnessapp.data.entities.YogaAsanaTutorial
 import com.davidgrath.fitnessapp.data.entities.YogaSessionTemplate
 import com.davidgrath.fitnessapp.framework.database.AppDatabase
+import com.davidgrath.fitnessapp.ui.SplashScreenActivity
+import com.davidgrath.fitnessapp.util.Constants
+import com.davidgrath.fitnessapp.util.Constants.PreferencesTitles
 import com.davidgrath.fitnessapp.util.ResourceProviderAssetPaths
 import com.davidgrath.fitnessapp.util.ResourceProviderUrls
 import com.davidgrath.fitnessapp.util.SimpleAbstractResourceProvider
@@ -47,6 +52,23 @@ class FitnessApp: Application() {
     lateinit var yogaAsanaTutorials: Map<String, YogaAsanaTutorial>
 
     lateinit var resourceProvider: SimpleAbstractResourceProvider
+
+    private val sharedPreferencesChangeListener = object: SharedPreferences.OnSharedPreferenceChangeListener {
+        override fun onSharedPreferenceChanged(sp: SharedPreferences, key: String?) {
+            when(key) {
+                PreferencesTitles.EMAIL -> {
+                    val email = sp.getString(key, null)?:""
+                    if(email.isBlank()) {
+                        val splashScreenIntent =
+                            Intent(this@FitnessApp, SplashScreenActivity::class.java)
+                        splashScreenIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        splashScreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(splashScreenIntent)
+                    }
+                }
+            }
+        }
+    }
 
 
     override fun onCreate() {
@@ -106,6 +128,8 @@ class FitnessApp: Application() {
         } else {
             ResourceProviderAssetPaths()
         }
+        val sharedPreferences = getSharedPreferences(Constants.MAIN_PREFERENCES_NAME, MODE_PRIVATE)
+        sharedPreferences.registerOnSharedPreferenceChangeListener(sharedPreferencesChangeListener)
     }
 
     /*override fun createConfigurationContext(overrideConfiguration: Configuration): Context {

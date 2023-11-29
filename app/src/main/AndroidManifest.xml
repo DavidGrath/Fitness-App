@@ -12,7 +12,7 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/fitness_zone_logo"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.FitnessApp"
@@ -30,11 +30,11 @@
         <activity android:name=".ui.onboarding.OnboardingActivity" />
         <activity android:name=".ui.home.HomeActivity"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
         </activity>
         <activity android:name=".GymTestActivity" />
         <activity android:name=".YogaTestActivity" />
@@ -44,6 +44,16 @@
         <activity android:name=".ui.cycling.CyclingActivity" />
         <activity android:name=".ui.gym.GymActivity" />
         <activity android:name=".ui.yoga.YogaActivity" />
+        <activity android:name=".ui.SplashScreenActivity"
+            android:exported="true"
+            android:theme="@style/SplashStyle"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <service android:name=".framework.FitnessService" android:foregroundServiceType="location"/>
     </application>

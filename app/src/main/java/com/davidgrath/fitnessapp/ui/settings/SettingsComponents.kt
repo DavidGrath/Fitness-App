@@ -103,6 +103,11 @@ fun SettingsScreen(
     onNavigateUnits: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+
+    val context = LocalContext.current
+    val preferences = remember {
+        context.getSharedPreferences(Constants.MAIN_PREFERENCES_NAME, Context.MODE_PRIVATE)
+    }
     Column(modifier = Modifier.fillMaxSize()) {
 
         val scrollState = rememberScrollState()
@@ -184,7 +189,22 @@ fun SettingsScreen(
             Divider(Modifier.fillMaxWidth())
             Spacer(Modifier.height(16.dp))
 
-            SimpleSettingsItem(iconResId = R.drawable.logout, text = stringResource(R.string.settings_item_log_out), onClick = {}, checkable = false)
+            SimpleSettingsItem(iconResId = R.drawable.logout, text = stringResource(R.string.settings_item_log_out),
+                onClick = {
+                          preferences.edit()
+                              .putString(PreferencesTitles.FIRST_NAME, null)
+                              .putString(PreferencesTitles.LAST_NAME, null)
+                              .putString(PreferencesTitles.EMAIL, null)
+                              .putInt(PreferencesTitles.HEIGHT, 0)
+                              .putString(PreferencesTitles.HEIGHT_UNIT, null)
+                              .putFloat(PreferencesTitles.WEIGHT, 0f)
+                              .putString(PreferencesTitles.WEIGHT_UNIT, null)
+                              .putInt(PreferencesTitles.BIRTH_DATE_DAY, 0)
+                              .putInt(PreferencesTitles.BIRTH_DATE_MONTH, 0)
+                              .putInt(PreferencesTitles.BIRTH_DATE_YEAR, 0)
+                              .apply()
+                },
+                checkable = false)
 
             Spacer(Modifier.height(16.dp))
         }
