@@ -39,4 +39,10 @@ interface AbstractFitnessService {
     fun endGymSet(repCount: Int) : Single<Long>
     fun setGymRoutineAndSetIndex(routineIndex: Int, setIndex: Int)
     fun getGymRoutineAndSetIndex(): Observable<Pair<Int, Int>>
+    fun getRunningIdObservable() : Observable<Long>
+    fun getWalkingIdObservable() : Observable<Long>
+    fun getSwimmingIdObservable() : Observable<Long>
+    fun getCyclingIdObservable() : Observable<Long>
+    fun getGymIdObservable() : Observable<Long>
+    fun getYogaIdObservable() : Observable<Long>
 }

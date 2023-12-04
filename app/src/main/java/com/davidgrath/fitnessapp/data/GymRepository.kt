@@ -6,6 +6,7 @@ import com.davidgrath.fitnessapp.framework.database.dao.GymWorkoutDao
 import com.davidgrath.fitnessapp.framework.database.entities.GymSet
 import com.davidgrath.fitnessapp.framework.database.entities.GymWorkout
 import com.davidgrath.fitnessapp.util.dateAsStart
+import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import java.util.Date
 import java.util.TimeZone
@@ -14,8 +15,8 @@ interface GymRepository {
     fun addWorkout(name: String): Single<Long>
 //    fun addRoutine(workoutId: Int, routineName: String): Single<Int>
     fun addSet(workoutId: Long, setIdentifier: String, repCount: Int, timed: Boolean, timeTaken: Long): Single<Long>
-    fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Single<List<GymWorkout>>
-    fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary>
+    fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Observable<List<GymWorkout>>
+    fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Observable<WorkoutSummary>
 }
 
 class GymRepositoryImpl(
@@ -42,7 +43,7 @@ class GymRepositoryImpl(
         return gymSetDao.insertSet(gymSet)
     }
 
-    override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Single<List<GymWorkout>> {
+    override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Observable<List<GymWorkout>> {
         val startTime = if(startDate != null) {
             dateAsStart(startDate).time
         } else {
@@ -53,10 +54,10 @@ class GymRepositoryImpl(
         } else {
             -1
         }
-        return gymWorkoutDao.getWorkoutsByDateRangeSingle(startTime, endTime)
+        return gymWorkoutDao.getWorkoutsByDateRange(startTime, endTime)
     }
 
-    override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
+    override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Observable<WorkoutSummary> {
         val startTime = if(startDate != null) {
             dateAsStart(startDate).time
         } else {
@@ -67,7 +68,7 @@ class GymRepositoryImpl(
         } else {
             -1
         }
-        return gymWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startTime, endTime)
+        return gymWorkoutDao.getWorkoutsSummaryByDateRange(startTime, endTime)
     }
 }
 

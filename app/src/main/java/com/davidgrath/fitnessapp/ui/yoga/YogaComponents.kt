@@ -201,9 +201,6 @@ fun YogaDashboardScreen(
     }
 
     LaunchedEffect(key1 = null) {
-        viewModel.getWorkoutsInPastWeek()
-        viewModel.getFullWorkoutsSummary()
-        viewModel.getSessionAndAsanaIndex()
         setIsInitial(false)
     }
     val yogaScreensState =
@@ -267,9 +264,7 @@ fun YogaHistoryScreen(
     viewModel: YogaViewModel,
     onNavigateBack: () -> Unit
 ) {
-    LaunchedEffect(key1 = null) {
-        viewModel.getWorkouts()
-    }
+
     val yogaScreensState =
         viewModel.yogaScreensStateLiveData.observeAsState().value?:YogaViewModel.YogaScreensState()
     val workouts = yogaScreensState.pastWorkouts
@@ -510,8 +505,6 @@ fun YogaAsanaScreen(
         viewModel.yogaScreensStateLiveData.observeAsState().value?:YogaViewModel.YogaScreensState()
 
     LaunchedEffect(key1 = null) {
-        viewModel.getYogaAsanaState()
-        viewModel.getSessionAndAsanaIndex()
         if(viewModel.asanasProgress < yogaAsanaIndex
 //            && yogaAsanaState.identifier != currentSession.asanas[yogaScreensState.currentAsanaIndex].identifier
         ) {

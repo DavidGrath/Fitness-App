@@ -40,6 +40,7 @@ import com.davidgrath.fitnessapp.framework.database.entities.YogaWorkout
 import com.davidgrath.fitnessapp.ui.home.HomeActivity
 import com.davidgrath.fitnessapp.util.Constants
 import com.davidgrath.fitnessapp.util.distanceKm
+import com.davidgrath.fitnessapp.util.millisToTimeString
 //import com.google.android.gms.location.LocationRequest
 //import com.google.android.gms.location.LocationServices
 //import com.google.android.gms.location.LocationSettingsRequest
@@ -54,6 +55,8 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 class FitnessService: Service() {
 
@@ -70,14 +73,11 @@ class FitnessService: Service() {
 
     class FitnessBinder(private val service: FitnessService): Binder(), AbstractFitnessService {
 
-        private val UPDATE_DURATION = 67L  //Some prime less than 100
         private val onNotificationClickedPendingIntent : PendingIntent
         private val locationManager = service.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 //        private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(service)
         private var currentWorkout = "NONE"
         private val currentWorkoutSubject = BehaviorSubject.create<String>()
-        private var currentWorkoutId = -1L
-//        private val currentWorkoutIdSubject = PublishSubject.create<Int>()
         private val fitnessApp = service.application as FitnessApp
         private val appDatabase = AppDatabase.getDatabase(service)
 
@@ -87,31 +87,37 @@ class FitnessService: Service() {
         private var timerUpdateFuture: ScheduledFuture<*>? = null
         private val timerUpdateRunnable: Runnable
 
+        private var currentRunningId = -1L
+        private val currentRunningIdSubject = BehaviorSubject.create<Long>()
         private val runningWorkoutDao = appDatabase.runningWorkoutDao()
         private val runningLocationDataDao = appDatabase.runningLocationDataDao()
         private val runningNotificationUpdateRunnable: Runnable
-        private var totalRunningDistance = 0.0
         private var runningNotificationUpdateFuture: ScheduledFuture<*>? = null
 
+        private var currentWalkingId = -1L
+        private val currentWalkingIdSubject = PublishSubject.create<Long>()
         private val walkingWorkoutDao = appDatabase.walkingWorkoutDao()
         private val walkingLocationDataDao = appDatabase.walkingLocationDataDao()
         private val walkingNotificationUpdateRunnable: Runnable
-        private var totalWalkingDistance = 0.0
         private var walkingNotificationUpdateFuture: ScheduledFuture<*>? = null
 
+        private var currentCyclingId = -1L
+        private val currentCyclingIdSubject = PublishSubject.create<Long>()
         private val cyclingWorkoutDao = appDatabase.cyclingWorkoutDao()
         private val cyclingLocationDataDao = appDatabase.cyclingLocationDataDao()
         private val cyclingNotificationUpdateRunnable: Runnable
-        private var totalCyclingDistance = 0.0
         private var cyclingNotificationUpdateFuture: ScheduledFuture<*>? = null
 
-
+        private var currentSwimmingId = -1L
+        private val currentSwimmingIdSubject = PublishSubject.create<Long>()
         private val swimmingWorkoutDao = appDatabase.swimmingWorkoutDao()
         private val swimmingUpdateRunnable: Runnable
         private var swimmingUpdateFuture: ScheduledFuture<*>? = null
         private val swimmingNotificationUpdateRunnable: Runnable
         private var swimmingNotificationUpdateFuture: ScheduledFuture<*>? = null
 
+        private var currentGymId = -1L
+        private val currentGymIdSubject = PublishSubject.create<Long>()
         private val gymWorkoutDao = appDatabase.gymWorkoutDao()
         private val gymSetDao = appDatabase.gymSetDao()
         private var gymSetTimerDuration = 0L
@@ -122,6 +128,8 @@ class FitnessService: Service() {
         private var currentGymSetIndex: Int = -1
         private var currentGymData = BehaviorSubject.create<Pair<Int, Int>>()
 
+        private var currentYogaId = -1L
+        private val currentYogaIdSubject = PublishSubject.create<Long>()
         private val yogaWorkoutDao = appDatabase.yogaWorkoutDao()
         private val yogaAsanaDao = appDatabase.yogaAsanaDao()
         private var yogaAsanaTimerDuration = 0L
@@ -185,8 +193,6 @@ class FitnessService: Service() {
             }
         }*/
 
-        private var previousLatitude: Double? = null
-        private var previousLongitude: Double? = null
         val locationListener = LocationListener { latestLocation ->
             val altitude : Double? = if (latestLocation.hasAltitude()) latestLocation.altitude else null
             val bearing : Float? = if (latestLocation.hasBearing()) latestLocation.bearing else null
@@ -194,38 +200,36 @@ class FitnessService: Service() {
             val speed : Float? = if (latestLocation.hasSpeed()) latestLocation.speed else null
             when(currentWorkout) {
                 "RUNNING" -> {
-                    incrementRunningStatistics(currentWorkoutId, previousLatitude, previousLongitude, latestLocation.latitude, latestLocation.longitude)
+                    val runningLocationData = RunningLocationData(null, currentRunningId, latestLocation.latitude,
+                        latestLocation.longitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
+                    runningLocationDataDao.insertWorkoutLocationData(runningLocationData)
                         .flatMap {
-                            val runningLocationData = RunningLocationData(null, currentWorkoutId, latestLocation.latitude,
-                                latestLocation.longitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
-                            runningLocationDataDao.insertWorkoutLocationData(runningLocationData)
+                            calculateRunningKCalBurned(currentRunningId, timerDuration)
                         }
                         .subscribeOn(Schedulers.io())
                         .subscribe({}, {})
                 }
                 "WALKING" -> {
-                    incrementWalkingStatistics(currentWorkoutId, previousLatitude, previousLongitude, latestLocation.latitude, latestLocation.longitude)
+                    val walkingLocationData = WalkingLocationData(null, currentWalkingId, latestLocation.latitude,
+                        latestLocation.longitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
+                    walkingLocationDataDao.insertWorkoutLocationData(walkingLocationData)
                         .flatMap {
-                            val walkingLocationData = WalkingLocationData(null, currentWorkoutId, latestLocation.latitude,
-                                latestLocation.longitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
-                            walkingLocationDataDao.insertWorkoutLocationData(walkingLocationData)
+                            calculateWalkingKCalBurned(currentWalkingId, timerDuration)
                         }
                         .subscribeOn(Schedulers.io())
                         .subscribe({}, {})
                 }
                 "CYCLING" -> {
-                    incrementCyclingStatistics(currentWorkoutId, previousLatitude, previousLongitude, latestLocation.latitude, latestLocation.longitude)
+                    val cyclingLocationData = CyclingLocationData(null, currentCyclingId, latestLocation.latitude,
+                        latestLocation.longitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
+                    cyclingLocationDataDao.insertWorkoutLocationData(cyclingLocationData)
                         .flatMap {
-                            val cyclingLocationData = CyclingLocationData(null, currentWorkoutId, latestLocation.latitude,
-                                latestLocation.longitude, latestLocation.time, latestLocation.accuracy, altitude, bearing, speed)
-                            cyclingLocationDataDao.insertWorkoutLocationData(cyclingLocationData)
+                            calculateCyclingKCalBurned(currentCyclingId, timerDuration)
                         }
                         .subscribeOn(Schedulers.io())
                         .subscribe({}, {})
                 }
             }
-            previousLongitude = latestLocation.longitude
-            previousLatitude = latestLocation.latitude
         }
 
         init {
@@ -241,23 +245,23 @@ class FitnessService: Service() {
             timerDurationSubject.onNext(timerDuration)
             currentWorkoutSubject.onNext("NONE")
             timerUpdateRunnable = Runnable {
-                timerDuration += UPDATE_DURATION
+                timerDuration += TIMER_UPDATE_DURATION
                 timerDurationSubject.onNext(timerDuration)
             }
             gymSetTimerUpdateRunnable = Runnable {
-                gymSetTimerDuration += UPDATE_DURATION
+                gymSetTimerDuration += TIMER_UPDATE_DURATION
             }
             yogaAsanaTimerUpdateRunnable = Runnable {
-                yogaAsanaTimerDuration += UPDATE_DURATION
+                yogaAsanaTimerDuration += TIMER_UPDATE_DURATION
             }
             yogaAsanaTimeLeftUpdateRunnable = Runnable {
-                if(yogaAsanaTimeLeft - UPDATE_DURATION <= 0) {
+                if(yogaAsanaTimeLeft - TIMER_UPDATE_DURATION <= 0) {
                     yogaAsanaTimeLeft = 0
                     yogaAsanaState = yogaAsanaState.copy(timeLeft = yogaAsanaTimeLeft)
                     yogaAsanaStateSubject.onNext(yogaAsanaState)
                     yogaAsanaTimerUpdateFuture?.cancel(true)
                 } else {
-                    yogaAsanaTimeLeft -= UPDATE_DURATION
+                    yogaAsanaTimeLeft -= TIMER_UPDATE_DURATION
                     yogaAsanaState = yogaAsanaState.copy(timeLeft = yogaAsanaTimeLeft)
                     yogaAsanaStateSubject.onNext(yogaAsanaState)
                 }
@@ -265,32 +269,54 @@ class FitnessService: Service() {
             }
             runningNotificationUpdateRunnable = Runnable {
                 val notificationManager = service.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-                val notif = buildNotification("Running","0s, 0km", R.drawable.run_fast)
-                //TODO Add timer, distance, kcal text
-                notificationManager.notify(NOTIFICATION_ID, notif)
+                //I'm not calling "calculate" because it is already being called by
+                // the location listener
+                runningWorkoutDao.getWorkoutSingle(currentRunningId)
+                    .blockingSubscribe({
+                        val timeString = millisToTimeString(timerDuration)
+                        val distanceString = String.format("%.2f", it.totalDistanceKm) + " km"
+                        val detailsString = "$timeString, $distanceString, ${it.kCalBurned}kcal"
+                        val notif = buildNotification("Running",detailsString, R.drawable.run_fast)
+                        notificationManager.notify(NOTIFICATION_ID, notif)
+                    }, {})
             }
 
             walkingNotificationUpdateRunnable = Runnable {
                 val notificationManager = service.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-                val notif = buildNotification("Walking","0s, 0km", R.drawable.shoe_sneaker)
-                //TODO Add timer, distance, kcal text
-                notificationManager.notify(NOTIFICATION_ID, notif)
+                walkingWorkoutDao.getWorkoutSingle(currentWalkingId)
+                    .blockingSubscribe({
+                        val timeString = millisToTimeString(timerDuration)
+                        val distanceString = String.format("%.2f", it.totalDistanceKm) + " km"
+                        val detailsString = "$timeString, $distanceString, ${it.kCalBurned}kcal"
+                        val notif = buildNotification("Walking",detailsString, R.drawable.shoe_sneaker)
+                        notificationManager.notify(NOTIFICATION_ID, notif)
+                    }, {})
             }
 
             cyclingNotificationUpdateRunnable = Runnable {
                 val notificationManager = service.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-                val notif = buildNotification("Cycling","0s, 0km", R.drawable.bike)
-                //TODO Add timer, distance, kcal text
-                notificationManager.notify(NOTIFICATION_ID, notif)
+                cyclingWorkoutDao.getWorkoutSingle(currentCyclingId)
+                    .blockingSubscribe({
+                        val timeString = millisToTimeString(timerDuration)
+                        val distanceString = String.format("%.2f", it.totalDistanceKm) + " km"
+                        val detailsString = "$timeString, $distanceString, ${it.kCalBurned}kcal"
+                        val notif = buildNotification("Cycling",detailsString, R.drawable.bike)
+                        notificationManager.notify(NOTIFICATION_ID, notif)
+                    }, {})
             }
 
             swimmingUpdateRunnable = Runnable {
-                calculateSwimmingKCalBurned(currentWorkoutId, timerDuration).subscribe({}, {})
+                calculateSwimmingKCalBurned(currentSwimmingId, timerDuration).subscribe({}, {})
             }
             swimmingNotificationUpdateRunnable = Runnable {
                 val notificationManager = service.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-                val notif = buildNotification("Swimming","0s, 0km", R.drawable.swim)
-                notificationManager.notify(NOTIFICATION_ID, notif)
+                swimmingWorkoutDao.getWorkoutSingle(currentSwimmingId)
+                    .blockingSubscribe({
+                        val timeString = millisToTimeString(timerDuration)
+                        val detailsString = "$timeString, ${it.kCalBurned}kcal"
+                        val notif = buildNotification("Swimming",detailsString, R.drawable.swim)
+                        notificationManager.notify(NOTIFICATION_ID, notif)
+                    }, {})
             }
         }
 
@@ -326,7 +352,7 @@ class FitnessService: Service() {
                         timerDurationSubject.onNext(timerDuration)
                         timerUpdateFuture?.cancel(true)
                         executorService.remove(timerUpdateRunnable)
-                        calculateRunningKCalBurned(currentWorkoutId, duration)
+                        calculateRunningKCalBurned(currentRunningId, duration)
                     }
                     "WALKING" -> {
 //                        fusedLocationClient.removeLocationUpdates(locationCallback)
@@ -349,7 +375,7 @@ class FitnessService: Service() {
                         timerDurationSubject.onNext(timerDuration)
                         timerUpdateFuture?.cancel(true)
                         executorService.remove(timerUpdateRunnable)
-                        calculateWalkingKCalBurned(currentWorkoutId, timerDuration)
+                        calculateWalkingKCalBurned(currentWalkingId, timerDuration)
                     }
                     "CYCLING" -> {
 //                        fusedLocationClient.removeLocationUpdates(locationCallback)
@@ -372,7 +398,7 @@ class FitnessService: Service() {
                         timerDurationSubject.onNext(timerDuration)
                         timerUpdateFuture?.cancel(true)
                         executorService.remove(timerUpdateRunnable)
-                        calculateCyclingKCalBurned(currentWorkoutId, duration)
+                        calculateCyclingKCalBurned(currentCyclingId, duration)
                     }
                     "SWIMMING" -> {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -395,7 +421,7 @@ class FitnessService: Service() {
                         executorService.remove(swimmingUpdateRunnable)
                         timerUpdateFuture?.cancel(true)
                         executorService.remove(timerUpdateRunnable)
-                        calculateSwimmingKCalBurned(currentWorkoutId, duration)
+                        calculateSwimmingKCalBurned(currentSwimmingId, duration)
                     }
                     "GYM" -> {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -413,7 +439,7 @@ class FitnessService: Service() {
                         currentGymRoutineIndex = -1
                         currentGymSetIndex = -1
                         currentGymData.onNext(currentGymRoutineIndex to currentGymSetIndex)
-                        calculateGymKCalBurned(currentWorkoutId, duration)
+                        calculateGymKCalBurned(currentGymId, duration)
                     }
                     "YOGA" -> {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -435,7 +461,7 @@ class FitnessService: Service() {
                         currentYogaSessionIndex = -1
                         currentYogaAsanaIndex = -1
                         currentYogaData.onNext(currentYogaSessionIndex to currentYogaAsanaIndex)
-                        calculateYogaKCalBurned(currentWorkoutId, duration)
+                        calculateYogaKCalBurned(currentYogaId, duration)
                     }
                     else -> {
                         currentWorkout = "NONE"
@@ -540,20 +566,14 @@ class FitnessService: Service() {
                                 )
                             }
                             val notification =
-                                buildNotification("Running", "0s, 0km", R.drawable.run_fast)
+                                buildNotification("Running", "00:00, 0.00km, 0kcal", R.drawable.run_fast)
 
                             timerUpdateFuture = executorService.scheduleAtFixedRate(
-                                timerUpdateRunnable,
-                                0L,
-                                UPDATE_DURATION,
-                                TimeUnit.MILLISECONDS
-                            )
+                                timerUpdateRunnable, 0L,
+                                TIMER_UPDATE_DURATION, TimeUnit.MILLISECONDS)
                             runningNotificationUpdateFuture = executorService.scheduleAtFixedRate(
-                                runningNotificationUpdateRunnable,
-                                0L,
-                                5L,
-                                TimeUnit.SECONDS
-                            )
+                                runningNotificationUpdateRunnable, 0L,
+                                NOTIFICATION_UPDATE_DURATION, TimeUnit.SECONDS)
                             service.startForeground(NOTIFICATION_ID, notification)
                             runningWorkoutDao.insertWorkout(
                                 RunningWorkout(
@@ -562,7 +582,8 @@ class FitnessService: Service() {
                                     timeZone.id
                                 )
                             ).map {
-                                currentWorkoutId = it
+                                currentRunningId = it
+                                currentRunningIdSubject.onNext(currentRunningId)
                                 it
                             }
                         }
@@ -588,40 +609,6 @@ class FitnessService: Service() {
 
         }
 
-        //TODO This function gets affected by "stationary" behavior. Improve by detecting and adjusting
-        // the calculations for average speed -> MET -> calories appropriately
-        private fun incrementRunningStatistics(workoutId: Long, lat1: Double?, lon1: Double?, lat2: Double, lon2: Double) : Single<Unit> {
-            if(lat1 == null || lon1 == null) {
-                return Single.just(Unit)
-            }
-            val tempSpeedValues = arrayOf(1.0)
-            val tempMetValues = arrayOf(2.0)
-            //2011 Compendium of Physical Activities
-            val speedValues = tempSpeedValues + arrayOf(4.0, 5.0, 5.2, 6.0, 6.7, 7.0, 7.5, 8.0, 8.6, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0)
-            val metValues = tempMetValues + arrayOf(6.0, 8.3, 9.0, 9.8, 10.5, 11.0, 11.5, 11.8, 12.3, 12.8, 14.5, 16.0, 19.0, 19.8, 23.0)
-            return runningLocationDataDao.getWorkoutLocationDataSingle(workoutId)
-                .flatMap {
-                    val d = distanceKm(lat1, lon1, lat2, lon2)
-                    totalRunningDistance += d
-
-                    val durationMinutes = timerDuration / 60_000.0
-                    val durationHours = timerDuration.toFloat() / 3_600_000
-                    val totalDistanceMiles = totalRunningDistance * 0.621371F
-                    val averageSpeedMph = totalDistanceMiles/durationHours
-                    val metValueIndex = linearSearchApproximate(averageSpeedMph, speedValues)
-                    if(metValueIndex == -1) {
-                        return@flatMap runningWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, timerDuration, 0).map {  }
-                    }
-                    val metValue = metValues[metValueIndex]
-                    var bodyWeight = preferences.getFloat(Constants.PreferencesTitles.WEIGHT, 0.0F)
-                    if(preferences.getString(Constants.PreferencesTitles.WEIGHT_UNIT, null) == Constants.UNIT_WEIGHT_POUNDS) {
-                        bodyWeight *= 0.453592F;
-                    }
-                    val kCalBurned = (durationMinutes * bodyWeight * metValue) /200
-                    runningWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, timerDuration, kCalBurned.toInt()).map {  }
-                }
-        }
-
         private fun calculateRunningKCalBurned(workoutId: Long, duration: Long) : Single<Unit> {
             //2011 Compendium of Physical Activities
             val speedValues = arrayOf(4.0, 5.0, 5.2, 6.0, 6.7, 7.0, 7.5, 8.0, 8.6, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0)
@@ -634,7 +621,7 @@ class FitnessService: Service() {
                         totalDistance += d
                     }
                     if(totalDistance == 0.0) {
-                        return@flatMap runningWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, duration, 0).map {  }
+                        return@flatMap runningWorkoutDao.setWorkoutCalculations(workoutId, duration, 0.0, 0).map {  }
                     }
                     val durationMinutes = duration / 60_000.0
                     val durationHours = duration.toFloat() / 3_600_000
@@ -642,7 +629,7 @@ class FitnessService: Service() {
                     val averageSpeedMph = totalDistanceMiles/durationHours
                     val metValueIndex = linearSearchApproximate(averageSpeedMph, speedValues)
                     if(metValueIndex == -1) {
-                        return@flatMap runningWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, duration, 0).map {  }
+                        return@flatMap runningWorkoutDao.setWorkoutCalculations(workoutId, duration, totalDistance, 0).map {  }
                     }
                     val metValue = metValues[metValueIndex]
                     var bodyWeight = preferences.getFloat(Constants.PreferencesTitles.WEIGHT, 0.0F)
@@ -650,7 +637,7 @@ class FitnessService: Service() {
                         bodyWeight *= 0.453592F;
                     }
                     val kCalBurned = (durationMinutes * bodyWeight * metValue) /200
-                    runningWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, duration, kCalBurned.toInt()).map { }
+                    runningWorkoutDao.setWorkoutCalculations(workoutId, duration, totalDistance, kCalBurned.toInt()).map { }
                 }
         }
 
@@ -677,20 +664,17 @@ class FitnessService: Service() {
                                 )
                             }
                             val notification =
-                                buildNotification("Walking", "0s, 0km", R.drawable.shoe_sneaker)
+                                buildNotification("Walking", "00:00, 0.00km, 0kcal", R.drawable.shoe_sneaker)
 
                             timerUpdateFuture = executorService.scheduleAtFixedRate(
                                 timerUpdateRunnable,
                                 0L,
-                                UPDATE_DURATION,
+                                TIMER_UPDATE_DURATION,
                                 TimeUnit.MILLISECONDS
                             )
                             walkingNotificationUpdateFuture = executorService.scheduleAtFixedRate(
-                                walkingNotificationUpdateRunnable,
-                                0L,
-                                5L,
-                                TimeUnit.SECONDS
-                            )
+                                walkingNotificationUpdateRunnable, 0L,
+                                NOTIFICATION_UPDATE_DURATION, TimeUnit.SECONDS)
                             service.startForeground(NOTIFICATION_ID, notification)
                             walkingWorkoutDao.insertWorkout(
                                 WalkingWorkout(
@@ -699,7 +683,8 @@ class FitnessService: Service() {
                                     timeZone.id
                                 )
                             ).map {
-                                currentWorkoutId = it
+                                currentWalkingId = it
+                                currentWalkingIdSubject.onNext(it)
                                 it
                             }
                         }
@@ -723,39 +708,6 @@ class FitnessService: Service() {
             }
         }
 
-        private fun incrementWalkingStatistics(workoutId: Long, lat1: Double?, lon1: Double?, lat2: Double, lon2: Double) : Single<Unit> {
-            if(lat1 == null || lon1 == null) {
-                return Single.just(Unit)
-            }
-            val tempSpeedValues = arrayOf(1.0)
-            val tempMetValues = arrayOf(1.2)
-            //2011 Compendium of Physical Activities
-            val speedValues = tempSpeedValues + arrayOf(2.5, 2.8, 3.2, 3.5, 4.0, 4.5, 5.0) //All "level surface"
-            val metValues = tempMetValues + arrayOf(3.0, 3.5, 3.5, 4.3, 5.0, 7.0, 8.3) // All "level surface"
-            return walkingLocationDataDao.getWorkoutLocationDataSingle(workoutId)
-                .flatMap {
-
-                    val d = distanceKm(lat1, lon1, lat2, lon2)
-                    totalWalkingDistance += d
-
-                    val durationMinutes = timerDuration / 60_000.0
-                    val durationHours = timerDuration.toFloat() / 3_600_000
-                    val totalDistanceMiles = totalWalkingDistance * 0.621371F
-                    val averageSpeedMph = totalDistanceMiles/durationHours
-                    val metValueIndex = linearSearchApproximate(averageSpeedMph, speedValues)
-                    if(metValueIndex == -1) {
-                        return@flatMap walkingWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, timerDuration, 0).map {  }
-                    }
-                    val metValue = metValues[metValueIndex]
-                    var bodyWeight = preferences.getFloat(Constants.PreferencesTitles.WEIGHT, 0.0F)
-                    if(preferences.getString(Constants.PreferencesTitles.WEIGHT_UNIT, null) == Constants.UNIT_WEIGHT_POUNDS) {
-                        bodyWeight *= 0.453592F;
-                    }
-                    val kCalBurned = (durationMinutes * bodyWeight * metValue) /200
-                    walkingWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, timerDuration, kCalBurned.toInt()).map {  }
-                }
-        }
-
         private fun calculateWalkingKCalBurned(workoutId: Long, duration: Long) : Single<Unit> {
             //2011 Compendium of Physical Activities
             val walkingSpeedValues = arrayOf(2.5, 2.8, 3.2, 3.5, 4.0, 4.5, 5.0) //All "level surface"
@@ -768,7 +720,7 @@ class FitnessService: Service() {
                         totalDistance += d
                     }
                     if(totalDistance == 0.0) {
-                        return@flatMap walkingWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, duration, 0).map {  }
+                        return@flatMap walkingWorkoutDao.setWorkoutCalculations(workoutId, duration, 0.0, 0).map {  }
                     }
                     val durationMinutes = duration / 60_000.0
                     val durationHours = duration.toFloat() / 3_600_000
@@ -776,7 +728,7 @@ class FitnessService: Service() {
                     val averageSpeedMph = totalDistanceMiles/durationHours
                     val metValueIndex = linearSearchApproximate(averageSpeedMph, walkingSpeedValues)
                     if(metValueIndex == -1) {
-                        return@flatMap walkingWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, duration, 0).map { }
+                        return@flatMap walkingWorkoutDao.setWorkoutCalculations(workoutId, duration, totalDistance, 0).map { }
                     }
                     val metValue = walkingMetValues[metValueIndex]
                     var bodyWeight = preferences.getFloat(Constants.PreferencesTitles.WEIGHT, 0.0F)
@@ -784,7 +736,7 @@ class FitnessService: Service() {
                         bodyWeight *= 0.453592F;
                     }
                     val kCalBurned = (durationMinutes * bodyWeight * metValue) /200
-                    walkingWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, duration, kCalBurned.toInt()).map { }
+                    walkingWorkoutDao.setWorkoutCalculations(workoutId, duration, totalDistance, kCalBurned.toInt()).map { }
                 }
         }
 
@@ -811,23 +763,21 @@ class FitnessService: Service() {
                                     locationListener
                                 )
                             }
-                        val notification = buildNotification("Cycling", "0s, 0km", R.drawable.bike)
+                        val notification = buildNotification("Cycling", "00:00, 0.00km, 0kcal", R.drawable.bike)
 
                         timerUpdateFuture = executorService.scheduleAtFixedRate(
                             timerUpdateRunnable,
                             0L,
-                            UPDATE_DURATION,
+                            TIMER_UPDATE_DURATION,
                             TimeUnit.MILLISECONDS
                         )
                         cyclingNotificationUpdateFuture = executorService.scheduleAtFixedRate(
-                            cyclingNotificationUpdateRunnable,
-                            0L,
-                            5L,
-                            TimeUnit.SECONDS
-                        )
+                            cyclingNotificationUpdateRunnable, 0L,
+                            NOTIFICATION_UPDATE_DURATION, TimeUnit.SECONDS)
                         service.startForeground(NOTIFICATION_ID, notification)
                         cyclingWorkoutDao.insertWorkout(CyclingWorkout(null, Date().time, timeZone.id)).map {
-                            currentWorkoutId = it
+                            currentCyclingId = it
+                            currentCyclingIdSubject.onNext(it)
                             it
                         }
                     }
@@ -851,40 +801,6 @@ class FitnessService: Service() {
             }
         }
 
-        private fun incrementCyclingStatistics(workoutId: Long, lat1: Double?, lon1: Double?, lat2: Double, lon2: Double) : Single<Unit> {
-            if(lat1 == null || lon1 == null) {
-                return Single.just(Unit)
-            }
-            val tempSpeedValues = arrayOf(1.0)
-            val tempMetValues = arrayOf(1.2)
-            //2011 Compendium of Physical Activities
-            val speedValues = tempSpeedValues + arrayOf(10.0, 11.9, 12.0, 13.9, 14.0, 15.9, 16.0, 19.0, 20.0)
-            val metValues = tempMetValues + arrayOf(6.8, 6.8, 8.0, 8.0, 10.0, 10.0, 12.0, 12.0, 15.8)
-            return cyclingLocationDataDao.getWorkoutLocationDataSingle(workoutId)
-                .flatMap {
-                    val d = distanceKm(lat1, lon1, lat2, lon2)
-                    totalCyclingDistance += d
-
-                    val durationMinutes = timerDuration / 60_000.0
-                    val durationHours = timerDuration.toFloat() / 3_600_000
-                    val totalDistanceMiles = totalCyclingDistance * 0.621371F
-                    val averageSpeedMph = totalDistanceMiles/durationHours
-                    val metValueIndex = linearSearchApproximate(averageSpeedMph, speedValues)
-                    var metValue : Double
-                    if(metValueIndex == -1) {
-                        metValue = 7.5 // Bicycling, general
-                    } else {
-                        metValue = metValues[metValueIndex]
-                    }
-                    var bodyWeight = preferences.getFloat(Constants.PreferencesTitles.WEIGHT, 0.0F)
-                    if(preferences.getString(Constants.PreferencesTitles.WEIGHT_UNIT, null) == Constants.UNIT_WEIGHT_POUNDS) {
-                        bodyWeight *= 0.453592F;
-                    }
-                    val kCalBurned = (durationMinutes * bodyWeight * metValue) /200
-                    cyclingWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, timerDuration, kCalBurned.toInt()).map {  }
-                }
-        }
-
         private fun calculateCyclingKCalBurned(workoutId: Long, duration: Long) : Single<Unit> {
             //2011 Compendium of Physical Activities
             val cyclingSpeedValues = arrayOf(10.0, 11.9, 12.0, 13.9, 14.0, 15.9, 16.0, 19.0, 20.0)
@@ -897,7 +813,7 @@ class FitnessService: Service() {
                         totalDistance += d
                     }
                     if(totalDistance == 0.0) {
-                        return@flatMap cyclingWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, duration, 0).map {  }
+                        return@flatMap cyclingWorkoutDao.setWorkoutCalculations(workoutId, duration, 0.0, 0).map {  }
                     }
                     val durationMinutes = duration / 60_000.0
                     val durationHours = duration.toFloat() / 3_600_000
@@ -905,7 +821,7 @@ class FitnessService: Service() {
                     val averageSpeedMph = totalDistanceMiles/durationHours
                     val metValueIndex = linearSearchApproximate(averageSpeedMph, cyclingSpeedValues)
                     if(metValueIndex == -1) {
-                        return@flatMap cyclingWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, duration, 0).map { }
+                        return@flatMap cyclingWorkoutDao.setWorkoutCalculations(workoutId, duration, totalDistance, 0).map { }
                     }
                     val metValue = cyclingMetValues[metValueIndex]
                     var bodyWeight = preferences.getFloat(Constants.PreferencesTitles.WEIGHT, 0.0F)
@@ -913,7 +829,7 @@ class FitnessService: Service() {
                         bodyWeight *= 0.453592F;
                     }
                     val kCalBurned = (durationMinutes * bodyWeight * metValue) /200
-                    cyclingWorkoutDao.setWorkoutDurationAndKCalBurned(workoutId, duration, kCalBurned.toInt()).map { }
+                    cyclingWorkoutDao.setWorkoutCalculations(workoutId, duration, totalDistance, kCalBurned.toInt()).map { }
                 }
         }
 
@@ -923,12 +839,12 @@ class FitnessService: Service() {
                     val timeZone = TimeZone.getDefault()
                     currentWorkout = "SWIMMING"
                     currentWorkoutSubject.onNext(currentWorkout)
-                    val notification = buildNotification("Swimming", "0s, 0km", R.drawable.swim)
+                    val notification = buildNotification("Swimming", "00:00, 0kcal", R.drawable.swim)
 
                     timerUpdateFuture = executorService.scheduleAtFixedRate(
                         timerUpdateRunnable,
                         0L,
-                        UPDATE_DURATION,
+                        TIMER_UPDATE_DURATION,
                         TimeUnit.MILLISECONDS
                     )
                     swimmingUpdateFuture = executorService.scheduleAtFixedRate(
@@ -940,12 +856,13 @@ class FitnessService: Service() {
                     swimmingNotificationUpdateFuture = executorService.scheduleAtFixedRate(
                         swimmingNotificationUpdateRunnable,
                         0L,
-                        5L,
+                        NOTIFICATION_UPDATE_DURATION,
                         TimeUnit.SECONDS
                     )
                     service.startForeground(NOTIFICATION_ID, notification)
                     swimmingWorkoutDao.insertWorkout(SwimmingWorkout(null, Date().time, timeZone.id)).map {
-                        currentWorkoutId = it
+                        currentSwimmingId = it
+                        currentSwimmingIdSubject.onNext(it)
                         it
                     }
                 }
@@ -974,13 +891,14 @@ class FitnessService: Service() {
                     timerUpdateFuture = executorService.scheduleAtFixedRate(
                         timerUpdateRunnable,
                         0L,
-                        UPDATE_DURATION,
+                        TIMER_UPDATE_DURATION,
                         TimeUnit.MILLISECONDS
                     )
                     service.startForeground(NOTIFICATION_ID, notification)
                     gymWorkoutDao.insertWorkout(GymWorkout(null, timestamp, timeZone.id, name))
                         .map {
-                            currentWorkoutId = it
+                            currentGymId = it
+                            currentGymIdSubject.onNext(it)
                             it
                         }
                 }
@@ -988,7 +906,7 @@ class FitnessService: Service() {
 
         override fun startGymSet(setIdentifier: String) {
             gymSetTimerDuration = 0L
-            gymSetTimerUpdateFuture = executorService.scheduleAtFixedRate(gymSetTimerUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
+            gymSetTimerUpdateFuture = executorService.scheduleAtFixedRate(gymSetTimerUpdateRunnable, 0L, TIMER_UPDATE_DURATION, TimeUnit.MILLISECONDS)
             currentGymSetIdentifier = setIdentifier
         }
 
@@ -1000,7 +918,7 @@ class FitnessService: Service() {
         override fun endGymSet(repCount: Int) : Single<Long> {
             gymSetTimerUpdateFuture?.cancel(true)
             val timestamp = Date().time
-            return gymSetDao.insertSet(GymSet(null, currentWorkoutId, currentGymSetIdentifier, timestamp, repCount, gymSetTimerDuration))
+            return gymSetDao.insertSet(GymSet(null, currentGymId, currentGymSetIdentifier, timestamp, repCount, gymSetTimerDuration))
                 .doOnSuccess {
                     gymSetTimerDuration = 0L
                     currentGymSetIdentifier = ""
@@ -1016,6 +934,30 @@ class FitnessService: Service() {
 
         override fun getGymRoutineAndSetIndex(): Observable<Pair<Int, Int>> {
             return currentGymData
+        }
+
+        override fun getRunningIdObservable(): Observable<Long> {
+            return currentRunningIdSubject
+        }
+
+        override fun getWalkingIdObservable(): Observable<Long> {
+            return currentWalkingIdSubject
+        }
+
+        override fun getSwimmingIdObservable(): Observable<Long> {
+            return currentSwimmingIdSubject
+        }
+
+        override fun getCyclingIdObservable(): Observable<Long> {
+            return currentCyclingIdSubject
+        }
+
+        override fun getGymIdObservable(): Observable<Long> {
+            return currentGymIdSubject
+        }
+
+        override fun getYogaIdObservable(): Observable<Long> {
+            return currentYogaIdSubject
         }
 
         private fun calculateGymKCalBurned(workoutId: Long, duration: Long) : Single<Unit> {
@@ -1053,13 +995,14 @@ class FitnessService: Service() {
                     timerUpdateFuture = executorService.scheduleAtFixedRate(
                         timerUpdateRunnable,
                         0L,
-                        UPDATE_DURATION,
+                        TIMER_UPDATE_DURATION,
                         TimeUnit.MILLISECONDS
                     )
                     service.startForeground(NOTIFICATION_ID, notification)
                     yogaWorkoutDao.insertWorkout(YogaWorkout(null, timestamp, timeZone.id, name))
                         .map {
-                            currentWorkoutId = it
+                            currentYogaId = it
+                            currentYogaIdSubject.onNext(it)
                             it
                         }
                 }
@@ -1070,12 +1013,12 @@ class FitnessService: Service() {
                 return
             }
             yogaAsanaTimerDuration = 0L
-            yogaAsanaTimerUpdateFuture = executorService.scheduleAtFixedRate(yogaAsanaTimerUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
+            yogaAsanaTimerUpdateFuture = executorService.scheduleAtFixedRate(yogaAsanaTimerUpdateRunnable, 0L, TIMER_UPDATE_DURATION, TimeUnit.MILLISECONDS)
             yogaAsanaTimeLeft = durationMillis.toLong()
             yogaAsanaState = YogaAsanaState(yogaAsanaTimeLeft, false, asanaIdentifier)
             yogaAsanaStateSubject.onNext(yogaAsanaState)
             yogaAsanaTimeLeftUpdateFuture = executorService.scheduleAtFixedRate(
-                yogaAsanaTimeLeftUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
+                yogaAsanaTimeLeftUpdateRunnable, 0L, TIMER_UPDATE_DURATION, TimeUnit.MILLISECONDS)
             currentYogaAsanaIdentifier = asanaIdentifier
         }
 
@@ -1086,7 +1029,7 @@ class FitnessService: Service() {
             yogaAsanaTimerUpdateFuture?.cancel(true)
             yogaAsanaTimeLeftUpdateFuture?.cancel(true)
             val timestamp = Date().time
-            return yogaAsanaDao.insertAsana(YogaAsana(null, currentWorkoutId, currentYogaAsanaIdentifier, timestamp, yogaAsanaTimerDuration))
+            return yogaAsanaDao.insertAsana(YogaAsana(null, currentYogaId, currentYogaAsanaIdentifier, timestamp, yogaAsanaTimerDuration))
                 .doOnSuccess {
                     yogaAsanaTimerDuration = 0L
                     yogaAsanaTimeLeft = 0
@@ -1109,9 +1052,9 @@ class FitnessService: Service() {
         override fun resumeCurrentYogaAsana() {
             if(currentYogaAsanaIdentifier.isNotBlank() && yogaAsanaState.isPaused) {
                 yogaAsanaTimerUpdateFuture =
-                    executorService.scheduleAtFixedRate(yogaAsanaTimerUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
+                    executorService.scheduleAtFixedRate(yogaAsanaTimerUpdateRunnable, 0L, TIMER_UPDATE_DURATION, TimeUnit.MILLISECONDS)
                 yogaAsanaTimeLeftUpdateFuture =
-                    executorService.scheduleAtFixedRate(yogaAsanaTimeLeftUpdateRunnable, 0L, UPDATE_DURATION, TimeUnit.MILLISECONDS)
+                    executorService.scheduleAtFixedRate(yogaAsanaTimeLeftUpdateRunnable, 0L, TIMER_UPDATE_DURATION, TimeUnit.MILLISECONDS)
                 yogaAsanaState = yogaAsanaState.copy(isPaused = false)
                 yogaAsanaStateSubject.onNext(yogaAsanaState)
             }
@@ -1147,7 +1090,7 @@ class FitnessService: Service() {
                 yogaAsanaTimeLeftUpdateFuture?.cancel(true)
                 executorService.remove(yogaAsanaTimeLeftUpdateRunnable)
                 val timestamp = Date().time
-                return yogaAsanaDao.insertAsana(YogaAsana(null, currentWorkoutId, currentYogaAsanaIdentifier, timestamp, yogaAsanaTimerDuration))
+                return yogaAsanaDao.insertAsana(YogaAsana(null, currentYogaId, currentYogaAsanaIdentifier, timestamp, yogaAsanaTimerDuration))
                     .doOnSuccess {
                         yogaAsanaTimerDuration = 0L
                         currentYogaAsanaIdentifier = ""
@@ -1220,6 +1163,8 @@ class FitnessService: Service() {
         }
 
         companion object {
+            private const val TIMER_UPDATE_DURATION = 67L  //Some prime less than 100
+            private const val NOTIFICATION_UPDATE_DURATION = 1L
             private const val LOG_TAG = "FitnessBinder"
             private const val NOTIFICATION_CHANNEL_ID = "workout_tracker"
             private const val NOTIFICATION_CHANNEL_NAME = "Workout tracker"

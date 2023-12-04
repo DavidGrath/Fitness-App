@@ -53,6 +53,7 @@ import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
 import com.davidgrath.fitnessapp.ui.components.animateAlignmentAsState
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
 import com.davidgrath.fitnessapp.util.SimpleResult
+import com.davidgrath.fitnessapp.util.millisToTimeString
 import java.util.Calendar
 import java.util.TimeZone
 import kotlin.time.DurationUnit
@@ -129,8 +130,6 @@ fun CyclingDashboard(
         cyclingViewModel.cyclingScreenStateLiveData.observeAsState().value?: CyclingViewModel.CyclingScreenState()
 
     LaunchedEffect(null) {
-        cyclingViewModel.getWorkoutsInPastWeek()
-        cyclingViewModel.getFullWorkoutsSummary()
         setIsInitial(false)
     }
 
@@ -185,9 +184,6 @@ fun CyclingHistory(
 ) {
 
     val cyclingScreenState = cyclingViewModel.cyclingScreenStateLiveData.observeAsState().value?:CyclingViewModel.CyclingScreenState()
-    LaunchedEffect(key1 = null) {
-        cyclingViewModel.getWorkouts()
-    }
     val workouts = cyclingScreenState.workouts
 
     Column(
@@ -220,12 +216,12 @@ fun CyclingWorkoutScreen(
 ) {
 
     LaunchedEffect(key1 = null) {
-//        cyclingViewModel.getIsCycling()
+        cyclingViewModel.getIsCycling()
         cyclingViewModel.getTimeElapsed()
     }
     val cyclingScreenState = cyclingViewModel.cyclingScreenStateLiveData.observeAsState().value?: CyclingViewModel.CyclingScreenState()
     val isCycling = cyclingScreenState.isCycling
-    val caloriesBurned = cyclingViewModel.currentWorkoutLiveData.observeAsState().value?.kCalBurned?:0
+    val caloriesBurned = cyclingScreenState.currentWorkout.kCalBurned
     val locationData = cyclingScreenState.locationData
     val elapsedTimeMillis = cyclingScreenState.elapsedTimeMillis
 
@@ -257,28 +253,11 @@ fun CyclingWorkoutScreen(
                         color = MaterialTheme.colors.primary
                     )
 
-
-                    var timeString = ""
-                    val resolvedMillis = if (isCycling) {
-                        elapsedTimeMillis
+                    val timeString = if(isCycling) {
+                        millisToTimeString(elapsedTimeMillis)
                     } else {
-                        0L
+                        "00:00"
                     }
-                    resolvedMillis.toDuration(DurationUnit.MILLISECONDS)
-                        .toComponents { hours, minutes, seconds, nanoseconds ->
-                            timeString = if (hours > 0) {
-                                String.format("%02d", hours) + ":" + String.format(
-                                    "%02d",
-                                    minutes
-                                ) + ":" + String.format("%02d", seconds)
-                            } else {
-                                String.format("%02d", minutes) + ":" + String.format(
-                                    "%02d",
-                                    seconds
-                                )
-                            }
-
-                        }
                     Text(
                         timeString,
                         style = MaterialTheme.typography.h3
@@ -292,8 +271,13 @@ fun CyclingWorkoutScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(verticalAlignment = Alignment.Bottom) {
+                                val resolvedKm = if (isCycling) {
+                                    String.format("%.2f", cyclingScreenState.currentWorkout.totalDistanceKm)
+                                } else {
+                                    "0.00"
+                                }
                                 Text(
-                                    "0",
+                                    resolvedKm,
                                     style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
                                 )
                                 Text(

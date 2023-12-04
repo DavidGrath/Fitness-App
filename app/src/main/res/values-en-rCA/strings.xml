@@ -29,7 +29,7 @@
     <string name="yoga_header">YOGA</string>
     <string name="yoga_tutorial_heading_video">VIDEO</string>
     <string name="yoga_tutorial_button_close">CLOSE</string>
-    <string name="yoga_workout_button_start">START Workout</string>
+    <string name="yoga_workout_button_start">START_WORKOUT</string>
     <string name="yoga_asana_button_resume">RESUME</string>
     <string name="yoga_asana_button_pause">PAUSE</string>
     <string name="yoga_asana_button_next">NEXT</string>

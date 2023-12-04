@@ -55,6 +55,7 @@ import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
 import com.davidgrath.fitnessapp.ui.components.animateAlignmentAsState
 import com.davidgrath.fitnessapp.ui.entities.LocationDataUI
 import com.davidgrath.fitnessapp.util.SimpleResult
+import com.davidgrath.fitnessapp.util.millisToTimeString
 import com.davidgrath.fitnessapp.util.workoutNameToAssetMap
 import java.util.Calendar
 import java.util.TimeZone
@@ -154,8 +155,6 @@ fun RunningDashboard(
         mutableStateOf(true)
     }
     LaunchedEffect(key1 = null) {
-        viewModel.getWorkoutsInPastWeek()
-        viewModel.getFullWorkoutsSummary()
         setIsInitial(false)
     }
 
@@ -211,9 +210,6 @@ fun RunningHistory(
     onNavigateBack: () -> Unit,
 ) {
 
-    LaunchedEffect(key1 = null) {
-        viewModel.getWorkouts()
-    }
     val runningScreensState = viewModel.runningScreensStateLiveData.observeAsState().value?: RunningViewModel.RunningScreensState()
     val workouts = runningScreensState.workouts
 
@@ -248,10 +244,6 @@ fun RunningWorkoutScreen(
     onNavigateBack: () -> Unit
 ) {
 
-    LaunchedEffect(key1 = null) {
-        viewModel.getIsRunning()
-        viewModel.getTimeElapsed()
-    }
     val runningScreensState = viewModel.runningScreensStateLiveData.observeAsState().value?: RunningViewModel.RunningScreensState()
     val isRunning = runningScreensState.isRunning
     val locationData = runningScreensState.locationData
@@ -287,27 +279,11 @@ fun RunningWorkoutScreen(
                     )
 
 
-                    var timeString = ""
-                    val resolvedMillis = if (isRunning) {
-                        elapsedTimeMillis
+                    val timeString = if (isRunning) {
+                        millisToTimeString(elapsedTimeMillis)
                     } else {
-                        0L
+                        "00:00"
                     }
-                    resolvedMillis.toDuration(DurationUnit.MILLISECONDS)
-                        .toComponents { hours, minutes, seconds, nanoseconds ->
-                            timeString = if (hours > 0) {
-                                String.format("%02d", hours) + ":" + String.format(
-                                    "%02d",
-                                    minutes
-                                ) + ":" + String.format("%02d", seconds)
-                            } else {
-                                String.format("%02d", minutes) + ":" + String.format(
-                                    "%02d",
-                                    seconds
-                                )
-                            }
-
-                        }
                     Text(
                         timeString,
                         style = MaterialTheme.typography.h3
@@ -321,8 +297,13 @@ fun RunningWorkoutScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(verticalAlignment = Alignment.Bottom) {
+                                val resolvedKm = if (isRunning) {
+                                    String.format("%.2f", runningScreensState.currentWorkout.totalDistanceKm)
+                                } else {
+                                    "0.00"
+                                }
                                 Text(
-                                    "0",
+                                    resolvedKm,
                                     style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
                                 )
                                 Text(

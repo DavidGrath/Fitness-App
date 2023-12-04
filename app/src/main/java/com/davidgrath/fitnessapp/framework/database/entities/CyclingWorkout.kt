@@ -10,5 +10,6 @@ data class CyclingWorkout(
     val date: Long,
     val timeZoneId: String,
     val duration: Long = 0,
+    val totalDistanceKm: Double = 0.0,
     val kCalBurned: Int = 0
 )

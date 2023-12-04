@@ -24,7 +24,15 @@ abstract class SwimmingWorkoutDao {
     abstract fun getWorkoutSingle(workoutId: Long): Single<SwimmingWorkout>
     @Query("SELECT * FROM SwimmingWorkout WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END)" +
             " AND (CASE WHEN :endDate == -1 THEN 1 ELSE :endDate <= date END)")
+    abstract fun getWorkoutsByDateRange(startDate: Long = -1, endDate: Long = -1): Observable<List<SwimmingWorkout>>
+    @Query("SELECT * FROM SwimmingWorkout WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END)" +
+            " AND (CASE WHEN :endDate == -1 THEN 1 ELSE :endDate <= date END)")
     abstract fun getWorkoutsByDateRangeSingle(startDate: Long = -1, endDate: Long = -1): Single<List<SwimmingWorkout>>
+
+    @Query("SELECT SUM(kCalBurned) AS totalCaloriesBurned, COUNT(*) AS workoutCount, (SUM(duration)/60000) AS timeSpentMinutes FROM SwimmingWorkout" +
+            " WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END) AND " +
+            "(CASE WHEN :endDate == -1 THEN 1 ELSE :endDate <= date END)")
+    abstract fun getWorkoutsSummaryByDateRange(startDate: Long? = -1, endDate: Long = -1): Observable<WorkoutSummary>
 
     @Query("SELECT SUM(kCalBurned) AS totalCaloriesBurned, COUNT(*) AS workoutCount, (SUM(duration)/60000) AS timeSpentMinutes FROM SwimmingWorkout" +
             " WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END) AND " +

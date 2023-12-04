@@ -6,6 +6,7 @@ import com.davidgrath.fitnessapp.framework.database.dao.YogaWorkoutDao
 import com.davidgrath.fitnessapp.framework.database.entities.YogaAsana
 import com.davidgrath.fitnessapp.framework.database.entities.YogaWorkout
 import com.davidgrath.fitnessapp.util.dateAsStart
+import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import java.util.Date
 import java.util.TimeZone
@@ -13,8 +14,8 @@ import java.util.TimeZone
 interface YogaRepository {
     fun addWorkout(name: String): Single<Long>
     fun addAsana(workoutId: Long, asanaIdentifier: String, timeTaken: Long): Single<Long>
-    fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Single<List<YogaWorkout>>
-    fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary>
+    fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Observable<List<YogaWorkout>>
+    fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Observable<WorkoutSummary>
 }
 
 class YogaRepositoryImpl(
@@ -35,7 +36,7 @@ class YogaRepositoryImpl(
         return yogaAsanaDao.insertAsana(yogaAsana)
     }
 
-    override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Single<List<YogaWorkout>> {
+    override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Observable<List<YogaWorkout>> {
         val startTime = if(startDate != null) {
             dateAsStart(startDate).time
         } else {
@@ -46,10 +47,10 @@ class YogaRepositoryImpl(
         } else {
             -1
         }
-        return yogaWorkoutDao.getWorkoutsByDateRangeSingle(startTime, endTime)
+        return yogaWorkoutDao.getWorkoutsByDateRange(startTime, endTime)
     }
 
-    override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
+    override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Observable<WorkoutSummary> {
         val startTime = if(startDate != null) {
             dateAsStart(startDate).time
         } else {
@@ -60,6 +61,6 @@ class YogaRepositoryImpl(
         } else {
             -1
         }
-        return yogaWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startTime, endTime)
+        return yogaWorkoutDao.getWorkoutsSummaryByDateRange(startTime, endTime)
     }
 }

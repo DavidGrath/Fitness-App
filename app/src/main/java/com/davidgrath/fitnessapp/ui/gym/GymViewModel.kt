@@ -26,9 +26,6 @@ class GymViewModel(
     private val gymRepository: GymRepository
 ): ViewModel() {
 
-    var currentWorkoutId: Long = -1
-        private set
-
     private val gson = Gson()
     private val _tempVideoDetailsLiveData = MutableLiveData<TempVideoDetails>()
     val tempVideoDetailsLiveData : LiveData<TempVideoDetails> = _tempVideoDetailsLiveData
@@ -61,21 +58,37 @@ class GymViewModel(
                 }, {
 
                 })
+            value!!.getGymRoutineAndSetIndex()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    {
+                        _gymScreenState = _gymScreenState.copy(currentRoutineIndex = it.first, currentSetIndex = it.second)
+                        _gymScreenStateLiveData.postValue(_gymScreenState)
+                    },
+                    {
+                    }
+                )
         }
+
+    init {
+        getWorkouts()
+        getWorkoutsInPastWeek()
+        getFullWorkoutsSummary()
+    }
 
     fun addWorkout(name: String? = "") {
         fitnessService!!.startWorkout("GYM")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { id ->
-                currentWorkoutId = id
                 _addWorkoutLiveData.postValue(SimpleResult.Success(Unit))
             }, {
                 _addWorkoutLiveData.postValue(SimpleResult.Failure(it))
             })
     }
 
-    fun getWorkoutsInPastWeek() {
+    private fun getWorkoutsInPastWeek() {
         val calendar = Calendar.getInstance()
         val lastDay = calendar.time
         calendar.add(Calendar.DAY_OF_YEAR, -8)
@@ -85,10 +98,6 @@ class GymViewModel(
         gymRepository.getWorkoutsByDateRange(firstDay, lastDay)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
                 {
                     _gymScreenState = _gymScreenState.copy(pastWeekWorkouts = it)
@@ -99,14 +108,10 @@ class GymViewModel(
             )
     }
 
-    fun getWorkouts() {
+    private fun getWorkouts() {
         gymRepository.getWorkoutsByDateRange()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
                 {
                     _gymScreenState = _gymScreenState.copy(pastWorkouts = it)
@@ -117,7 +122,7 @@ class GymViewModel(
             )
     }
 
-    fun getFullWorkoutsSummary() {
+    private fun getFullWorkoutsSummary() {
         //TODO I don't know if I should add a currentWorkoutId to the repositories so as to make sure
         // the fetched Observables/LiveDatas aren't prematurely updated before the workout is done
         gymRepository.getWorkoutsSummaryByDateRange()
@@ -126,20 +131,6 @@ class GymViewModel(
             .subscribe(
                 {
                     _gymScreenState = _gymScreenState.copy(workoutSummary = it)
-                    _gymScreenStateLiveData.postValue(_gymScreenState)
-                },
-                {
-                }
-            )
-    }
-
-    fun getRoutineAndSetIndex() {
-        fitnessService!!.getGymRoutineAndSetIndex()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                {
-                    _gymScreenState = _gymScreenState.copy(currentRoutineIndex = it.first, currentSetIndex = it.second)
                     _gymScreenStateLiveData.postValue(_gymScreenState)
                 },
                 {

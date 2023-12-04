@@ -29,9 +29,6 @@ class YogaViewModel(
     private val yogaRepository: YogaRepository
 ): ViewModel() {
 
-    var currentWorkoutId: Long = -1
-        private set
-
     private val _addWorkoutLiveData = MutableLiveData<SimpleResult<Unit>>(SimpleResult.Processing())
     val addWorkoutLiveData : LiveData<SimpleResult<Unit>> = _addWorkoutLiveData
 
@@ -77,14 +74,36 @@ class YogaViewModel(
                 }, {
 
                 })
+            value!!.getYogaSessionAndAsanaIndex()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    {
+                        _yogaScreensState = _yogaScreensState.copy(currentSessionIndex = it.first, currentAsanaIndex = it.second)
+                        _yogaScreensStateLiveData.postValue(_yogaScreensState)
+                    },
+                    {
+                    }
+                )
+            value!!.getYogaAsanaState()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    _yogaAsanaStateLiveData.postValue(it)
+                }
         }
+
+    init {
+        getWorkouts()
+        getWorkoutsInPastWeek()
+        getFullWorkoutsSummary()
+    }
 
     fun addWorkout() {
         fitnessService!!.startWorkout("YOGA")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { id ->
-                currentWorkoutId = id
                 _addWorkoutLiveData.postValue(SimpleResult.Success(Unit))
                 asanasProgress = -1
             }, {
@@ -92,7 +111,7 @@ class YogaViewModel(
             })
     }
 
-    fun getWorkoutsInPastWeek() {
+    private fun getWorkoutsInPastWeek() {
         val calendar = Calendar.getInstance()
         val lastDay = calendar.time
         calendar.add(Calendar.DAY_OF_YEAR, -8)
@@ -102,10 +121,6 @@ class YogaViewModel(
         yogaRepository.getWorkoutsByDateRange(firstDay, lastDay)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
                 { list ->
                     val mapped = list.map {
@@ -119,14 +134,10 @@ class YogaViewModel(
             )
     }
 
-    fun getWorkouts() {
+    private fun getWorkouts() {
         yogaRepository.getWorkoutsByDateRange()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
                 { list ->
                     val mapped = list.map {
@@ -140,9 +151,7 @@ class YogaViewModel(
             )
     }
 
-    fun getFullWorkoutsSummary() {
-        //TODO I don't know if I should add a currentWorkoutId to the repositories so as to make sure
-        // the fetched Observables/LiveDatas aren't prematurely updated before the workout is done
+    private fun getFullWorkoutsSummary() {
         yogaRepository.getWorkoutsSummaryByDateRange()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -159,20 +168,6 @@ class YogaViewModel(
 //    fun getIsDoingYoga() {
 //
 //    }
-
-    fun getSessionAndAsanaIndex() {
-        fitnessService!!.getYogaSessionAndAsanaIndex()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                {
-                    _yogaScreensState = _yogaScreensState.copy(currentSessionIndex = it.first, currentAsanaIndex = it.second)
-                    _yogaScreensStateLiveData.postValue(_yogaScreensState)
-                },
-                {
-                }
-            )
-    }
 
     fun setSessionAndAsanaIndex(sessionIndex: Int, asanaIndex: Int) {
         Log.d("YogaViewModel", "sessionIndex: $sessionIndex, asanaIndex: $asanaIndex")
@@ -204,15 +199,6 @@ class YogaViewModel(
 
     fun resumeAsana() {
         fitnessService!!.resumeCurrentYogaAsana()
-    }
-
-    fun getYogaAsanaState() {
-        fitnessService!!.getYogaAsanaState()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe {
-                _yogaAsanaStateLiveData.postValue(it)
-            }
     }
 
     fun endAsana() {

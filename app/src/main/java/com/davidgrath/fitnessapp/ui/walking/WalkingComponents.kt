@@ -127,8 +127,6 @@ fun WalkingDashboard(
     }
 
     LaunchedEffect(key1 = null) {
-        walkingViewModel.getWorkoutsInPastWeek()
-        walkingViewModel.getFullWorkoutsSummary()
         setIsInitial(false)
     }
 
@@ -184,11 +182,6 @@ fun WalkingHistory(
     onNavigateBack: () -> Unit,
 ) {
 
-    LaunchedEffect(key1 = null) {
-        walkingViewModel.getWorkouts()
-    }
-
-
     val walkingScreensState = walkingViewModel.walkingScreensStateLiveData.observeAsState()
         .value?:WalkingViewModel.WalkingScreensState()
     val workouts = walkingScreensState.workouts
@@ -225,10 +218,6 @@ fun WalkingWorkoutScreen(
     onNavigateBack: () -> Unit
 ) {
 
-    LaunchedEffect(key1 = null) {
-        walkingViewModel.getIsWalking()
-        walkingViewModel.getTimeElapsed()
-    }
     val walkingScreensState = walkingViewModel.walkingScreensStateLiveData.observeAsState()
         .value?:WalkingViewModel.WalkingScreensState()
 
@@ -300,8 +289,13 @@ fun WalkingWorkoutScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(verticalAlignment = Alignment.Bottom) {
+                                val resolvedKm = if (isWalking) {
+                                    String.format("%.2f", walkingScreensState.currentWorkout.totalDistanceKm)
+                                } else {
+                                    "0.00"
+                                }
                                 Text(
-                                    "0",
+                                    resolvedKm,
                                     style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold)
                                 )
                                 Text(

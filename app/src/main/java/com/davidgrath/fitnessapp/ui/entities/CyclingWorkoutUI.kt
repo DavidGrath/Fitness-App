@@ -3,7 +3,7 @@ package com.davidgrath.fitnessapp.ui.entities
 import java.util.Date
 import java.util.TimeZone
 
-data class RunningWorkoutUI(
+data class CyclingWorkoutUI(
     val id: Long = 0,
     val date: Long = Date().time,
     val timeZoneId: String = TimeZone.getDefault().id,

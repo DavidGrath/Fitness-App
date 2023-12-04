@@ -10,6 +10,8 @@ import com.davidgrath.fitnessapp.data.entities.WorkoutSummary
 import com.davidgrath.fitnessapp.ui.entities.SwimmingWorkoutUI
 import com.davidgrath.fitnessapp.util.swimmingWorkoutToSwimmingWorkoutUI
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.Calendar
 import java.util.Date
@@ -18,16 +20,58 @@ class SwimmingViewModel(
     private val swimmingRepository: SwimmingRepository
 ) : ViewModel() {
 
-    var currentWorkoutId: Long = -1
-    private set
+    private var currentWorkoutDisposable : Disposable? = null
 
     var fitnessService: AbstractFitnessService? = null
+        set(value) {
+            field = value
+            value?.let {
+                it.getSwimmingIdObservable().subscribe({ id ->
+                    currentWorkoutDisposable?.dispose()
+                    currentWorkoutDisposable = swimmingRepository.getWorkout(id)
+                        .subscribe({
+                            _swimmingScreensState = _swimmingScreensState.copy(
+                                currentWorkout = swimmingWorkoutToSwimmingWorkoutUI(it)
+                            )
+                            _swimmingScreensStateLiveData.postValue(_swimmingScreensState)
+                        }, {
+                        })
+                }, {})
+                it.getCurrentWorkoutObservable()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .map {
+                        it == "SWIMMING"
+                    }
+                    .subscribe({
+                        _swimmingScreensState = _swimmingScreensState.copy(isSwimming = it)
+                        _swimmingScreensStateLiveData.postValue(_swimmingScreensState)
+                    }, {
+
+                    })
+                it.getCurrentTimeElapsedObservable()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ time ->
+                        _swimmingScreensState = _swimmingScreensState.copy(elapsedTimeMillis = time)
+                        _swimmingScreensStateLiveData.postValue(_swimmingScreensState)
+                    }, {
+
+                    })
+            }
+        }
 
     private var _swimmingScreensState = SwimmingScreensState()
     private val _swimmingScreensStateLiveData = MutableLiveData<SwimmingScreensState>(_swimmingScreensState)
     val swimmingScreensStateLiveData : LiveData<SwimmingScreensState> = _swimmingScreensStateLiveData
 
-    fun getWorkoutsInPastWeek() {
+    init {
+        getWorkouts()
+        getWorkoutsInPastWeek()
+        getFullWorkoutsSummary()
+    }
+
+    private fun getWorkoutsInPastWeek() {
         val calendar = Calendar.getInstance()
         val lastDay = calendar.time
         calendar.add(Calendar.DAY_OF_YEAR, -8)
@@ -37,10 +81,6 @@ class SwimmingViewModel(
         swimmingRepository.getWorkoutsByDateRange(firstDay, lastDay)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
                 { list ->
                     val mapped = list.map {
@@ -65,10 +105,6 @@ class SwimmingViewModel(
         swimmingRepository.getWorkoutsByDateRange(firstDay, lastDay)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
             { list ->
                 val mapped = list.map {
@@ -82,14 +118,10 @@ class SwimmingViewModel(
         )
     }
 
-    fun getWorkouts() {
+    private fun getWorkouts() {
         swimmingRepository.getWorkoutsByDateRange()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
             { list ->
                 val mapped = list.map {
@@ -103,7 +135,7 @@ class SwimmingViewModel(
         )
     }
 
-    fun getFullWorkoutsSummary() {
+    private fun getFullWorkoutsSummary() {
         //TODO I don't know if I should add a currentWorkoutId to the repositories so as to make sure
         // the fetched Observables/LiveDatas aren't prematurely updated before the workout is done
         swimmingRepository.getWorkoutsSummaryByDateRange()
@@ -120,47 +152,11 @@ class SwimmingViewModel(
             )
     }
 
-    fun getIsSwimming() {
-        //TODO Add LiveDateReactiveStreams
-        fitnessService!!.getCurrentWorkoutObservable()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                it == "SWIMMING"
-            }
-            .subscribe({
-                _swimmingScreensState = _swimmingScreensState.copy(isSwimming = it)
-                _swimmingScreensStateLiveData.postValue(_swimmingScreensState)
-            }, {
-
-            })
-    }
-
-    fun getTimeElapsed() {
-        fitnessService!!.getCurrentTimeElapsedObservable()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ time ->
-                _swimmingScreensState = _swimmingScreensState.copy(elapsedTimeMillis = time)
-                _swimmingScreensStateLiveData.postValue(_swimmingScreensState)
-            }, {
-
-            })
-    }
-
     fun startSwimming() {
         fitnessService!!.startWorkout("SWIMMING")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .flatMapObservable { id ->
-                currentWorkoutId = id
-                swimmingRepository.getWorkout(currentWorkoutId)
-            }
-            .subscribe( {
-                _swimmingScreensState = _swimmingScreensState.copy(currentWorkout = swimmingWorkoutToSwimmingWorkoutUI(it))
-                _swimmingScreensStateLiveData.postValue(_swimmingScreensState)
-            }, {
-            })
+            .subscribe({}, {})
     }
 
     fun stopSwimming() {

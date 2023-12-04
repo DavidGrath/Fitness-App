@@ -41,8 +41,8 @@ abstract class CyclingWorkoutDao {
     //endregion
 
     //UPDATE
-    @Query("UPDATE CyclingWorkout SET duration = :duration, kCalBurned = :kCalBurned WHERE id = :workoutId")
-    abstract fun setWorkoutDurationAndKCalBurned(workoutId: Long, duration: Long, kCalBurned: Int) : Single<Int>
+    @Query("UPDATE CyclingWorkout SET duration = :duration, totalDistanceKm = :totalDistanceKm, kCalBurned = :kCalBurned WHERE id = :workoutId")
+    abstract fun setWorkoutCalculations(workoutId: Long, duration: Long, totalDistanceKm: Double, kCalBurned: Int) : Single<Int>
     //DELETE
 }
 

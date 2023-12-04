@@ -198,9 +198,6 @@ fun GymDashboardScreen(
         mutableStateOf(true)
     }
     LaunchedEffect(key1 = null) {
-        viewModel.getWorkoutsInPastWeek()
-        viewModel.getFullWorkoutsSummary()
-        viewModel.getRoutineAndSetIndex()
         setIsInitial(false)
     }
 
@@ -265,9 +262,6 @@ fun GymHistoryScreen(
     viewModel: GymViewModel,
     onNavigateBack: () -> Unit
 ) {
-    LaunchedEffect(key1 = null) {
-        viewModel.getWorkouts()
-    }
     val gymScreensState = viewModel.gymScreenStateLiveData.observeAsState().value?:GymViewModel.GymScreensState()
     val workouts = gymScreensState.pastWorkouts
     Column(
@@ -514,7 +508,6 @@ fun GymSetScreen(
 
     LaunchedEffect(key1 = null) {
         viewModel.startSet(currentGymSet.identifier)
-        viewModel.getRoutineAndSetIndex()
     }
 
     LaunchedEffect(gymScreensState) {

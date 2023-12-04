@@ -23,7 +23,16 @@ abstract class RunningWorkoutDao {
     abstract fun getWorkoutSingle(workoutId: Long): Single<RunningWorkout>
     @Query("SELECT * FROM RunningWorkout WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END)" +
             " AND (CASE WHEN :endDate == -1 THEN 1 ELSE :endDate <= date END)")
+    abstract fun getWorkoutsByDateRange(startDate: Long = -1, endDate: Long = -1): Observable<List<RunningWorkout>>
+
+    @Query("SELECT * FROM RunningWorkout WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END)" +
+            " AND (CASE WHEN :endDate == -1 THEN 1 ELSE :endDate <= date END)")
     abstract fun getWorkoutsByDateRangeSingle(startDate: Long = -1, endDate: Long = -1): Single<List<RunningWorkout>>
+    @Query("SELECT SUM(kCalBurned) AS totalCaloriesBurned, COUNT(*) AS workoutCount, (SUM(duration)/60000) AS timeSpentMinutes FROM RunningWorkout" +
+            " WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END) AND " +
+            "(CASE WHEN :endDate == -1 THEN 1 ELSE :endDate <= date END)")
+    abstract fun getWorkoutsSummaryByDateRange(startDate: Long? = -1, endDate: Long = -1): Observable<WorkoutSummary>
+
     @Query("SELECT SUM(kCalBurned) AS totalCaloriesBurned, COUNT(*) AS workoutCount, (SUM(duration)/60000) AS timeSpentMinutes FROM RunningWorkout" +
             " WHERE (CASE WHEN :startDate == -1 THEN 1 ELSE :startDate <= date END) AND " +
             "(CASE WHEN :endDate == -1 THEN 1 ELSE :endDate <= date END)")
@@ -32,8 +41,8 @@ abstract class RunningWorkoutDao {
     //endregion
 
     //region UPDATE
-    @Query("UPDATE RunningWorkout SET duration = :duration, kCalBurned = :kCalBurned WHERE id = :workoutId")
-    abstract fun setWorkoutDurationAndKCalBurned(workoutId: Long, duration: Long, kCalBurned: Int) : Single<Int>
+    @Query("UPDATE RunningWorkout SET duration = :duration, totalDistanceKm = :totalDistanceKm, kCalBurned = :kCalBurned WHERE id = :workoutId")
+    abstract fun setWorkoutCalculations(workoutId: Long, duration: Long, totalDistanceKm: Double, kCalBurned: Int) : Single<Int>
     //endregion
     //DELETE
 }

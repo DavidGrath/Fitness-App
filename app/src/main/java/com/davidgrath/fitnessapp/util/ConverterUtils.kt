@@ -1,9 +1,11 @@
 package com.davidgrath.fitnessapp.util
 
+import com.davidgrath.fitnessapp.framework.database.entities.CyclingWorkout
 import com.davidgrath.fitnessapp.framework.database.entities.RunningWorkout
 import com.davidgrath.fitnessapp.framework.database.entities.SwimmingWorkout
 import com.davidgrath.fitnessapp.framework.database.entities.WalkingWorkout
 import com.davidgrath.fitnessapp.framework.database.entities.YogaWorkout
+import com.davidgrath.fitnessapp.ui.entities.CyclingWorkoutUI
 import com.davidgrath.fitnessapp.ui.entities.RunningWorkoutUI
 import com.davidgrath.fitnessapp.ui.entities.SwimmingWorkoutUI
 import com.davidgrath.fitnessapp.ui.entities.WalkingWorkoutUI
@@ -15,6 +17,7 @@ fun runningWorkoutToRunningWorkoutUI(runningWorkout: RunningWorkout): RunningWor
         runningWorkout.date,
         runningWorkout.timeZoneId,
         runningWorkout.duration,
+        runningWorkout.totalDistanceKm,
         runningWorkout.kCalBurned
     )
 }
@@ -35,6 +38,7 @@ fun walkingWorkoutToWalkingWorkoutUI(walkingWorkout: WalkingWorkout): WalkingWor
         walkingWorkout.date,
         walkingWorkout.timeZoneId,
         walkingWorkout.duration,
+        walkingWorkout.totalDistanceKm,
         walkingWorkout.kCalBurned
     )
 }
@@ -47,5 +51,16 @@ fun yogaWorkoutToYogaWorkoutUI(yogaWorkout: YogaWorkout): YogaWorkoutUI {
         yogaWorkout.name,
         yogaWorkout.duration,
         yogaWorkout.kCalBurned
+    )
+}
+
+fun cyclingWorkoutToCyclingWorkoutUI(cyclingWorkout: CyclingWorkout): CyclingWorkoutUI {
+    return CyclingWorkoutUI(
+        cyclingWorkout.id ?: 0,
+        cyclingWorkout.date,
+        cyclingWorkout.timeZoneId,
+        cyclingWorkout.duration,
+        cyclingWorkout.totalDistanceKm,
+        cyclingWorkout.kCalBurned
     )
 }

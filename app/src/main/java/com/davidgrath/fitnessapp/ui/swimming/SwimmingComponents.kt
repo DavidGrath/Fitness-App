@@ -137,8 +137,6 @@ fun SwimmingDashboard(
         mutableStateOf(true)
     }
     LaunchedEffect(key1 = null) {
-        swimmingViewModel.getWorkoutsInPastWeek()
-        swimmingViewModel.getFullWorkoutsSummary()
         setIsInitial(false)
     }
 
@@ -194,10 +192,7 @@ fun SwimmingHistory(
     onNavigateBack: () -> Unit,
 ) {
 
-    LaunchedEffect(key1 = null) {
-        swimmingViewModel.getWorkouts()
-    }
-    val swimmingScreensState = swimmingViewModel.swimmingScreensStateLiveData.observeAsState()?.value?:SwimmingViewModel.SwimmingScreensState()
+    val swimmingScreensState = swimmingViewModel.swimmingScreensStateLiveData.observeAsState().value?:SwimmingViewModel.SwimmingScreensState()
     val workouts = swimmingScreensState.workouts
 
     Column(
@@ -231,10 +226,6 @@ fun SwimmingWorkoutScreen(
     onNavigateBack: () -> Unit
 ) {
 
-    LaunchedEffect(key1 = null) {
-        swimmingViewModel.getIsSwimming()
-        swimmingViewModel.getTimeElapsed()
-    }
     val swimmingScreensState = swimmingViewModel.swimmingScreensStateLiveData.observeAsState().value?:SwimmingViewModel.SwimmingScreensState()
     val isSwimming = swimmingScreensState.isSwimming
     val currentWorkout = swimmingScreensState.currentWorkout

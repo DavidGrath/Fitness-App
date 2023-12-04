@@ -1,5 +1,6 @@
 package com.davidgrath.fitnessapp.ui.running
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -20,16 +21,59 @@ class RunningViewModel(
     private val runningRepository: RunningRepository
 ) : ViewModel() {
 
-    var currentWorkoutId: Long = -1
-        private set
+    private var currentWorkoutDisposable: Disposable? = null
 
     var fitnessService: AbstractFitnessService? = null
+        set(value) {
+            field = value
+            value?.let {
+                it.getRunningIdObservable()
+                    .subscribeOn(Schedulers.io())
+                    .subscribe({ id ->
+                        currentWorkoutDisposable?.dispose()
+                        currentWorkoutDisposable = runningRepository.getWorkout(id)
+                            .subscribe({
+                                val rw = runningWorkoutToRunningWorkoutUI(it)
+                                _runningScreensState = _runningScreensState.copy(currentWorkout = rw)
+                                _runningScreensStateLiveData.postValue(_runningScreensState)
+                                getLocationData(id)
+                            }, {})
+                    }, {})
+                it.getCurrentWorkoutObservable()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .map {
+                        it == "RUNNING"
+                    }
+                    .subscribe({
+                        _runningScreensState = _runningScreensState.copy(isRunning = it)
+                        _runningScreensStateLiveData.postValue(_runningScreensState)
+                    }, {
+
+                    })
+                it.getCurrentTimeElapsedObservable()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ time ->
+                        _runningScreensState = _runningScreensState.copy(elapsedTimeMillis = time)
+                        _runningScreensStateLiveData.postValue(_runningScreensState)
+                    }, {
+
+                    })
+            }
+        }
 
     private var _runningScreensState = RunningScreensState()
     private val _runningScreensStateLiveData = MutableLiveData(_runningScreensState)
     val runningScreensStateLiveData: LiveData<RunningScreensState> = _runningScreensStateLiveData
 
-    fun getWorkoutsInPastWeek() {
+    init {
+        getWorkouts()
+        getWorkoutsInPastWeek()
+        getFullWorkoutsSummary()
+    }
+
+    private fun getWorkoutsInPastWeek() {
         val calendar = Calendar.getInstance()
         val lastDay = calendar.time
         calendar.add(Calendar.DAY_OF_YEAR, -8)
@@ -39,10 +83,6 @@ class RunningViewModel(
         runningRepository.getWorkoutsByDateRange(firstDay, lastDay)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
                 { list ->
                     val mapped = list.map {
@@ -56,7 +96,7 @@ class RunningViewModel(
             )
     }
 
-    fun getWorkoutsInMonth(date: Date) {
+    private fun getWorkoutsInMonth(date: Date) {
         val calendar = Calendar.getInstance().also {
             it.time = date
         }
@@ -67,10 +107,6 @@ class RunningViewModel(
         runningRepository.getWorkoutsByDateRange(firstDay, lastDay)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
                 { list ->
                     val mapped = list.map {
@@ -84,14 +120,10 @@ class RunningViewModel(
             )
     }
 
-    fun getWorkouts() {
+    private fun getWorkouts() {
         runningRepository.getWorkoutsByDateRange()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                //TODO There should be a better way to ensure we don't fetch the current workout
-                it.filter { it.id != currentWorkoutId }
-            }
             .subscribe(
                 { list ->
                     val mapped = list.map {
@@ -105,7 +137,7 @@ class RunningViewModel(
             )
     }
 
-    fun getFullWorkoutsSummary() {
+    private fun getFullWorkoutsSummary() {
         //TODO I don't know if I should add a currentWorkoutId to the repositories so as to make sure
         // the fetched Observables/LiveDatas aren't prematurely updated before the workout is done
         runningRepository.getWorkoutsSummaryByDateRange()
@@ -121,24 +153,7 @@ class RunningViewModel(
             )
     }
 
-    fun getIsRunning() {
-        //TODO Add LiveDateReactiveStreams
-        fitnessService!!.getCurrentWorkoutObservable()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .map {
-                it == "RUNNING"
-            }
-            .subscribe({
-                _runningScreensState = _runningScreensState.copy(isRunning = it)
-                _runningScreensStateLiveData.postValue(_runningScreensState)
-            }, {
-
-            })
-    }
-
-    private fun getLocationData() {
-        //TODO Add LiveDateReactiveStreams
+    private fun getLocationData(currentWorkoutId: Long) {
         runningRepository.getWorkoutLocationData(currentWorkoutId)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -153,33 +168,11 @@ class RunningViewModel(
             })
     }
 
-    fun getTimeElapsed() {
-        fitnessService!!.getCurrentTimeElapsedObservable()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ time ->
-                _runningScreensState = _runningScreensState.copy(elapsedTimeMillis = time)
-                _runningScreensStateLiveData.postValue(_runningScreensState)
-            }, {
-
-            })
-    }
-
     fun startRunning() {
         fitnessService!!.startWorkout("RUNNING")
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .flatMapObservable { id ->
-                currentWorkoutId = id
-                runningRepository.getWorkout(currentWorkoutId)
-            }
-            .subscribe( {
-                val rw = runningWorkoutToRunningWorkoutUI(it)
-                _runningScreensState = _runningScreensState.copy(currentWorkout = rw)
-                _runningScreensStateLiveData.postValue(_runningScreensState)
-                getLocationData() // Called here because it depends on currentWorkoutId
-            }, {
-            })
+            .subscribe({}, {})
     }
 
     fun stopRunning() {
@@ -203,6 +196,10 @@ class RunningViewModel(
         val locationData: List<LocationDataUI> = emptyList(),
         val elapsedTimeMillis: Long = 0L
     )
+
+    companion object {
+        private const val LOG_TAG = "RunningViewModel"
+    }
 }
 
 class RunningViewModelFactory(

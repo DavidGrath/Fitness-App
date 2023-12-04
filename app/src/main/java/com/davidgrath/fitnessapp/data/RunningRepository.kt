@@ -15,8 +15,8 @@ interface RunningRepository {
     fun getAllWorkoutsSingle() : Single<List<RunningWorkout>>
     fun getWorkoutLocationData(workoutId: Long) : Observable<List<RunningLocationData>>
     fun getWorkoutLocationDataSingle(workoutId: Long) : Single<List<RunningLocationData>>
-    fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Single<List<RunningWorkout>>
-    fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary>
+    fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Observable<List<RunningWorkout>>
+    fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Observable<WorkoutSummary>
 }
 
 class RunningRepositoryImpl(
@@ -40,7 +40,7 @@ class RunningRepositoryImpl(
         return runningLocationDataDao.getWorkoutLocationDataSingle(workoutId)
     }
 
-    override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Single<List<RunningWorkout>> {
+    override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Observable<List<RunningWorkout>> {
         val startTime = if(startDate != null) {
             dateAsStart(startDate).time
         } else {
@@ -51,10 +51,10 @@ class RunningRepositoryImpl(
         } else {
             -1
         }
-        return runningWorkoutDao.getWorkoutsByDateRangeSingle(startTime, endTime)
+        return runningWorkoutDao.getWorkoutsByDateRange(startTime, endTime)
     }
 
-    override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
+    override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Observable<WorkoutSummary> {
         val startTime = if(startDate != null) {
             dateAsStart(startDate).time
         } else {
@@ -65,6 +65,6 @@ class RunningRepositoryImpl(
         } else {
             -1
         }
-        return runningWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startTime, endTime)
+        return runningWorkoutDao.getWorkoutsSummaryByDateRange(startTime, endTime)
     }
 }

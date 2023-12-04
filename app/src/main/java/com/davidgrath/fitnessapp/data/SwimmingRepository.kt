@@ -11,8 +11,8 @@ import java.util.Date
 interface SwimmingRepository {
     fun getWorkout(workoutId: Long): Observable<SwimmingWorkout>
     fun getAllWorkoutsSingle() : Single<List<SwimmingWorkout>>
-    fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Single<List<SwimmingWorkout>>
-    fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Single<WorkoutSummary>
+    fun getWorkoutsByDateRange(startDate: Date? = null, endDate: Date? = null): Observable<List<SwimmingWorkout>>
+    fun getWorkoutsSummaryByDateRange(startDate: Date? = null, endDate: Date? = null): Observable<WorkoutSummary>
 }
 
 class SwimmingRepositoryImpl(
@@ -27,7 +27,7 @@ class SwimmingRepositoryImpl(
         return swimmingWorkoutDao.getAllWorkoutsSingle()
     }
 
-    override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Single<List<SwimmingWorkout>> {
+    override fun getWorkoutsByDateRange(startDate: Date?, endDate: Date?): Observable<List<SwimmingWorkout>> {
         val startTime = if(startDate != null) {
             dateAsStart(startDate).time
         } else {
@@ -38,10 +38,10 @@ class SwimmingRepositoryImpl(
         } else {
             -1
         }
-        return swimmingWorkoutDao.getWorkoutsByDateRangeSingle(startTime, endTime)
+        return swimmingWorkoutDao.getWorkoutsByDateRange(startTime, endTime)
     }
 
-    override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Single<WorkoutSummary> {
+    override fun getWorkoutsSummaryByDateRange(startDate: Date?, endDate: Date?): Observable<WorkoutSummary> {
         val startTime = if(startDate != null) {
             dateAsStart(startDate).time
         } else {
@@ -52,6 +52,6 @@ class SwimmingRepositoryImpl(
         } else {
             -1
         }
-        return swimmingWorkoutDao.getWorkoutsSummaryByDateRangeSingle(startTime, endTime)
+        return swimmingWorkoutDao.getWorkoutsSummaryByDateRange(startTime, endTime)
     }
 }

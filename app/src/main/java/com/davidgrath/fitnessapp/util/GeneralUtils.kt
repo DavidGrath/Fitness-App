@@ -7,6 +7,8 @@ import java.util.Date
 import java.util.TimeZone
 import kotlin.math.floor
 import kotlin.math.roundToInt
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 fun inchesToFeetAndInches(inches: Int) : Pair<Int, Int> {
     return (inches / 12) to (inches % 12)
@@ -136,4 +138,23 @@ fun dateAsEnd(date: Date) : Date {
     calendar.set(Calendar.MILLISECOND, 0)
     calendar.add(Calendar.MILLISECOND, -1)
     return calendar.time
+}
+
+fun millisToTimeString(milliseconds: Long): String {
+    val duration = if(milliseconds >= 0) {
+        milliseconds.toDuration(DurationUnit.MILLISECONDS)
+    } else {
+        0L.toDuration(DurationUnit.MILLISECONDS)
+    }
+    var timeString: String = "00:00"
+    // I had this assumption that lambdas like below have no guarantee of setting a variable's value
+    // I wonder, then, how timeString's initializer above is redundant
+    duration.toComponents { hours, minutes, seconds, nanoseconds ->
+        timeString = if(hours > 0) {
+            String.format("%02d", hours) + ":" + String.format("%02d", minutes) + ":" + String.format("%02d", seconds)
+        } else {
+            String.format("%02d", minutes) + ":" + String.format("%02d", seconds)
+        }
+    }
+    return timeString
 }
