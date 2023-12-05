@@ -42,6 +42,7 @@ class GymViewModel(
     private var _gymScreenState = GymScreensState()
     private val _gymScreenStateLiveData = MutableLiveData(_gymScreenState)
     val gymScreenStateLiveData: LiveData<GymScreensState> = _gymScreenStateLiveData
+    var setProgress = -1
 
     var fitnessService: AbstractFitnessService? = null
         set(value) {
@@ -83,9 +84,30 @@ class GymViewModel(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe( { id ->
                 _addWorkoutLiveData.postValue(SimpleResult.Success(Unit))
+                setProgress = -1
             }, {
                 _addWorkoutLiveData.postValue(SimpleResult.Failure(it))
             })
+    }
+
+    fun incrementRepCount(amount: Int) {
+        val repCount = _gymScreenState.currentRepCount
+        if(repCount + amount <= 99) {
+            _gymScreenState = _gymScreenState.copy(currentRepCount = repCount + amount)
+        } else {
+            _gymScreenState = _gymScreenState.copy(currentRepCount = 99)
+        }
+        _gymScreenStateLiveData.postValue(_gymScreenState)
+    }
+
+    fun decrementRepCount(amount: Int) {
+        val repCount = _gymScreenState.currentRepCount
+        if(repCount - amount >= 0) {
+            _gymScreenState = _gymScreenState.copy(currentRepCount = repCount - amount)
+        } else {
+            _gymScreenState = _gymScreenState.copy(currentRepCount = 0)
+        }
+        _gymScreenStateLiveData.postValue(_gymScreenState)
     }
 
     private fun getWorkoutsInPastWeek() {
@@ -138,8 +160,9 @@ class GymViewModel(
             )
     }
 
-    fun startSet(setIdentifier: String) {
+    fun startSet(gymSetIndex: Int, setIdentifier: String) {
         fitnessService!!.startGymSet(setIdentifier)
+        setProgress = gymSetIndex
     }
 
     //TODO For now use endSet() with zero as argument
@@ -153,6 +176,9 @@ class GymViewModel(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ id ->
                 _endSetLiveData.postValue(SimpleResult.Success(Unit))
+                setProgress = -1
+                _gymScreenState = _gymScreenState.copy(currentRepCount = 0)
+                _gymScreenStateLiveData.postValue(_gymScreenState)
             }, {
                 _endSetLiveData.postValue(SimpleResult.Failure(it))
             })
@@ -211,6 +237,10 @@ class GymViewModel(
         val isDoingGym: Boolean = false,
         val currentRoutineIndex: Int = 0,
         val currentSetIndex: Int = 0,
+        //This variable used to be in rememberSaveable, but when I added wanted to add long press,
+        // pointerInput(Unit) would use a stale value, and pointerInput(repCount) would restart the
+        // gesture before a proper "press-and-hold" could occur
+        val currentRepCount: Int = 0,
     )
 }
 

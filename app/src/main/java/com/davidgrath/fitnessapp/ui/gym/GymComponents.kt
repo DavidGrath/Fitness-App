@@ -1,10 +1,18 @@
 package com.davidgrath.fitnessapp.ui.gym
 
 import android.graphics.drawable.ColorDrawable
+import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +49,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -73,6 +83,8 @@ import com.davidgrath.fitnessapp.ui.components.WorkoutSummaryComponent
 import com.davidgrath.fitnessapp.util.Constants.BULLET
 import com.davidgrath.fitnessapp.util.SimpleResult
 import com.davidgrath.fitnessapp.util.setIdentifierToIconMap
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
@@ -483,6 +495,7 @@ fun GymRoutineSetsScreen(
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GymSetScreen(
     gymRoutineIndex: Int,
@@ -501,13 +514,31 @@ fun GymSetScreen(
     val routineTitle = currentRoutine.routineName
     val setTitle = setTitleMap[currentGymSet.identifier]?._default ?: "Unknown"
     val gymScreensState = viewModel.gymScreenStateLiveData.observeAsState().value?: GymViewModel.GymScreensState()
-
-    val (repCount, setRepCount) = rememberSaveable {
+    val repCount = gymScreensState.currentRepCount
+    /*val (repCount, setRepCount) = rememberSaveable {
         mutableStateOf(0)
     }
+    val incrementRepCount = { amount: Int ->
+            Log.d("GymSetScreen", "repCount: ${repCount}, amount: $amount")
+            if (repCount + amount <= 99) {
+                setRepCount(repCount + amount)
+            } else {
+                setRepCount(99)
+            }
+    }
+    val decrementRepCount = { amount: Int ->
+            Log.d("GymSetScreen", "repCount: ${repCount}, amount: $amount")
+            if (repCount - amount >= 0) {
+                setRepCount(repCount - amount)
+            } else {
+                setRepCount(0)
+            }
+    }*/
 
     LaunchedEffect(key1 = null) {
-        viewModel.startSet(currentGymSet.identifier)
+        if(viewModel.setProgress < gymSetIndex) {
+            viewModel.startSet(gymSetIndex, currentGymSet.identifier)
+        }
     }
 
     LaunchedEffect(gymScreensState) {
@@ -568,21 +599,22 @@ fun GymSetScreen(
                     Image(
                         painter = painterResource(id = R.drawable.plus_circle),
                         contentDescription = "increment",
-                        Modifier.clickable {
-                            if(repCount + 1 <= 99) {
-                                setRepCount(repCount + 1)
-                            }
-                        }
+                        Modifier.shortAndLongPress({
+                            viewModel.incrementRepCount(1)
+                        }, {
+                            viewModel.incrementRepCount(3)
+                        })
+
                     )
                     Spacer(modifier = Modifier.height(32.dp))
                     Image(
                         painter = painterResource(id = R.drawable.minus_circle),
                         contentDescription = "decrement",
-                        Modifier.clickable {
-                            if(repCount - 1 >= 0) {
-                                setRepCount(repCount - 1)
-                            }
-                        }
+                        Modifier.shortAndLongPress({
+                            viewModel.decrementRepCount(1)
+                        }, {
+                            viewModel.decrementRepCount(3)
+                        })
                     )
                 }
             }
@@ -747,5 +779,41 @@ fun SimpleGymSetItem(
         val title = setTitleMap[gymSet.identifier]?._default ?: "Unknown"
         Text(title,
             style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
+    }
+}
+
+// Copied and modified from https://stackoverflow.com/questions/75912910/migrating-from-foreachgesture-to-awaiteachgesture
+// and androidx.compose.foundation.gestures.TapGestureDetector.kt
+fun Modifier.shortAndLongPress(shortPress: (() -> Unit)?, longPress: (() -> Unit)?): Modifier {
+    return pointerInput(Unit) {
+        coroutineScope {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                try {
+                    val u = withTimeout(viewConfiguration.longPressTimeoutMillis) {
+                        waitForUpOrCancellation()
+                    }
+                    if (u != null) {
+                        shortPress?.invoke()
+                    } else {
+
+                    }
+                } catch (e: PointerEventTimeoutCancellationException) {
+                    val job = launch {
+                        var currentDelay = 400L
+                        while (down.pressed) {
+                            delay(currentDelay)
+                            longPress?.invoke()
+                            if (currentDelay - 50L >= 150L) {
+                                currentDelay -= 50L
+                            }
+                        }
+                    }
+                    waitForUpOrCancellation()
+                    job.cancel()
+                }
+            }
+        }
+
     }
 }
