@@ -1,8 +1,16 @@
 package com.davidgrath.fitnessapp.ui.profile
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Log
 import android.widget.NumberPicker
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -10,13 +18,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.DropdownMenuItem
@@ -27,26 +42,39 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.signature.MediaStoreSignature
 import com.davidgrath.fitnessapp.R
 import com.davidgrath.fitnessapp.ui.components.SimpleAppBar
 import com.davidgrath.fitnessapp.ui.components.UnderlineTextField
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingScreenState
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModel
 import com.davidgrath.fitnessapp.util.Constants
+import com.davidgrath.fitnessapp.util.Constants.PreferencesTitles
+import com.davidgrath.fitnessapp.util.Constants.avatarMap
+import com.davidgrath.fitnessapp.util.SimpleResult
 import com.davidgrath.fitnessapp.util.centimetersToInches
 import com.davidgrath.fitnessapp.util.feetAndInchesToInches
 import com.davidgrath.fitnessapp.util.getTensPart
@@ -54,19 +82,28 @@ import com.davidgrath.fitnessapp.util.inchesToCentimeters
 import com.davidgrath.fitnessapp.util.inchesToFeetAndInches
 import com.davidgrath.fitnessapp.util.kilogramsToPounds
 import com.davidgrath.fitnessapp.util.poundsToKilograms
+import com.davidgrath.fitnessapp.util.tempGetUri
 import kotlinx.coroutines.launch
+import java.io.File
+import java.lang.RuntimeException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.GregorianCalendar
 import kotlin.math.floor
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun ProfileScreen(
-    viewModel: OnboardingViewModel,
+    viewModel: ProfileViewModel,
     onNavigateBack: () -> Unit
 ) {
 
-    val screenState = viewModel.screenStateLiveData.observeAsState().value?: OnboardingScreenState()
+    val screenState = viewModel.profileScreenStateLiveData.observeAsState().value?: ProfileScreenState()
+    val context = LocalContext.current
+    //TODO Maybe abstract this use case of profile picture and preferences through a Repository
+    val preferences = remember {
+        context.getSharedPreferences(Constants.MAIN_PREFERENCES_NAME, Context.MODE_PRIVATE)
+    }
 
     Column(modifier = Modifier
         .fillMaxSize()) {
@@ -86,13 +123,139 @@ fun ProfileScreen(
             Spacer(Modifier.height(16.dp))
             Text(stringResource(R.string.profile_label_general_settings), style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Bold))
             Spacer(Modifier.height(16.dp))
+            val (isAvatarDialogShowing, setIsAvatarDialogShowing) = remember {
+                mutableStateOf(false)
+            }
+            val (isDefaultAvatarDialogShowing, setIsDefaultAvatarDialogShowing) = remember {
+                mutableStateOf(false)
+            }
+            val imageModifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .size(96.dp)
+                .clip(CircleShape)
+                .clickable {
+                    setIsAvatarDialogShowing(true)
+                }
 
-            Image(painter = painterResource(R.drawable.account_circle), contentDescription = "avatar",
-                Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .size(96.dp)
-            )
+            val avatar = screenState.userAvatar
+            val avatarType = screenState.userAvatarType
+            val avatarFileExists = screenState.userAvatarFileExists
+            val uuid = preferences.getString(PreferencesTitles.CURRENT_USER_UUID, null)!!
+            val avatarFile = remember {
+                val avatarFolder = File(context.filesDir, "avatars")
+                if(!avatarFolder.exists()) {
+                    avatarFolder.mkdir()
+                }
+                File(avatarFolder, "$uuid.jpg")
+            }
+            when(avatarType) {
+                "default" -> {
+                    val resId = avatarMap[avatar]?:R.drawable.avatar_02
+                    Image(
+                        painter = painterResource(resId),
+                        contentDescription = "avatar",
+                        Modifier
+                            .border(2.dp, Color.Black, CircleShape)
+                            .then(imageModifier),
+                        contentScale = ContentScale.FillHeight
+                    )
+                }
+                "media" -> {
+                    if (avatarFileExists) {
+                        GlideImage(
+                            model = avatarFile,
+                            contentDescription = "avatar",
+                            imageModifier
+                        ) {
+                            it.circleCrop()
+                                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                                .skipMemoryCache(true)
+                        }
+                    } else {
+                        Image(
+                            painter = painterResource(R.drawable.account_circle),
+                            contentDescription = "avatar",
+                            imageModifier
+                        )
+                    }
+                }
+                else -> {
+                    Image(
+                        painter = painterResource(R.drawable.account_circle),
+                        contentDescription = "avatar",
+                        imageModifier
+                    )
+                }
+            }
+            val (uri, setUri) = rememberSaveable {
+                mutableStateOf<String?>(tempGetUri(context, preferences).toString())
+            }
+            val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) {
+                coroutineScope.launch {
+                    viewModel.setAvatarFile(context.contentResolver.openInputStream(Uri.parse(uri!!))!!, avatarFile, preferences).observe(lifecycleOwner) {
+                        if(it is SimpleResult.Success) {
+                            context.contentResolver.delete(Uri.parse(uri), null, null)
+                            setUri(null)
+                        }
+                    }
+                }
+            }
+            if(isAvatarDialogShowing) {
+                AvatarDialog(
+                    onChooseAvatarAction = {
+                        when(it) {
+                            AVATAR_DIALOG_ACTION_MEDIA -> {
+                                coroutineScope.launch {
+                                    viewModel.submitAvatarType("media").observe(lifecycleOwner) {
+                                        if(it is SimpleResult.Success) {
+//                                            val b = if (avatarFile.exists()) {
+//                                                BitmapFactory.decodeStream(avatarFile.inputStream())
+//                                            } else {
+//                                                null
+//                                            }
+//                                            if (b == null) {
+                                            if (!avatarFile.exists()) {
+                                                if(uri == null) {
+                                                    val u = tempGetUri(context, preferences)
+                                                    setUri(u.toString())
+                                                    launcher.launch(u)
+                                                } else {
+                                                    launcher.launch(Uri.parse(uri))
+                                                }
+                                            } /*else {
+                                                setBitmap(b)
+                                            }*/
+                                        }
+                                    }
+                                }
 
+                            }
+                            AVATAR_DIALOG_ACTION_DEFAULT_AVATAR -> {
+                                setIsDefaultAvatarDialogShowing(true)
+                            }
+                            AVATAR_DIALOG_ACTION_DELETE -> {
+                                viewModel.submitAvatarType("none").observe(lifecycleOwner) {
+                                }
+                            }
+                        }
+                    },
+                    onDismiss = {
+                        setIsAvatarDialogShowing(false)
+                    }
+                )
+            }
+            if(isDefaultAvatarDialogShowing) {
+                DefaultAvatarDialog(
+                    onSelectDefaultAvatar = {
+                        viewModel.submitAvatarType("default", it).observe(lifecycleOwner) {
+                        }
+                    },
+                    initialDefaultAvatarId = if(avatar.isNotBlank()) avatar else "avatar_02",
+                    onDismiss = {
+                        setIsDefaultAvatarDialogShowing(false)
+                    }
+                )
+            }
             Spacer(Modifier.height(16.dp))
             Text(stringResource(R.string.profile_label_first_name), style = MaterialTheme.typography.body1)
             Spacer(Modifier.height(8.dp))
@@ -277,7 +440,9 @@ fun ProfileScreen(
                         .clickable {
                             viewModel.setGender("male")
                             coroutineScope.launch {
-                                viewModel.submitGender().observe(lifecycleOwner) {}
+                                viewModel
+                                    .submitGender()
+                                    .observe(lifecycleOwner) {}
                             }
                         }
                         .padding(8.dp)
@@ -292,7 +457,9 @@ fun ProfileScreen(
                         .clickable {
                             viewModel.setGender("female")
                             coroutineScope.launch {
-                                viewModel.submitGender().observe(lifecycleOwner) {}
+                                viewModel
+                                    .submitGender()
+                                    .observe(lifecycleOwner) {}
                             }
                         }
                         .padding(8.dp)
@@ -765,6 +932,242 @@ fun BirthdateDialog(
                             }
                         }
                     )
+                }
+            }
+        }
+    )
+}
+
+val AVATAR_DIALOG_ACTION_MEDIA = 1
+val AVATAR_DIALOG_ACTION_DEFAULT_AVATAR = 2
+val AVATAR_DIALOG_ACTION_DELETE = 3
+@Composable
+fun AvatarDialog(
+    onChooseAvatarAction: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val (currentAction, setCurrentAction) = remember {
+        mutableStateOf(-1)
+    }
+    AlertDialog(onDismissRequest = {},
+        title = {
+            Text(text = "Set Avatar", style = MaterialTheme.typography.h5)
+        },
+        dismissButton = {
+            Text(stringResource(R.string.dialog_birthdate_button_cancel),
+                Modifier
+                    .padding(8.dp)
+                    .clickable {
+                        onDismiss()
+                    },
+                style = MaterialTheme.typography.body1
+            )
+        },
+        confirmButton = {
+            val buttonActiveModifier = if(currentAction != -1) {
+                Modifier.clickable {
+                    onChooseAvatarAction(currentAction)
+                    onDismiss()
+                }
+            } else {
+                Modifier
+            }
+            Text("Choose",
+                Modifier
+                    .padding(8.dp)
+                    .then(buttonActiveModifier),
+                color = if(currentAction != -1) {
+                    MaterialTheme.colors.primary
+                } else {
+                    Color.Gray
+                },
+                style = MaterialTheme.typography.body1
+            )
+        },
+        text = {
+            //TODO For some reason, when an item is selected, the "text" Composable changes boundaries
+            // in a weird way. Tried wrapping the Column in a Box to see if it changes anything, but no luck
+            Box {
+                Column(Modifier.padding(vertical = 8.dp)) {
+                    Row(
+                        Modifier
+                            .selectableGroup()
+                            .fillMaxWidth(),
+                        Arrangement.SpaceBetween
+                    ) {
+                        SimpleAvatarAction(
+                            isSelected = currentAction == AVATAR_DIALOG_ACTION_MEDIA,
+                            imageResId = R.drawable.baseline_photo_camera_24,
+                            imageContentDescription = "take picture",
+                            onClick = {
+                                if (currentAction == AVATAR_DIALOG_ACTION_MEDIA) {
+                                    onChooseAvatarAction(currentAction)
+                                    onDismiss()
+                                } else {
+                                    setCurrentAction(AVATAR_DIALOG_ACTION_MEDIA)
+                                }
+
+                            },
+                        )
+                        SimpleAvatarAction(
+                            isSelected = currentAction == AVATAR_DIALOG_ACTION_DEFAULT_AVATAR,
+                            imageResId = R.drawable.avatar_02,
+                            imageContentDescription = "use default",
+                            onClick = {
+                                if (currentAction == AVATAR_DIALOG_ACTION_DEFAULT_AVATAR) {
+                                    onChooseAvatarAction(currentAction)
+                                    onDismiss()
+                                } else {
+                                    setCurrentAction(AVATAR_DIALOG_ACTION_DEFAULT_AVATAR)
+                                }
+                            },
+                        )
+                        SimpleAvatarAction(
+                            isSelected = currentAction == AVATAR_DIALOG_ACTION_DELETE,
+                            imageResId = R.drawable.baseline_delete_24,
+                            imageContentDescription = "delete",
+                            onClick = {
+                                if (currentAction == AVATAR_DIALOG_ACTION_DELETE) {
+                                    onChooseAvatarAction(currentAction)
+                                    onDismiss()
+                                } else {
+                                    setCurrentAction(AVATAR_DIALOG_ACTION_DELETE)
+                                }
+                            },
+                        )
+                    }
+                    val text = when (currentAction) {
+                        AVATAR_DIALOG_ACTION_MEDIA -> {
+                            "Take a picture"
+                        }
+
+                        AVATAR_DIALOG_ACTION_DEFAULT_AVATAR -> {
+                            "Use a default avatar"
+                        }
+
+                        AVATAR_DIALOG_ACTION_DELETE -> {
+                            "Delete avatar"
+                        }
+
+                        else -> {
+                            null
+                        }
+                    }
+                    if (text != null) {
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text,
+                            Modifier.fillMaxWidth(),
+                            style = MaterialTheme.typography.body1,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    )
+
+}
+
+@Composable
+fun SimpleAvatarAction(
+    isSelected: Boolean,
+    imageResId: Int,
+    imageContentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val selectedModifier = if(isSelected){
+        modifier
+            .background(
+                MaterialTheme.colors.primary.copy(alpha = .5f),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .border(4.dp, MaterialTheme.colors.primary, shape = RoundedCornerShape(8.dp))
+    } else {
+        modifier
+    }
+    Image(painter = painterResource(id = imageResId),
+        contentDescription = imageContentDescription,
+        modifier
+            .clickable {
+                onClick()
+            }
+            .then(selectedModifier)
+            .padding(16.dp)
+            .size(48.dp)
+    )
+}
+
+@Composable
+fun DefaultAvatarDialog(
+    initialDefaultAvatarId: String = "avatar_02",
+    onSelectDefaultAvatar: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val (currentDefaultAvatar, setCurrentDefaultAvatar) = remember {
+        mutableStateOf(initialDefaultAvatarId)
+    }
+    AlertDialog(onDismissRequest = {},
+        title = {
+            Text(text = "Select Default Avatar", style = MaterialTheme.typography.h5)
+        },
+        dismissButton = {
+            Text(stringResource(R.string.dialog_birthdate_button_cancel),
+                Modifier
+                    .padding(8.dp)
+                    .clickable {
+                        onDismiss()
+                    },
+                style = MaterialTheme.typography.body1
+            )
+        },
+        confirmButton = {
+            val buttonActiveModifier = Modifier.clickable {
+                    onSelectDefaultAvatar(currentDefaultAvatar)
+                    onDismiss()
+                }
+            Text("Choose",
+                Modifier
+                    .padding(8.dp)
+                    .then(buttonActiveModifier),
+                color = MaterialTheme.colors.primary,
+                style = MaterialTheme.typography.body1
+            )
+        },
+        text = {
+            val itemList = avatarMap.entries.toList()
+            LazyVerticalGrid(GridCells.Adaptive(80.dp), Modifier.selectableGroup(),horizontalArrangement = Arrangement.SpaceEvenly) {
+                items(itemList.size, { i -> itemList[i].key}) { index ->
+                    val selectedModifier = if(itemList[index].key == currentDefaultAvatar){
+                        Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .size(64.dp)
+                            .background(
+                                MaterialTheme.colors.primary.copy(alpha = .5f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .border(
+                                4.dp,
+                                MaterialTheme.colors.primary,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+
+                    } else {
+                        Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .size(64.dp)
+                    }
+                    Box(Modifier.padding(vertical = 4.dp)) {
+                        Image(
+                            painter = painterResource(id = itemList[index].value),
+                            contentDescription = "default avatar",
+                            selectedModifier
+                                .clickable {
+                                    setCurrentDefaultAvatar(itemList[index].key)
+                                }
+                        )
+                    }
                 }
             }
         }

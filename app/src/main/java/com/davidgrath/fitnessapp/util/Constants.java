@@ -1,8 +1,12 @@
 package com.davidgrath.fitnessapp.util;
 
+import com.davidgrath.fitnessapp.R;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class Constants {
     public static final String MAIN_PREFERENCES_NAME = "FitnessApp";
@@ -40,6 +44,13 @@ public class Constants {
         public static final String CHOSEN_COUNTRY_CODE = "chosenCountryCode";
         public static final String SHOULD_SYNC_TO_GOOGLE_FIT = "shouldSyncToGoogleFit";
         public static final String SHOULD_REMIND_TO_WORKOUT = "shouldRemindToWorkout";
+        public static final String CURRENT_USER_UUID = "currentUserUuid";
+        public static final String MEDIA_STORE_TEMP_IMAGE_URI = "mediaStoreTempImageUri";
+        public static final String USER_AVATAR = "userAvatar";
+        /**
+         * none, default, media
+         */
+        public static final String USER_AVATAR_TYPE = "userAvatarType";
     }
 
     public static final String[] supportedLanguages = new String[]{
@@ -59,4 +70,30 @@ public class Constants {
             "id",
             "vi"
     };
+
+    // https://ui8.net/pigment-store-804a8d/products/60-unique-avatars
+    // https://ui8.net/pigment-store-804a8d/products?status=7
+    public static final Map<String, Integer> avatarMap = new HashMap<>();
+    static {
+        avatarMap.put("avatar_02", R.drawable.avatar_02);
+        avatarMap.put("avatar_05", R.drawable.avatar_05);
+        avatarMap.put("avatar_08", R.drawable.avatar_08);
+        avatarMap.put("avatar_11", R.drawable.avatar_11);
+        avatarMap.put("avatar_29", R.drawable.avatar_29);
+        avatarMap.put("avatar_30", R.drawable.avatar_30);
+        avatarMap.put("avatar_32", R.drawable.avatar_32);
+        avatarMap.put("avatar_35", R.drawable.avatar_35);
+        avatarMap.put("avatar_37", R.drawable.avatar_37);
+        avatarMap.put("avatar_39", R.drawable.avatar_39);
+        avatarMap.put("avatar_41", R.drawable.avatar_41);
+        avatarMap.put("avatar_43", R.drawable.avatar_43);
+        avatarMap.put("avatar_45", R.drawable.avatar_45);
+        avatarMap.put("avatar_47", R.drawable.avatar_47);
+        avatarMap.put("avatar_49", R.drawable.avatar_49);
+        avatarMap.put("avatar_51", R.drawable.avatar_51);
+        avatarMap.put("avatar_53", R.drawable.avatar_53);
+        avatarMap.put("avatar_55", R.drawable.avatar_55);
+        avatarMap.put("avatar_57", R.drawable.avatar_57);
+        avatarMap.put("avatar_59", R.drawable.avatar_59);
+    }
 }

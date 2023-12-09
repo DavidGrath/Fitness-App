@@ -15,6 +15,7 @@ import com.davidgrath.fitnessapp.util.kilogramsToPounds
 import com.davidgrath.fitnessapp.util.poundsToKilograms
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.UUID
 
 class OnboardingViewModel(
     private val userDataRepository: UserDataRepository
@@ -41,102 +42,91 @@ class OnboardingViewModel(
 
         userDataRepository.getFirstName()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(firstName = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getLastName()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(lastName = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getEmail()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(email = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getGender()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(gender = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getHeight()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(height = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getHeightUnit()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(heightUnit = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getBirthDateDay()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(birthDateDay = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getBirthDateMonth()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(birthDateMonth = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getBirthDateYear()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(birthDateYear = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getWeight()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(weight = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
         userDataRepository.getWeightUnit()
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
                 screenState = screenState.copy(weightUnit = it)
                 _screenStateLiveData.postValue(screenState)
             }, {
-                Log.e("OnboardingViewModel", it.message, it)
+                Log.e(LOG_TAG, it.message, it)
             })
     }
 
@@ -164,12 +154,17 @@ class OnboardingViewModel(
         } else if(screenState.currentPageIndex + 1 == size) {
             //TODO Move to separate submit method or learn how to consume state in a "one-off" manner
             _submitLiveData.postValue(SimpleResult.Processing())
+            //TODO New bug discovered: it seems the height and weight default to inches and pounds when
+            // "logging out" and registering again
             userDataRepository.setAllUserData(
                 screenState.firstName.trim(), screenState.lastName.trim(), screenState.email.trim(),
                 screenState.gender, screenState.height, screenState.heightUnit,
                 screenState.birthDateDay, screenState.birthDateMonth, screenState.birthDateYear,
                 screenState.weight, screenState.weightUnit
             )
+                .flatMap {
+                    userDataRepository.setUserUuid(UUID.randomUUID().toString())
+                }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
@@ -347,6 +342,9 @@ class OnboardingViewModel(
         return _liveData
     }
 
+    companion object {
+        private const val LOG_TAG = "OnboardingViewModel"
+    }
 
 }
 

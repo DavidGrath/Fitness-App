@@ -48,7 +48,9 @@ import com.davidgrath.fitnessapp.util.Constants
 import com.davidgrath.fitnessapp.util.Constants.PreferencesTitles
 import com.davidgrath.fitnessapp.util.kilogramsToPounds
 import com.davidgrath.fitnessapp.util.poundsToKilograms
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
 
 
 fun NavGraphBuilder.settingsNavGraph(navController: NavHostController, viewModel: SettingsViewModel) {
@@ -106,6 +108,7 @@ fun SettingsScreen(
     val preferences = remember {
         context.getSharedPreferences(Constants.MAIN_PREFERENCES_NAME, Context.MODE_PRIVATE)
     }
+    val coroutineScope = rememberCoroutineScope()
     Column(modifier = Modifier.fillMaxSize()) {
 
         val scrollState = rememberScrollState()
@@ -185,22 +188,34 @@ fun SettingsScreen(
 
             SimpleSettingsItem(iconResId = R.drawable.logout, text = stringResource(R.string.settings_item_log_out),
                 onClick = {
-                          preferences.edit()
-                              .putString(PreferencesTitles.FIRST_NAME, null)
-                              .putString(PreferencesTitles.LAST_NAME, null)
-                              .putString(PreferencesTitles.EMAIL, null)
-                              .putInt(PreferencesTitles.HEIGHT, 0)
-                              .putString(PreferencesTitles.HEIGHT_UNIT, null)
-                              .putFloat(PreferencesTitles.WEIGHT, 0f)
-                              .putString(PreferencesTitles.WEIGHT_UNIT, null)
-                              .putInt(PreferencesTitles.BIRTH_DATE_DAY, 0)
-                              .putInt(PreferencesTitles.BIRTH_DATE_MONTH, 0)
-                              .putInt(PreferencesTitles.BIRTH_DATE_YEAR, 0)
-                              .putBoolean(PreferencesTitles.SHOULD_SYNC_TO_GOOGLE_FIT, false)
-                              .putBoolean(PreferencesTitles.SHOULD_SYNC_TO_GOOGLE_FIT, false)
-                              .putString(PreferencesTitles.DISTANCE_UNIT, null)
-                              .putString(PreferencesTitles.TEMPERATURE_UNIT, null)
-                              .apply()
+                    coroutineScope.launch(Dispatchers.IO) {
+                        val uuid = preferences.getString(PreferencesTitles.CURRENT_USER_UUID, "")!!
+                        preferences.edit()
+                            .putString(PreferencesTitles.FIRST_NAME, null)
+                            .putString(PreferencesTitles.LAST_NAME, null)
+                            .putString(PreferencesTitles.EMAIL, null)
+                            .putInt(PreferencesTitles.HEIGHT, 0)
+                            .putString(PreferencesTitles.HEIGHT_UNIT, null)
+                            .putFloat(PreferencesTitles.WEIGHT, 0f)
+                            .putString(PreferencesTitles.WEIGHT_UNIT, null)
+                            .putInt(PreferencesTitles.BIRTH_DATE_DAY, 0)
+                            .putInt(PreferencesTitles.BIRTH_DATE_MONTH, 0)
+                            .putInt(PreferencesTitles.BIRTH_DATE_YEAR, 0)
+                            .putBoolean(PreferencesTitles.SHOULD_SYNC_TO_GOOGLE_FIT, false)
+                            .putBoolean(PreferencesTitles.SHOULD_SYNC_TO_GOOGLE_FIT, false)
+                            .putString(PreferencesTitles.DISTANCE_UNIT, null)
+                            .putString(PreferencesTitles.TEMPERATURE_UNIT, null)
+                            .putString(PreferencesTitles.USER_AVATAR, null)
+                            .putString(PreferencesTitles.USER_AVATAR_TYPE, null)
+                            .putString(PreferencesTitles.CURRENT_USER_UUID, null)
+                            .commit()
+                        val avatarDir = File(context.filesDir, "avatars")
+                        val avatarFile = File(avatarDir, "$uuid.jpg")
+                        if(avatarFile.exists()) {
+                            avatarFile.delete()
+                        }
+                    }
+
                 },
                 checkable = false)
 

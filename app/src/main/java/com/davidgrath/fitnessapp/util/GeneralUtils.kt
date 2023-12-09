@@ -1,5 +1,11 @@
 package com.davidgrath.fitnessapp.util
 
+import android.content.ContentValues
+import android.content.Context
+import android.content.SharedPreferences
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import com.davidgrath.fitnessapp.R
 import java.math.BigDecimal
 import java.util.Calendar
@@ -157,4 +163,29 @@ fun millisToTimeString(milliseconds: Long): String {
         }
     }
     return timeString
+}
+
+//TODO This function doesn't belong here, but I don't know where else to keep it,
+// so it stays here for now
+fun tempGetUri(context: Context, preferences: SharedPreferences) : Uri {
+    val uriString = preferences.getString(Constants.PreferencesTitles.MEDIA_STORE_TEMP_IMAGE_URI, null)
+    val uri: Uri
+    if(uriString == null) {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures")
+            put(MediaStore.Images.Media.DISPLAY_NAME, "temp.jpg")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/*")
+            put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1_000)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
+            }
+        }
+        uri = context.contentResolver.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            contentValues
+        )!!
+    } else {
+        uri = Uri.parse(uriString)
+    }
+    return uri
 }

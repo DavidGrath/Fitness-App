@@ -14,6 +14,9 @@ interface UserDataRepository {
     fun getBirthDateDay(): Observable<Int>
     fun getBirthDateMonth(): Observable<Int>
     fun getBirthDateYear(): Observable<Int>
+    fun getAvatar(): Observable<String>
+    fun getAvatarType(): Observable<String>
+    fun getAvatarFileExists(): Observable<Boolean>
     fun getWeight(): Observable<Float>
     fun getWeightUnit(): Observable<String>
     fun setNameAndEmail(firstName: String, lastName: String, email: String): Single<Unit>
@@ -21,10 +24,12 @@ interface UserDataRepository {
     fun setHeight(height: Int, unit: String): Single<Unit>
     fun setBirthDate(day: Int, month: Int, year: Int): Single<Unit>
     fun setWeight(weight: Float, unit: String): Single<Unit>
+    fun setAvatar(userAvatar: String?): Single<Unit>
+    fun setAvatarType(userAvatarType: String): Single<Unit>
     fun setAllUserData(firstName: String, lastName: String, email: String, gender: String,
                        height: Int, heightUnit: String, day: Int, month: Int, year: Int,
                        weight: Float, weightUnit: String): Single<Unit>
-
+    fun setUserUuid(uuid: String): Single<Unit>
     fun getNextOnboardingPhase() : String
 }
 

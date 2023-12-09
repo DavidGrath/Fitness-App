@@ -55,6 +55,7 @@ import com.davidgrath.fitnessapp.ui.gym.GymViewModel
 import com.davidgrath.fitnessapp.ui.gym.gymNavGraph
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModel
 import com.davidgrath.fitnessapp.ui.profile.ProfileScreen
+import com.davidgrath.fitnessapp.ui.profile.ProfileViewModel
 import com.davidgrath.fitnessapp.ui.running.RunningActivity
 import com.davidgrath.fitnessapp.ui.running.RunningViewModel
 import com.davidgrath.fitnessapp.ui.running.runningNavGraph
@@ -79,6 +80,7 @@ import com.davidgrath.fitnessapp.util.SimpleResult
 fun HomeScreen(
     homeViewModel: HomeViewModel,
     onboardingViewModel: OnboardingViewModel,
+    profileViewModel: ProfileViewModel,
     runningViewModel: RunningViewModel,
     walkingViewModel: WalkingViewModel,
     swimmingViewModel: SwimmingViewModel,
@@ -96,8 +98,9 @@ fun HomeScreen(
     ) { padding ->
         HomeNavHost(
             navController, homeViewModel,
-            onboardingViewModel, runningViewModel, walkingViewModel,
-            swimmingViewModel, cyclingViewModel, gymViewModel, yogaViewModel, settingsViewModel,
+            onboardingViewModel, profileViewModel,
+            runningViewModel, walkingViewModel, swimmingViewModel,
+            cyclingViewModel, gymViewModel, yogaViewModel, settingsViewModel,
             Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -268,6 +271,7 @@ fun HomeNavHost(
     navController: NavHostController,
     homeViewModel: HomeViewModel,
     onboardingViewModel: OnboardingViewModel,
+    profileViewModel: ProfileViewModel,
     runningViewModel: RunningViewModel,
     walkingViewModel: WalkingViewModel,
     swimmingViewModel: SwimmingViewModel,
@@ -305,7 +309,7 @@ fun HomeNavHost(
         yogaNavGraph(navController, yogaViewModel)
         composable(route = BasicNavScreen.ProfileNav.path) {
             ProfileScreen(
-                onboardingViewModel,
+                profileViewModel,
                 {
                     navController.popBackStack()
                 }

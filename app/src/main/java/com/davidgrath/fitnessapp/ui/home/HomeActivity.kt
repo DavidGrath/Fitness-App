@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.FileObserver
 import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,6 +19,8 @@ import com.davidgrath.fitnessapp.ui.gym.GymViewModel
 import com.davidgrath.fitnessapp.ui.gym.GymViewModelFactory
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModel
 import com.davidgrath.fitnessapp.ui.onboarding.OnboardingViewModelFactory
+import com.davidgrath.fitnessapp.ui.profile.ProfileViewModel
+import com.davidgrath.fitnessapp.ui.profile.ProfileViewModelFactory
 import com.davidgrath.fitnessapp.ui.running.RunningViewModel
 import com.davidgrath.fitnessapp.ui.running.RunningViewModelFactory
 import com.davidgrath.fitnessapp.ui.settings.SettingsViewModel
@@ -27,11 +30,13 @@ import com.davidgrath.fitnessapp.ui.walking.WalkingViewModel
 import com.davidgrath.fitnessapp.ui.walking.WalkingViewModelFactory
 import com.davidgrath.fitnessapp.ui.yoga.YogaViewModel
 import com.davidgrath.fitnessapp.ui.yoga.YogaViewModelFactory
+import java.io.File
 
 class HomeActivity : ComponentActivity() {
 
     lateinit var homeViewModel: HomeViewModel
     lateinit var onboardingViewModel: OnboardingViewModel
+    lateinit var profileViewModel: ProfileViewModel
     lateinit var runningViewModel: RunningViewModel
     lateinit var walkingViewModel: WalkingViewModel
     lateinit var swimmingViewModel: SwimmingViewModel
@@ -57,8 +62,8 @@ class HomeActivity : ComponentActivity() {
             setContent { //TODO This just looks wrong, but it seems onServiceConnected only gets
                 // called after onCreate returns, so work with it for now
                 FitnessAppTheme {
-                    HomeScreen(homeViewModel,
-                        onboardingViewModel, runningViewModel, walkingViewModel, swimmingViewModel,
+                    HomeScreen(homeViewModel, onboardingViewModel, profileViewModel,
+                        runningViewModel, walkingViewModel, swimmingViewModel,
                         cyclingViewModel, gymViewModel, yogaViewModel, settingsViewModel
                     )
                 }
@@ -75,6 +80,7 @@ class HomeActivity : ComponentActivity() {
         homeViewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory()).get(HomeViewModel::class.java)
         val userDataRepository = UserDataRepositoryImpl(this)
         onboardingViewModel = ViewModelProvider(this, OnboardingViewModelFactory(userDataRepository)).get(OnboardingViewModel::class.java)
+        profileViewModel = ViewModelProvider(this, ProfileViewModelFactory(userDataRepository)).get(ProfileViewModel::class.java)
 
         val runningRepository = (application as FitnessApp).runningRepository
         val walkingRepository = (application as FitnessApp).walkingRepository
@@ -109,5 +115,18 @@ class HomeActivity : ComponentActivity() {
             unbindService(servConn)
             isBoundToService = false
         }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when(requestCode) {
+            REQUEST_CODE_TAKE_PICTURE -> {
+
+            }
+        }
+    }
+
+    companion object {
+        const val REQUEST_CODE_TAKE_PICTURE = 100
     }
 }

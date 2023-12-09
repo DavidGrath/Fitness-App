@@ -1,6 +1,8 @@
 package com.davidgrath.fitnessapp.ui.gym
 
+import android.content.Intent
 import android.graphics.drawable.ColorDrawable
+import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -367,7 +369,13 @@ fun GymRoutineSetsScreen(
                     Spacer(Modifier.height(8.dp))
                     if(!(tempVideoDetails?.thumbnailUrl.isNullOrEmpty())) {
                         GlideImage(model = tempVideoDetails?.thumbnailUrl, contentDescription = "yt thumbnail",
-                        Modifier.fillMaxWidth(),
+                        Modifier.fillMaxWidth()
+                            .clickable {
+                                val viewIntent = Intent(Intent.ACTION_VIEW)
+                                val uri = "https://youtu.be/${currentTutorial.youtubeVideoId}"
+                                viewIntent.data = Uri.parse(uri)
+                                context.startActivity(viewIntent)
+                            },
                         ) {
                             it.override(tempVideoDetails!!.thumbnailWidth!!, tempVideoDetails!!.thumbnailHeight!!)
                         }
