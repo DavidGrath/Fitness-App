@@ -124,8 +124,8 @@ val workoutNameToUrlMap = mapOf(
 
 fun dateAsStart(date: Date) : Date {
     val calendar = Calendar.getInstance()
-    calendar.timeZone = TimeZone.getTimeZone("UTC")
     calendar.time = date
+    calendar.timeZone = TimeZone.getTimeZone("UTC")
     calendar.set(Calendar.HOUR_OF_DAY, 0)
     calendar.set(Calendar.MINUTE, 0)
     calendar.set(Calendar.SECOND, 0)
@@ -135,8 +135,8 @@ fun dateAsStart(date: Date) : Date {
 
 fun dateAsEnd(date: Date) : Date {
     val calendar = Calendar.getInstance()
-    calendar.timeZone = TimeZone.getTimeZone("UTC")
     calendar.time = date
+    calendar.timeZone = TimeZone.getTimeZone("UTC")
     calendar.add(Calendar.DATE, 1)
     calendar.set(Calendar.HOUR_OF_DAY, 0)
     calendar.set(Calendar.MINUTE, 0)
